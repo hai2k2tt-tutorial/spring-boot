@@ -5,5 +5,8 @@ dependencies:
 - name: applications
   repository: file://charts/applications
   version: 0.1.0
-digest: sha256:c7f45b2ca96a03b6a90ab7761caa2f87123d3614168bc457ab41aec8338dd906
-generated: "2026-05-10T15:21:34.684236+07:00"
+- name: k8s-gateway
+  repository: file://charts/k8s-gateway
+  version: 0.1.0
+digest: sha256:94935b5600c82952f53db61c5dcfb69ed58b4d0dca96cfeff8c602641cdc9653
+generated: "2026-05-11T15:49:26.507968+07:00"

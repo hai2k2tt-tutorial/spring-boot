@@ -1,6 +1,6 @@
 enabled: true
 namespace: microservices
-image: hai2k2tt/product-service:latest
+image: hai2k2tt/product-service:1.0-SNAPSHOT
 imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:

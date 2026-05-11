@@ -221,8 +221,6 @@ infrastructure:
 
 applications:
   namespace: microservices
-  gatewayApi:
-    enabled: true
   commonConfig:
     lokiUrl: http://loki.microservices.svc.cluster.local:3100/loki/api/v1/push
     managementZipkinTracingEndpoint: http://tempo.microservices.svc.cluster.local:9411
@@ -241,7 +239,7 @@ applications:
       issuerUri: http://keycloak:8080/realms/spring-microservices-security-realm
   productService:
     enabled: true
-    image: hai2k2tt/product-service:latest
+    image: hai2k2tt/product-service:1.0-SNAPSHOT
     imagePullPolicy: IfNotPresent
     replicaCount: 1
     service:
@@ -250,7 +248,7 @@ applications:
       mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
   orderService:
     enabled: true
-    image: hai2k2tt/order-service:latest
+    image: hai2k2tt/order-service:1.0-SNAPSHOT
     imagePullPolicy: IfNotPresent
     replicaCount: 1
     service:
@@ -260,7 +258,7 @@ applications:
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   inventoryService:
     enabled: true
-    image: hai2k2tt/inventory-service:latest
+    image: hai2k2tt/inventory-service:1.0-SNAPSHOT
     imagePullPolicy: IfNotPresent
     replicaCount: 1
     service:
@@ -269,7 +267,7 @@ applications:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
   notificationService:
     enabled: true
-    image: hai2k2tt/notification-service:latest
+    image: hai2k2tt/notification-service:1.0-SNAPSHOT
     imagePullPolicy: IfNotPresent
     replicaCount: 1
     service:
@@ -290,3 +288,43 @@ applications:
     replicaCount: 1
     service:
       port: 3001
+
+k8sGateway:
+  enabled: true
+  namespace: microservices
+  gateway:
+    name: api-gateway
+    className: nginx
+    listeners:
+      - name: http
+        port: 80
+        protocol: HTTP
+  route:
+    name: infrastructure-routes
+    serviceName: api-gateway
+    servicePort: 9000
+    infrastructureRoutes:
+      - path: /keycloak
+        backendRefName: keycloak
+        backendRefPort: 8080
+      - path: /kafka-ui
+        backendRefName: kafka-ui
+        backendRefPort: 8080
+      - path: /grafana
+        backendRefName: grafana
+        backendRefPort: 3000
+      - path: /tempo
+        backendRefName: tempo
+        backendRefPort: 3100
+      - path: /prometheus
+        backendRefName: prometheus
+        backendRefPort: 9090
+      - path: /mailhog
+        backendRefName: mailhog
+        backendRefPort: 8025
+      - path: /schema-registry
+        backendRefName: schema-registry
+        backendRefPort: 8081
+      - path: /loki
+        backendRefName: loki
+        backendRefPort: 3100

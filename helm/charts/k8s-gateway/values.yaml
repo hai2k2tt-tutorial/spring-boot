@@ -1,0 +1,39 @@
+namespace: microservices
+
+gateway:
+  name: api-gateway
+  className: nginx
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+
+route:
+  name: infrastructure-routes
+  serviceName: api-gateway
+  servicePort: 9000
+  infrastructureRoutes:
+    - path: /keycloak
+      backendRefName: keycloak
+      backendRefPort: 8080
+    - path: /kafka-ui
+      backendRefName: kafka-ui
+      backendRefPort: 8080
+    - path: /grafana
+      backendRefName: grafana
+      backendRefPort: 3000
+    - path: /tempo
+      backendRefName: tempo
+      backendRefPort: 3100
+    - path: /prometheus
+      backendRefName: prometheus
+      backendRefPort: 9090
+    - path: /mailhog
+      backendRefName: mailhog
+      backendRefPort: 8025
+    - path: /schema-registry
+      backendRefName: schema-registry
+      backendRefPort: 8081
+    - path: /loki
+      backendRefName: loki
+      backendRefPort: 3100

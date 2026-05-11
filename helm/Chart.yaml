@@ -11,3 +11,7 @@ dependencies:
   - name: applications
     version: 0.1.0
     repository: "file://charts/applications"
+  - name: k8s-gateway
+    version: 0.1.0
+    repository: "file://charts/k8s-gateway"
+    condition: k8sGateway.enabled

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: hai2k2tt/notification-service:latest
+          image: hai2k2tt/notification-service:1.0-SNAPSHOT
           env:
             - name: SPRING_KAFKA_BOOTSTRAP-SERVERS
               valueFrom:

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: hai2k2tt/order-service:latest
+          image: hai2k2tt/order-service:1.0-SNAPSHOT
           env:
             - name: SPRING_KAFKA_BOOTSTRAP-SERVERS
               valueFrom:

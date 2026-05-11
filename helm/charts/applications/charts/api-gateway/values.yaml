@@ -1,7 +1,5 @@
 enabled: true
 namespace: microservices
-gatewayApi:
-  enabled: true
 image: hai2k2tt/api-gateway:latest
 imagePullPolicy: IfNotPresent
 replicaCount: 1

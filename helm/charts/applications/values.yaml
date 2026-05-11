@@ -23,7 +23,7 @@ apiGateway:
 
 productService:
   enabled: true
-  image: hai2k2tt/product-service:latest
+  image: hai2k2tt/product-service:1.0-SNAPSHOT
   imagePullPolicy: IfNotPresent
   replicaCount: 1
   service:
@@ -33,7 +33,7 @@ productService:
 
 orderService:
   enabled: true
-  image: hai2k2tt/order-service:latest
+  image: hai2k2tt/order-service:1.0-SNAPSHOT
   imagePullPolicy: IfNotPresent
   replicaCount: 1
   service:
@@ -44,7 +44,7 @@ orderService:
 
 inventoryService:
   enabled: true
-  image: hai2k2tt/inventory-service:latest
+  image: hai2k2tt/inventory-service:1.0-SNAPSHOT
   imagePullPolicy: IfNotPresent
   replicaCount: 1
   service:
@@ -54,7 +54,7 @@ inventoryService:
 
 notificationService:
   enabled: true
-  image: hai2k2tt/notification-service:latest
+  image: hai2k2tt/notification-service:1.0-SNAPSHOT
   imagePullPolicy: IfNotPresent
   replicaCount: 1
   service:

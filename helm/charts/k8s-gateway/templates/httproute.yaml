@@ -1,0 +1,31 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.route.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+  rules:
+{{- range .Values.route.infrastructureRoutes }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .path }}
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: {{ .backendRefName }}
+          port: {{ .backendRefPort }}
+{{- end }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ .Values.route.serviceName }}
+          port: {{ .Values.route.servicePort }}

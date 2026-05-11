@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: hai2k2tt/product-service:latest
+          image: hai2k2tt/product-service:1.0-SNAPSHOT
           env:
             - name: SPRING_DATA_MONGODB_URI
               valueFrom:
