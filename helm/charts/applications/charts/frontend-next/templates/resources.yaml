@@ -1,0 +1,41 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-next
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: frontend-next
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: frontend-next
+  template:
+    metadata:
+      labels:
+        app: frontend-next
+    spec:
+      containers:
+        - name: frontend-next
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-next
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: frontend-next
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend-next
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+{{- end }}

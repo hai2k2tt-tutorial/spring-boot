@@ -1,0 +1,41 @@
+apiVersion: v2
+name: applications
+description: Application workloads for the microservices demo
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: api-gateway
+    alias: apiGateway
+    version: 0.1.0
+    repository: "file://charts/api-gateway"
+    condition: apiGateway.enabled
+  - name: product-service
+    alias: productService
+    version: 0.1.0
+    repository: "file://charts/product-service"
+    condition: productService.enabled
+  - name: order-service
+    alias: orderService
+    version: 0.1.0
+    repository: "file://charts/order-service"
+    condition: orderService.enabled
+  - name: inventory-service
+    alias: inventoryService
+    version: 0.1.0
+    repository: "file://charts/inventory-service"
+    condition: inventoryService.enabled
+  - name: notification-service
+    alias: notificationService
+    version: 0.1.0
+    repository: "file://charts/notification-service"
+    condition: notificationService.enabled
+  - name: frontend
+    version: 0.1.0
+    repository: "file://charts/frontend"
+    condition: frontend.enabled
+  - name: frontend-next
+    alias: frontendNext
+    version: 0.1.0
+    repository: "file://charts/frontend-next"
+    condition: frontendNext.enabled

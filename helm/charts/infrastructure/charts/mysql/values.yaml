@@ -1,0 +1,4 @@
+namespace: microservices
+
+rootPassword: mysql
+

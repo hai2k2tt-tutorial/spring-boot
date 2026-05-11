@@ -1,0 +1,79 @@
+namespace: microservices
+
+gatewayApi:
+  enabled: true
+
+commonConfig:
+  lokiUrl: http://loki.microservices.svc.cluster.local:3100/loki/api/v1/push
+  managementZipkinTracingEndpoint: http://tempo.microservices.svc.cluster.local:9411
+  productServiceUrl: http://product-service.microservices.svc.cluster.local:8080
+  orderServiceUrl: http://order-service.microservices.svc.cluster.local:8081
+  inventoryServiceUrl: http://inventory-service.microservices.svc.cluster.local:8082
+  springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
+
+apiGateway:
+  enabled: true
+  image: hai2k2tt/api-gateway:latest
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    port: 9000
+  config:
+    issuerUri: http://keycloak:8080/realms/spring-microservices-security-realm
+
+productService:
+  enabled: true
+  image: hai2k2tt/product-service:latest
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    port: 8080
+  config:
+    mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
+
+orderService:
+  enabled: true
+  image: hai2k2tt/order-service:latest
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    port: 8081
+  config:
+    datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
+    schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
+
+inventoryService:
+  enabled: true
+  image: hai2k2tt/inventory-service:latest
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    port: 8082
+  config:
+    datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
+
+notificationService:
+  enabled: true
+  image: hai2k2tt/notification-service:latest
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    port: 8083
+  config:
+    schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
+
+frontend:
+  enabled: true
+  image: hai2k2tt/frontend:latest
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    port: 80
+
+frontendNext:
+  enabled: true
+  image: hai2k2tt/frontend-next:latest
+  imagePullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    port: 3001

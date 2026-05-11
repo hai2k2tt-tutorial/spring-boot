@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-next
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-next
+  template:
+    metadata:
+      labels:
+        app: frontend-next
+    spec:
+      containers:
+        - name: frontend-next
+          image: hai2k2tt/frontend-next:latest
+          ports:
+            - containerPort: 3001

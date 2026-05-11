@@ -1,0 +1,10 @@
+enabled: true
+namespace: microservices
+image: hai2k2tt/order-service:latest
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 8081
+config:
+  datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
+  schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081

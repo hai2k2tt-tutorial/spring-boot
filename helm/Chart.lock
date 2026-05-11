@@ -1,0 +1,9 @@
+dependencies:
+- name: infrastructure
+  repository: file://charts/infrastructure
+  version: 0.1.0
+- name: applications
+  repository: file://charts/applications
+  version: 0.1.0
+digest: sha256:c7f45b2ca96a03b6a90ab7761caa2f87123d3614168bc457ab41aec8338dd906
+generated: "2026-05-10T15:21:34.684236+07:00"

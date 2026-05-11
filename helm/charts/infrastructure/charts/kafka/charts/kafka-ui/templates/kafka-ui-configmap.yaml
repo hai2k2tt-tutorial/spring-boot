@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-ui-config
+  namespace: {{ .Values.namespace }}
+data:
+  kafka_clusters_name: 'local'
+  kafka_clusters_bootstrapservers: 'broker:29092'
+  dynamic_config_enabled: 'true'

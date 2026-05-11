@@ -1,0 +1,13 @@
+apiVersion: v2
+name: microservices
+description: Umbrella chart for the microservices demo
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: infrastructure
+    version: 0.1.0
+    repository: "file://charts/infrastructure"
+  - name: applications
+    version: 0.1.0
+    repository: "file://charts/applications"

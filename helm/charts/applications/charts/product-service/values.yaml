@@ -1,0 +1,9 @@
+enabled: true
+namespace: microservices
+image: hai2k2tt/product-service:latest
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 8080
+config:
+  mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin

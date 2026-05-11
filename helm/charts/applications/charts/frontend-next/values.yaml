@@ -1,0 +1,7 @@
+enabled: true
+namespace: microservices
+image: hai2k2tt/frontend-next:latest
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 3001

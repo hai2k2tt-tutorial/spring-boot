@@ -1,0 +1,9 @@
+enabled: true
+namespace: microservices
+image: hai2k2tt/inventory-service:latest
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 8082
+config:
+  datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service

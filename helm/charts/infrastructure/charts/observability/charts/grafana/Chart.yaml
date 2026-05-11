@@ -1,0 +1,6 @@
+apiVersion: v2
+name: grafana
+description: Grafana
+version: 0.1.0
+appVersion: "10.1.0"
+

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-mysql-config
+data:
+    mysql_database: 'keycloak'
+    mysql_user: 'keycloak'

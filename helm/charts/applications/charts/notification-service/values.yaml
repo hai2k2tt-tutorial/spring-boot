@@ -1,0 +1,9 @@
+enabled: true
+namespace: microservices
+image: hai2k2tt/notification-service:latest
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 8083
+config:
+  schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081

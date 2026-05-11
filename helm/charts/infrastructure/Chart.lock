@@ -1,0 +1,21 @@
+dependencies:
+- name: mysql
+  repository: file://charts/mysql
+  version: 0.1.0
+- name: mongodb
+  repository: file://charts/mongodb
+  version: 0.1.0
+- name: kafka
+  repository: file://charts/kafka
+  version: 0.1.0
+- name: keycloak
+  repository: file://charts/keycloak
+  version: 0.1.0
+- name: mailhog
+  repository: file://charts/mailhog
+  version: 0.1.0
+- name: observability
+  repository: file://charts/observability
+  version: 0.1.0
+digest: sha256:c097a904d7f46f5d75d0e25bf2939c87b46b23b818ce9f742df5561972cf76b3
+generated: "2026-05-08T17:17:46.167812+07:00"

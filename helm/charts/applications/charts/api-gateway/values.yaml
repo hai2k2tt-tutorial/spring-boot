@@ -1,0 +1,11 @@
+enabled: true
+namespace: microservices
+gatewayApi:
+  enabled: true
+image: hai2k2tt/api-gateway:latest
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 9000
+config:
+  issuerUri: http://keycloak:8080/realms/spring-microservices-security-realm

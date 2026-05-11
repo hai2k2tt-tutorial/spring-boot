@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: schema-registry
+  name: schema-registry-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: schema-registry
+  strategy: { }
+  template:
+    metadata:
+      labels:
+        app: schema-registry
+    spec:
+      containers:
+        - image: confluentinc/cp-schema-registry:7.5.0
+          name: schema-registry
+          resources: { }
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SCHEMA_REGISTRY_HOST_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: schema_registry_host_name
+                  name: schema-registry-config
+            - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  key: schema_registry_kafkastore_bootstrap_servers
+                  name: schema-registry-config
+            - name: SCHEMA_REGISTRY_LISTENERS
+              valueFrom:
+                configMapKeyRef:
+                  key: schema_registry_listeners
+                  name: schema-registry-config

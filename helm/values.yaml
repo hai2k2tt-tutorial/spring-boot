@@ -1,0 +1,292 @@
+global:
+  namespace: microservices
+
+infrastructure:
+  namespace: microservices
+  mysql:
+    enabled: true
+    fullnameOverride: mysql
+    image: mysql:8.3.0
+    replicaCount: 1
+    rootPassword: mysql
+    persistence:
+      enabled: true
+      storageClassName: standard
+      size: 1Gi
+      hostPath: /data/mysql
+    initSql: |
+      CREATE DATABASE IF NOT EXISTS order_service;
+      CREATE DATABASE IF NOT EXISTS inventory_service;
+
+  mongodb:
+    enabled: true
+    fullnameOverride: mongodb
+    image: mongo:7.0.5
+    replicaCount: 1
+    rootUsername: root
+    rootPassword: password
+    database: product-service
+    persistence:
+      enabled: true
+      storageClassName: standard
+      size: 1Gi
+      hostPath: /data/mongodb
+
+  kafka:
+    enabled: true
+    broker:
+      image: confluentinc/cp-kafka:7.5.0
+      replicaCount: 1
+      serviceName: broker
+      brokerId: "1"
+      zookeeperConnect: zookeeper:2181
+      listenerSecurityProtocolMap: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      advertisedListeners: "PLAINTEXT://broker:29092,PLAINTEXT_HOST://broker:9092"
+      offsetsTopicReplicationFactor: "1"
+    zookeeper:
+      image: confluentinc/cp-zookeeper:7.5.0
+      replicaCount: 1
+      serviceName: zookeeper
+      clientPort: "2181"
+      tickTime: "2000"
+    schemaRegistry:
+      image: confluentinc/cp-schema-registry:7.5.0
+      replicaCount: 1
+      serviceName: schema-registry
+      hostName: schema-registry
+      kafkaStoreBootstrapServers: broker:29092
+      listeners: http://schema-registry:8081
+    ui:
+      image: provectuslabs/kafka-ui:latest
+      replicaCount: 1
+      serviceName: kafka-ui
+      clustersName: local
+      clustersBootstrapServers: broker:29092
+      dynamicConfigEnabled: "true"
+
+  keycloak:
+    enabled: true
+    fullnameOverride: keycloak
+    image: quay.io/keycloak/keycloak:24.0.1
+    replicaCount: 1
+    adminUser: admin
+    adminPassword: admin
+    db:
+      vendor: MYSQL
+      host: keycloak-mysql
+      database: keycloak
+      user: keycloak
+      password: password
+    kcHttpEnabled: "true"
+    kcHostnameStrict: "false"
+    kcHostnameStrictHttps: "false"
+    realmImport: ""
+
+  keycloak-mysql:
+    enabled: true
+    fullnameOverride: keycloak-mysql
+    image: mysql:8
+    replicaCount: 1
+    rootPassword: root
+    database: keycloak
+    user: keycloak
+    password: password
+    persistence:
+      enabled: true
+      storageClassName: standard
+      size: 1Gi
+      hostPath: /data/keycloak-mysql
+
+  mailhog:
+    enabled: true
+    fullnameOverride: mailhog
+    image: mailhog/mailhog:v1.0.1
+    replicaCount: 1
+
+  observability:
+    enabled: true
+    grafana:
+      image: grafana/grafana:10.1.0
+      replicaCount: 1
+      anonymousEnabled: "true"
+      anonymousOrgRole: Admin
+      disableLoginForm: "true"
+      datasourceYml: |
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            access: proxy
+            url: http://prometheus.default.svc.cluster.local:9090
+            editable: false
+            jsonData:
+              httpMethod: POST
+              exemplarTraceIdDestinations:
+                - name: trace_id
+                  datasourceUid: tempo
+          - name: Tempo
+            type: tempo
+            access: proxy
+            orgId: 1
+            url: http://tempo.default.svc.cluster.local:3100
+            basicAuth: false
+            isDefault: true
+            version: 1
+            editable: false
+            apiVersion: 1
+            uid: tempo
+            jsonData:
+              httpMethod: GET
+              tracesToLogs:
+                datasourceUid: 'loki'
+              nodeGraph:
+                enabled: true
+          - name: Loki
+            type: loki
+            uid: loki
+            access: proxy
+            orgId: 1
+            url: http://loki.default.svc.cluster.local:3100
+            basicAuth: false
+            isDefault: false
+            version: 1
+            editable: false
+            apiVersion: 1
+            jsonData:
+              derivedFields:
+                - datasourceUid: tempo
+                  matcherRegex: "\\[.+,(.+?),"
+                  name: TraceID
+                  url: $${__value.raw}
+    prometheus:
+      image: prom/prometheus:v2.46.0
+      replicaCount: 1
+      configYml: |
+        global:
+          scrape_interval: 2s
+          evaluation_interval: 2s
+
+        scrape_configs:
+          - job_name: 'api-gateway'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'host.docker.internal:9000' ]
+          - job_name: 'product-service'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'host.docker.internal:8080' ]
+                labels:
+                  application: 'Product Service'
+          - job_name: 'order-service'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'host.docker.internal:8081' ]
+                labels:
+                  application: 'Order Service'
+          - job_name: 'inventory-service'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'host.docker.internal:8082' ]
+                labels:
+                  application: 'Inventory Service'
+          - job_name: 'notification-service'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'host.docker.internal:8083' ]
+                labels:
+                  application: 'Notification Service'
+    loki:
+      image: grafana/loki:main
+      replicaCount: 1
+    tempo:
+      image: grafana/tempo:2.2.2
+      replicaCount: 1
+      storage:
+        size: 1Gi
+        storageClassName: standard
+        hostPath: /data/tempo
+      configYml: |
+        server:
+          http_listen_port: 3100
+
+        distributor:
+          receivers:
+            zipkin:
+
+        storage:
+          trace:
+            backend: local
+            local:
+              path: /tmp/tempo/blocks
+
+applications:
+  namespace: microservices
+  gatewayApi:
+    enabled: true
+  commonConfig:
+    lokiUrl: http://loki.microservices.svc.cluster.local:3100/loki/api/v1/push
+    managementZipkinTracingEndpoint: http://tempo.microservices.svc.cluster.local:9411
+    productServiceUrl: http://product-service.microservices.svc.cluster.local:8080
+    orderServiceUrl: http://order-service.microservices.svc.cluster.local:8081
+    inventoryServiceUrl: http://inventory-service.microservices.svc.cluster.local:8082
+    springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
+  apiGateway:
+    enabled: true
+    image: hai2k2tt/api-gateway:latest
+    imagePullPolicy: IfNotPresent
+    replicaCount: 1
+    service:
+      port: 9000
+    config:
+      issuerUri: http://keycloak:8080/realms/spring-microservices-security-realm
+  productService:
+    enabled: true
+    image: hai2k2tt/product-service:latest
+    imagePullPolicy: IfNotPresent
+    replicaCount: 1
+    service:
+      port: 8080
+    config:
+      mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
+  orderService:
+    enabled: true
+    image: hai2k2tt/order-service:latest
+    imagePullPolicy: IfNotPresent
+    replicaCount: 1
+    service:
+      port: 8081
+    config:
+      datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
+      schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
+  inventoryService:
+    enabled: true
+    image: hai2k2tt/inventory-service:latest
+    imagePullPolicy: IfNotPresent
+    replicaCount: 1
+    service:
+      port: 8082
+    config:
+      datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
+  notificationService:
+    enabled: true
+    image: hai2k2tt/notification-service:latest
+    imagePullPolicy: IfNotPresent
+    replicaCount: 1
+    service:
+      port: 8083
+    config:
+      schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
+  frontend:
+    enabled: true
+    image: hai2k2tt/frontend:latest
+    imagePullPolicy: IfNotPresent
+    replicaCount: 1
+    service:
+      port: 80
+  frontendNext:
+    enabled: true
+    image: hai2k2tt/frontend-next:latest
+    imagePullPolicy: IfNotPresent
+    replicaCount: 1
+    service:
+      port: 3001

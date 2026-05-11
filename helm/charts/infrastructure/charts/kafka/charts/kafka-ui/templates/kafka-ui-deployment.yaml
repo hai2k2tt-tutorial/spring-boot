@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui-deployment
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+        - name: kafka-ui
+          image: provectuslabs/kafka-ui:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_CLUSTERS_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: kafka-ui-config
+                  key: kafka_clusters_name
+            - name: KAFKA_CLUSTERS_BOOTSTRAPSERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: kafka-ui-config
+                  key: kafka_clusters_bootstrapservers
+            - name: DYNAMIC_CONFIG_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: kafka-ui-config
+                  key: dynamic_config_enabled

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: keycloak-mysql
+description: MySQL database for Keycloak
+version: 0.1.0
+appVersion: "8.0"
+

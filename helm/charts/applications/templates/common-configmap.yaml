@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: common-config
+  namespace: {{ .Values.namespace }}
+data:
+  LOKI_URL: {{ .Values.commonConfig.lokiUrl | quote }}
+  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: {{ .Values.commonConfig.managementZipkinTracingEndpoint | quote }}
+  PRODUCT_SERVICE_URL: {{ .Values.commonConfig.productServiceUrl | quote }}
+  ORDER_SERVICE_URL: {{ .Values.commonConfig.orderServiceUrl | quote }}
+  INVENTORY_SERVICE_URL: {{ .Values.commonConfig.inventoryServiceUrl | quote }}
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: {{ .Values.commonConfig.springKafkaBootstrapServers | quote }}

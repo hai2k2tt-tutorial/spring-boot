@@ -1,0 +1,8 @@
+namespace: microservices
+
+dbPassword: password
+adminPassword: admin
+keycloak-mysql:
+  rootPassword: root
+  password: password
+

@@ -1,0 +1,24 @@
+dependencies:
+- name: api-gateway
+  repository: file://charts/api-gateway
+  version: 0.1.0
+- name: product-service
+  repository: file://charts/product-service
+  version: 0.1.0
+- name: order-service
+  repository: file://charts/order-service
+  version: 0.1.0
+- name: inventory-service
+  repository: file://charts/inventory-service
+  version: 0.1.0
+- name: notification-service
+  repository: file://charts/notification-service
+  version: 0.1.0
+- name: frontend
+  repository: file://charts/frontend
+  version: 0.1.0
+- name: frontend-next
+  repository: file://charts/frontend-next
+  version: 0.1.0
+digest: sha256:7c225ec8a4df7331d0bfdeb0f05ea603e0b07f27dbb7770d93f2bd0738ef937c
+generated: "2026-05-10T15:21:34.664412+07:00"

@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  strategy: { }
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - image: quay.io/keycloak/keycloak:24.0.1
+          name: keycloak
+          resources: { }
+          ports:
+            - containerPort: 8080
+          args: ["start-dev", "--import-realm"]
+          env:
+            - name: DB_VENDOR
+              valueFrom:
+                configMapKeyRef:
+                  key: db_vendor
+                  name: keycloak-config
+            - name: DB_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  key: db_addr
+                  name: keycloak-config
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: db_database
+                  name: keycloak-config
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: db_user
+                  name: keycloak-config
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: db_password
+                  name: keycloak-secrets
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                configMapKeyRef:
+                  key: keycloak_admin
+                  name: keycloak-config
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: keycloak_admin_password
+                  name: keycloak-secrets
+            - name: KC_HTTP_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  key: kc_http_enabled
+                  name: keycloak-config
+            - name: KC_HOSTNAME_STRICT
+              valueFrom:
+                configMapKeyRef:
+                  key: kc_hostname_strict
+                  name: keycloak-config
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              valueFrom:
+                configMapKeyRef:
+                  key: kc_hostname_strict_https
+                  name: keycloak-config
+          volumeMounts:
+            - mountPath: /opt/keycloak/data/import/
+              name: keycloak-config
+      volumes:
+        - name: keycloak-config
+          configMap:
+            name: keycloak-config
