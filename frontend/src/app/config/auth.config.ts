@@ -1,10 +1,17 @@
 import { PassedInitialConfig } from 'angular-auth-oidc-client';
 
+const realmPath = '/realms/spring-microservices-security-realm';
+const { hostname, origin, protocol } = window.location;
+
+const authority = hostname === 'localhost'
+  ? `http://localhost:8181${realmPath}`
+  : `${protocol}//${hostname.replace(/^[^.]+/, 'keycloak')}${realmPath}`;
+
 export const authConfig: PassedInitialConfig = {
   config: {
-    authority: 'http://localhost:8181/realms/spring-microservices-security-realm',
-    redirectUrl: window.location.origin,
-    postLogoutRedirectUri: window.location.origin,
+    authority,
+    redirectUrl: origin,
+    postLogoutRedirectUri: origin,
     clientId: 'angular-client',
     scope: 'openid profile offline_access',
     responseType: 'code',

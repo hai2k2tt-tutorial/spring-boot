@@ -163,6 +163,24 @@ kubectl -n microservices create secret tls haint-fyi-tls \
   --key=tls.key
 ```
 
+If you already have a certificate and private key on the VPS, copy or place them in the repo checkout first. For example:
+
+```bash
+cd /root/spring-boot
+ls -l tls.crt tls.key
+```
+
+Then create or update the Kubernetes TLS secret from those files:
+
+```bash
+kubectl create namespace microservices --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl -n microservices create secret tls haint-fyi-tls \
+  --cert=/root/spring-boot/tls.crt \
+  --key=/root/spring-boot/tls.key \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
 If the secret already exists, replace it with:
 
 ```bash
@@ -173,6 +191,12 @@ kubectl -n microservices create secret tls haint-fyi-tls \
 ```
 
 For production, use a publicly trusted certificate instead of a self-signed one. The Gateway listener can keep the same secret name as long as the certificate secret is `haint-fyi-tls`.
+
+Verify the mounted certificate secret:
+
+```bash
+kubectl get secret haint-fyi-tls -n microservices
+```
 
 Keycloak in this chart is configured to keep HTTP enabled internally behind the Gateway, but to treat its public hostname as HTTPS. That avoids public redirects and OIDC helper pages falling back to `http://`.
 

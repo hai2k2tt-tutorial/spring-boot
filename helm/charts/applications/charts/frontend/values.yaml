@@ -5,6 +5,8 @@ imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:
   port: 80
+config:
+  apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
 resources:
   requests:
     cpu: 50m

@@ -104,6 +104,8 @@ frontend:
   replicaCount: 1
   service:
     port: 80
+  config:
+    apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
   resources:
     requests:
       cpu: 50m
@@ -127,6 +129,7 @@ frontendNext:
       cpu: 300m
       memory: 256Mi
   config:
+    apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
     nextPublicApiBaseUrl: https://api.haint.fyi/api
     authUrl: https://frontend-next.haint.fyi
     authIssuer: https://keycloak.haint.fyi/realms/spring-microservices-security-realm

@@ -21,6 +21,8 @@ spec:
           image: {{ .Values.image }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
+            - name: API_BASE_URL
+              value: {{ .Values.config.apiBaseUrl | quote }}
             - name: NEXT_PUBLIC_API_BASE_URL
               value: {{ .Values.config.nextPublicApiBaseUrl | quote }}
             - name: AUTH_URL

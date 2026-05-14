@@ -13,6 +13,7 @@ resources:
     cpu: 300m
     memory: 256Mi
 config:
+  apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
   nextPublicApiBaseUrl: http://api.haint.fyi/api
   authUrl: http://frontend-next.haint.fyi
   authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
