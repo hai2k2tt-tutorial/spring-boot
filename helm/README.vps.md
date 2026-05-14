@@ -8,7 +8,7 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 
 - public domain: `haint.fyi`
 - control plane IP: `103.6.234.153`
-- public gateway entrypoint: `http://*.haint.fyi`
+- public gateway entrypoint: `https://*.haint.fyi`
 - Kubernetes node architecture: `linux/amd64`
 - internal service-to-service traffic stays on cluster DNS under `microservices.svc.cluster.local`
 
@@ -34,13 +34,12 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 
 2. Open the gateway ports in the VPS firewall or security group.
 
-   The bundled Gateway resource exposes HTTP on port `80` through the NGINX Gateway Fabric data plane running with host ports.
+   The bundled Gateway resource exposes HTTP on port `80` and HTTPS on port `443` through the NGINX Gateway Fabric data plane running with host ports.
 
    ```text
    TCP 80
+   TCP 443
    ```
-
-   Open `443` only after you add a TLS listener and certificate configuration.
 
 3. Update the local-only hostnames in the chart values.
 
@@ -76,13 +75,13 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    ```yaml
    apiGateway:
      config:
-       issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+       issuerUri: https://keycloak.haint.fyi/realms/spring-microservices-security-realm
 
    frontendNext:
      config:
-       nextPublicApiBaseUrl: http://api.haint.fyi/api
-       authUrl: http://frontend-next.haint.fyi
-       authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+       nextPublicApiBaseUrl: https://api.haint.fyi/api
+       authUrl: https://frontend-next.haint.fyi
+       authIssuer: https://keycloak.haint.fyi/realms/spring-microservices-security-realm
    ```
 
 5. Review Keycloak redirect URIs.
@@ -90,9 +89,9 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    The chart defaults now include:
 
    ```text
-   http://frontend-next.haint.fyi
-   http://frontend-next.haint.fyi/*
-   http://frontend-next.haint.fyi/api/auth/callback/keycloak
+   https://frontend-next.haint.fyi
+   https://frontend-next.haint.fyi/*
+   https://frontend-next.haint.fyi/api/auth/callback/keycloak
    ```
 
 6. Review Prometheus scrape targets if you need metrics.
@@ -139,7 +138,41 @@ nginx:
     type: ClusterIP
 ```
 
-The control-plane toleration is required because the public DNS points to `103.6.234.153`, which is the `k8s-master` node. Running the gateway data plane on that node lets normal browser URLs like `http://frontend.haint.fyi/` reach Kubernetes directly on port `80`.
+The control-plane toleration is required because the public DNS points to `103.6.234.153`, which is the `k8s-master` node. Running the gateway data plane on that node lets normal browser URLs like `https://frontend.haint.fyi/` reach Kubernetes directly on ports `80` and `443`.
+
+## TLS configuration
+
+The chart now includes both:
+
+- an HTTP listener on port `80`
+- an HTTPS listener on port `443`
+
+The HTTPS listener expects a Kubernetes TLS secret named `haint-fyi-tls` in the `microservices` namespace.
+
+For a quick self-signed certificate:
+
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout tls.key \
+  -out tls.crt \
+  -subj "/CN=haint.fyi" \
+  -addext "subjectAltName=DNS:haint.fyi,DNS:*.haint.fyi"
+
+kubectl -n microservices create secret tls haint-fyi-tls \
+  --cert=tls.crt \
+  --key=tls.key
+```
+
+If the secret already exists, replace it with:
+
+```bash
+kubectl -n microservices delete secret haint-fyi-tls
+kubectl -n microservices create secret tls haint-fyi-tls \
+  --cert=tls.crt \
+  --key=tls.key
+```
+
+For production, use a publicly trusted certificate instead of a self-signed one. The Gateway listener can keep the same secret name as long as the certificate secret is `haint-fyi-tls`.
 
 ## Install prerequisites
 
@@ -280,6 +313,15 @@ Build the umbrella chart dependencies:
 helm dependency build helm
 ```
 
+Create the TLS secret before installing or upgrading the application stack:
+
+```bash
+kubectl get secret haint-fyi-tls -n microservices >/dev/null 2>&1 || \
+kubectl -n microservices create secret tls haint-fyi-tls \
+  --cert=tls.crt \
+  --key=tls.key
+```
+
 Install or upgrade the application stack:
 
 ```bash
@@ -356,17 +398,17 @@ Service map for `haint.fyi`, assuming you kept the same route names:
 
 | Service | Hostname | Backend port | Public URL |
 | --- | --- | --- | --- |
-| frontend | `frontend.haint.fyi` | `80` | `http://frontend.haint.fyi/` |
-| frontend-next | `frontend-next.haint.fyi` | `3001` | `http://frontend-next.haint.fyi/` |
-| api-gateway | `api.haint.fyi` | `9000` | `http://api.haint.fyi/` |
-| keycloak | `keycloak.haint.fyi` | `8080` | `http://keycloak.haint.fyi/` |
-| kafka-ui | `kafka-ui.haint.fyi` | `8080` | `http://kafka-ui.haint.fyi/` |
-| grafana | `grafana.haint.fyi` | `3000` | `http://grafana.haint.fyi/` |
-| tempo | `tempo.haint.fyi` | `3100` | `http://tempo.haint.fyi/` |
-| prometheus | `prometheus.haint.fyi` | `9090` | `http://prometheus.haint.fyi/` |
-| mailhog | `mailhog.haint.fyi` | `8025` | `http://mailhog.haint.fyi/` |
-| schema-registry | `schema-registry.haint.fyi` | `8081` | `http://schema-registry.haint.fyi/` |
-| loki | `loki.haint.fyi` | `3100` | `http://loki.haint.fyi/` |
+| frontend | `frontend.haint.fyi` | `80` | `https://frontend.haint.fyi/` |
+| frontend-next | `frontend-next.haint.fyi` | `3001` | `https://frontend-next.haint.fyi/` |
+| api-gateway | `api.haint.fyi` | `9000` | `https://api.haint.fyi/` |
+| keycloak | `keycloak.haint.fyi` | `8080` | `https://keycloak.haint.fyi/` |
+| kafka-ui | `kafka-ui.haint.fyi` | `8080` | `https://kafka-ui.haint.fyi/` |
+| grafana | `grafana.haint.fyi` | `3000` | `https://grafana.haint.fyi/` |
+| tempo | `tempo.haint.fyi` | `3100` | `https://tempo.haint.fyi/` |
+| prometheus | `prometheus.haint.fyi` | `9090` | `https://prometheus.haint.fyi/` |
+| mailhog | `mailhog.haint.fyi` | `8025` | `https://mailhog.haint.fyi/` |
+| schema-registry | `schema-registry.haint.fyi` | `8081` | `https://schema-registry.haint.fyi/` |
+| loki | `loki.haint.fyi` | `3100` | `https://loki.haint.fyi/` |
 
 ## Value checklist
 
@@ -380,7 +422,7 @@ If you want a single checklist for the VPS install, update these files:
 
 ## Notes
 
-- The chart currently defines an HTTP Gateway listener only.
-- If you want clean `https://` URLs on ports `443`, add TLS termination in front of the cluster or extend the Gateway resources accordingly.
+- The chart now defines both HTTP and HTTPS Gateway listeners.
+- Browsers will warn on the self-signed certificate until you trust it locally. Use a public CA-issued certificate for normal production access.
 - Keep `frontend:latest` and `frontend-next:latest` for arm64 if you still use them elsewhere. The VPS chart intentionally uses `frontend:amd64` and `frontend-next:amd64`.
 - The local `kind` install guide in `README.md` still applies to Docker-based development, but it is not the right path for this VPS deployment.

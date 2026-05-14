@@ -4,9 +4,9 @@ dbPassword: password
 adminPassword: admin
 hostname: keycloak.haint.fyi
 redirectUris:
-  - http://frontend-next.haint.fyi
-  - http://frontend-next.haint.fyi/*
-  - http://frontend-next.haint.fyi/api/auth/callback/keycloak
+  - https://frontend-next.haint.fyi
+  - https://frontend-next.haint.fyi/*
+  - https://frontend-next.haint.fyi/api/auth/callback/keycloak
 resources:
   requests:
     cpu: 250m

@@ -122,9 +122,9 @@ infrastructure:
     adminPassword: admin
     hostname: keycloak.haint.fyi
     redirectUris:
-      - http://frontend-next.haint.fyi
-      - http://frontend-next.haint.fyi/*
-      - http://frontend-next.haint.fyi/api/auth/callback/keycloak
+      - https://frontend-next.haint.fyi
+      - https://frontend-next.haint.fyi/*
+      - https://frontend-next.haint.fyi/api/auth/callback/keycloak
     db:
       vendor: MYSQL
       host: keycloak-mysql
@@ -339,7 +339,7 @@ applications:
         cpu: 500m
         memory: 1Gi
     config:
-      issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+      issuerUri: https://keycloak.haint.fyi/realms/spring-microservices-security-realm
   productService:
     enabled: true
     image: docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
@@ -434,9 +434,9 @@ applications:
       cpu: 300m
       memory: 256Mi
     config:
-      nextPublicApiBaseUrl: http://api.haint.fyi/api
-      authUrl: http://frontend-next.haint.fyi
-      authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+      nextPublicApiBaseUrl: https://api.haint.fyi/api
+      authUrl: https://frontend-next.haint.fyi
+      authIssuer: https://keycloak.haint.fyi/realms/spring-microservices-security-realm
       authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
       authClientId: angular-client
       authClientSecret: ""
