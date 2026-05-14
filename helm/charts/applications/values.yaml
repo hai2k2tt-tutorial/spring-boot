@@ -99,8 +99,8 @@ notificationService:
 
 frontend:
   enabled: true
-  image: hai2k2tt/frontend:latest
-  imagePullPolicy: IfNotPresent
+  image: docker.io/hai2k2tt/frontend:amd64
+  imagePullPolicy: Always
   replicaCount: 1
   service:
     port: 80
@@ -114,8 +114,8 @@ frontend:
 
 frontendNext:
   enabled: true
-  image: hai2k2tt/frontend-next:latest
-  imagePullPolicy: IfNotPresent
+  image: docker.io/hai2k2tt/frontend-next:amd64
+  imagePullPolicy: Always
   replicaCount: 1
   service:
     port: 3001
