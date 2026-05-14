@@ -29,8 +29,8 @@
     <rest-assured.version>5.5.0</rest-assured.version>
     <confluent.version>7.8.0</confluent.version>
     <avro.version>1.12.1</avro.version>
-    <docker.username>{docker.username}</docker.username>
-    <docker.password>{docker.password}</docker.password>
+    <docker.username>hai2k2tt</docker.username>
+    <docker.password>${env.DOCKER_PASSWORD}</docker.password>
   </properties>
 
   <dependencyManagement>
@@ -54,7 +54,7 @@
         <configuration>
           <image>
             <name>docker.io/${docker.username}/${project.artifactId}:${project.version}</name>
-            <builder>dashaun/builder:tiny</builder>
+            <builder>paketobuildpacks/builder-jammy-base</builder>
             <env>
             <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
             </env>
