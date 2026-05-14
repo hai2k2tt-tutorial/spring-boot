@@ -3,10 +3,17 @@ nginxGateway:
     - microservices
 
 nginx:
+  kind: daemonSet
+  pod:
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+  container:
+    hostPorts:
+      - port: 80
+        containerPort: 80
+      - port: 443
+        containerPort: 443
   service:
-    type: NodePort
-    nodePorts:
-      - port: 31437
-        listenerPort: 80
-      - port: 30478
-        listenerPort: 443
+    type: ClusterIP

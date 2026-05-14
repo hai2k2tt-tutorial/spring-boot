@@ -8,7 +8,8 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 
 - public domain: `haint.fyi`
 - control plane IP: `103.6.234.153`
-- public gateway entrypoint: `http://*.haint.fyi:31437`
+- public gateway entrypoint: `http://*.haint.fyi`
+- Kubernetes node architecture: `linux/amd64`
 - internal service-to-service traffic stays on cluster DNS under `microservices.svc.cluster.local`
 
 ## What this chart installs
@@ -31,15 +32,15 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 
    If you do not use wildcard DNS, create individual A records for each hostname used by the gateway routes.
 
-2. Open the gateway port in the VPS firewall.
+2. Open the gateway ports in the VPS firewall or security group.
 
-   The bundled Gateway resource currently exposes HTTP only, so the public entrypoint is the NodePort mapped to port `31437`.
+   The bundled Gateway resource exposes HTTP on port `80` through the NGINX Gateway Fabric data plane running with host ports.
 
    ```text
-   TCP 31437
+   TCP 80
    ```
 
-   Keep `30478` closed unless you add TLS to the chart or put a reverse proxy in front of the cluster.
+   Open `443` only after you add a TLS listener and certificate configuration.
 
 3. Update the local-only hostnames in the chart values.
 
@@ -75,13 +76,13 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    ```yaml
    apiGateway:
      config:
-       issuerUri: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
+       issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
 
    frontendNext:
      config:
-       nextPublicApiBaseUrl: http://api.haint.fyi:31437/api
-       authUrl: http://frontend-next.haint.fyi:31437
-       authIssuer: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
+       nextPublicApiBaseUrl: http://api.haint.fyi/api
+       authUrl: http://frontend-next.haint.fyi
+       authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
    ```
 
 5. Review Keycloak redirect URIs.
@@ -89,9 +90,9 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    The chart defaults now include:
 
    ```text
-   http://frontend-next.haint.fyi:31437
-   http://frontend-next.haint.fyi:31437/*
-   http://frontend-next.haint.fyi:31437/api/auth/callback/keycloak
+   http://frontend-next.haint.fyi
+   http://frontend-next.haint.fyi/*
+   http://frontend-next.haint.fyi/api/auth/callback/keycloak
    ```
 
 6. Review Prometheus scrape targets if you need metrics.
@@ -104,6 +105,42 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    - `inventory-service.microservices.svc.cluster.local:8082`
    - `notification-service.microservices.svc.cluster.local:8083`
 
+## Gateway exposure on this VPS
+
+Kubernetes `Service` type `LoadBalancer` does not create an external load balancer by itself. It asks a cloud provider integration to provision one. Managed Kubernetes clusters usually include that integration. A plain VPS Kubernetes cluster usually does not.
+
+On this cluster, changing the NGINX Gateway Fabric data plane service to `LoadBalancer` left it in this state:
+
+```text
+EXTERNAL-IP: <pending>
+```
+
+That means there is no working cloud load balancer controller for this VPS environment. You can install one only if the VPS provider exposes a compatible load balancer API or cloud-controller-manager, such as an OpenStack Octavia integration, Hetzner Cloud Controller Manager, or another provider-specific controller.
+
+MetalLB is another option for bare-metal or VPS Kubernetes, but it needs an IP address range that the network can route to the cluster. With only the existing node public IP `103.6.234.153`, MetalLB is not the cleanest fit because that IP is already assigned to the host.
+
+For this VPS, the chart uses NGINX Gateway Fabric's data plane as a `DaemonSet` with `hostPort` bindings:
+
+```yaml
+nginx:
+  kind: daemonSet
+  pod:
+    tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+  container:
+    hostPorts:
+      - port: 80
+        containerPort: 80
+      - port: 443
+        containerPort: 443
+  service:
+    type: ClusterIP
+```
+
+The control-plane toleration is required because the public DNS points to `103.6.234.153`, which is the `k8s-master` node. Running the gateway data plane on that node lets normal browser URLs like `http://frontend.haint.fyi/` reach Kubernetes directly on port `80`.
+
 ## Install prerequisites
 
 Make sure these are available on the VPS or on the machine you use to administer the cluster:
@@ -111,6 +148,107 @@ Make sure these are available on the VPS or on the machine you use to administer
 - `kubectl`
 - `helm`
 - access to the Kubernetes context for the VPS cluster
+
+For this VPS, the normal workflow is to run Helm from the control plane server:
+
+```bash
+ssh root@103.6.234.153
+cd /root/spring-boot
+```
+
+If the repo is not on the server yet:
+
+```bash
+git clone https://github.com/hai2k2tt-tutorial/spring-boot.git /root/spring-boot
+cd /root/spring-boot
+```
+
+## Build and publish amd64 images
+
+The VPS Kubernetes nodes are `linux/amd64`. Images built on an Apple Silicon Mac default to `linux/arm64` unless you explicitly set the platform. If an arm64-only image is deployed to this cluster, pods fail with errors like:
+
+```text
+no match for platform in manifest
+exec /cnb/process/web: exec format error
+```
+
+Build and push custom images with Docker Buildx before deploying.
+
+Create or select a multi-arch builder:
+
+```bash
+docker buildx create --use --name multiarch || docker buildx use multiarch
+docker buildx inspect --bootstrap
+```
+
+Spring Boot service images used by the chart:
+
+```bash
+docker buildx build --platform linux/amd64 \
+  -t docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT \
+  --push ./api-gateway
+
+docker buildx build --platform linux/amd64 \
+  -t docker.io/hai2k2tt/product-service:1.0-SNAPSHOT \
+  --push ./product-service
+
+docker buildx build --platform linux/amd64 \
+  -t docker.io/hai2k2tt/order-service:1.0-SNAPSHOT \
+  --push ./order-service
+
+docker buildx build --platform linux/amd64 \
+  -t docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT \
+  --push ./inventory-service
+
+docker buildx build --platform linux/amd64 \
+  -t docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT \
+  --push ./notification-service
+```
+
+Frontend images use separate amd64 tags so the existing arm64 `latest` tags can remain available:
+
+```bash
+docker buildx build --platform linux/amd64 \
+  -t docker.io/hai2k2tt/frontend:amd64 \
+  --push ./frontend
+
+docker buildx build --platform linux/amd64 \
+  -t docker.io/hai2k2tt/frontend-next:amd64 \
+  --push ./frontend-next
+```
+
+Verify the pushed manifests contain `linux/amd64`:
+
+```bash
+docker buildx imagetools inspect docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT
+docker buildx imagetools inspect docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
+docker buildx imagetools inspect docker.io/hai2k2tt/order-service:1.0-SNAPSHOT
+docker buildx imagetools inspect docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT
+docker buildx imagetools inspect docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT
+docker buildx imagetools inspect docker.io/hai2k2tt/frontend:amd64
+docker buildx imagetools inspect docker.io/hai2k2tt/frontend-next:amd64
+```
+
+The Helm chart is configured to deploy these image tags:
+
+```yaml
+apiGateway:
+  image: docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT
+productService:
+  image: docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
+orderService:
+  image: docker.io/hai2k2tt/order-service:1.0-SNAPSHOT
+inventoryService:
+  image: docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT
+notificationService:
+  image: docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT
+frontend:
+  image: docker.io/hai2k2tt/frontend:amd64
+frontendNext:
+  image: docker.io/hai2k2tt/frontend-next:amd64
+```
+
+All custom application images use `imagePullPolicy: Always` so Kubernetes pulls rebuilt tags instead of reusing stale cached images.
 
 ## Install order
 
@@ -150,6 +288,36 @@ helm upgrade --install microservices helm \
   --create-namespace
 ```
 
+For an existing VPS checkout, pull the latest chart changes and redeploy:
+
+```bash
+cd /root/spring-boot
+git pull --ff-only
+helm dependency build helm
+helm upgrade --install microservices helm \
+  --namespace microservices \
+  --create-namespace
+```
+
+If you republished an image tag and want to force fresh pods immediately:
+
+```bash
+kubectl rollout restart deploy/frontend deploy/frontend-next -n microservices
+kubectl rollout restart deploy/api-gateway deploy/product-service deploy/order-service deploy/inventory-service deploy/notification-service -n microservices
+```
+
+Wait for application rollouts:
+
+```bash
+kubectl rollout status deployment/api-gateway -n microservices --timeout=300s
+kubectl rollout status deployment/product-service -n microservices --timeout=300s
+kubectl rollout status deployment/order-service -n microservices --timeout=300s
+kubectl rollout status deployment/inventory-service -n microservices --timeout=300s
+kubectl rollout status deployment/notification-service -n microservices --timeout=300s
+kubectl rollout status deployment/frontend -n microservices --timeout=300s
+kubectl rollout status deployment/frontend-next -n microservices --timeout=300s
+```
+
 ## Verify
 
 ```bash
@@ -157,6 +325,20 @@ kubectl get pods -n nginx-gateway
 kubectl get pods -n microservices
 kubectl get gateway,httproute -n microservices
 kubectl get gatewayclass
+```
+
+Confirm the deployed images:
+
+```bash
+kubectl describe deploy \
+  api-gateway \
+  product-service \
+  order-service \
+  inventory-service \
+  notification-service \
+  frontend \
+  frontend-next \
+  -n microservices | egrep "^(Name:|Replicas:|    Image:)"
 ```
 
 If you installed metrics-server, you can also check:
@@ -174,29 +356,31 @@ Service map for `haint.fyi`, assuming you kept the same route names:
 
 | Service | Hostname | Backend port | Public URL |
 | --- | --- | --- | --- |
-| frontend | `frontend.haint.fyi` | `80` | `http://frontend.haint.fyi:31437/` |
-| frontend-next | `frontend-next.haint.fyi` | `3001` | `http://frontend-next.haint.fyi:31437/` |
-| api-gateway | `api.haint.fyi` | `9000` | `http://api.haint.fyi:31437/` |
-| keycloak | `keycloak.haint.fyi` | `8080` | `http://keycloak.haint.fyi:31437/` |
-| kafka-ui | `kafka-ui.haint.fyi` | `8080` | `http://kafka-ui.haint.fyi:31437/` |
-| grafana | `grafana.haint.fyi` | `3000` | `http://grafana.haint.fyi:31437/` |
-| tempo | `tempo.haint.fyi` | `3100` | `http://tempo.haint.fyi:31437/` |
-| prometheus | `prometheus.haint.fyi` | `9090` | `http://prometheus.haint.fyi:31437/` |
-| mailhog | `mailhog.haint.fyi` | `8025` | `http://mailhog.haint.fyi:31437/` |
-| schema-registry | `schema-registry.haint.fyi` | `8081` | `http://schema-registry.haint.fyi:31437/` |
-| loki | `loki.haint.fyi` | `3100` | `http://loki.haint.fyi:31437/` |
+| frontend | `frontend.haint.fyi` | `80` | `http://frontend.haint.fyi/` |
+| frontend-next | `frontend-next.haint.fyi` | `3001` | `http://frontend-next.haint.fyi/` |
+| api-gateway | `api.haint.fyi` | `9000` | `http://api.haint.fyi/` |
+| keycloak | `keycloak.haint.fyi` | `8080` | `http://keycloak.haint.fyi/` |
+| kafka-ui | `kafka-ui.haint.fyi` | `8080` | `http://kafka-ui.haint.fyi/` |
+| grafana | `grafana.haint.fyi` | `3000` | `http://grafana.haint.fyi/` |
+| tempo | `tempo.haint.fyi` | `3100` | `http://tempo.haint.fyi/` |
+| prometheus | `prometheus.haint.fyi` | `9090` | `http://prometheus.haint.fyi/` |
+| mailhog | `mailhog.haint.fyi` | `8025` | `http://mailhog.haint.fyi/` |
+| schema-registry | `schema-registry.haint.fyi` | `8081` | `http://schema-registry.haint.fyi/` |
+| loki | `loki.haint.fyi` | `3100` | `http://loki.haint.fyi/` |
 
 ## Value checklist
 
 If you want a single checklist for the VPS install, update these files:
 
+- `helm/values.yaml`
 - `helm/charts/k8s-gateway/values.yaml`
 - `helm/charts/applications/values.yaml`
-- `helm/charts/infrastructure/charts/keycloak/templates/configmap.yaml`
+- `helm/charts/infrastructure/charts/keycloak/values.yaml`
 - `helm/charts/infrastructure/charts/observability/charts/prometheus/templates/prometheus-configmap.yaml`
 
 ## Notes
 
 - The chart currently defines an HTTP Gateway listener only.
 - If you want clean `https://` URLs on ports `443`, add TLS termination in front of the cluster or extend the Gateway resources accordingly.
+- Keep `frontend:latest` and `frontend-next:latest` for arm64 if you still use them elsewhere. The VPS chart intentionally uses `frontend:amd64` and `frontend-next:amd64`.
 - The local `kind` install guide in `README.md` still applies to Docker-based development, but it is not the right path for this VPS deployment.

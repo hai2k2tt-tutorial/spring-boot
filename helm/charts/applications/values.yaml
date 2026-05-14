@@ -26,7 +26,7 @@ apiGateway:
       cpu: 500m
       memory: 512Mi
   config:
-    issuerUri: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
+    issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
 
 productService:
   enabled: true
@@ -127,9 +127,9 @@ frontendNext:
       cpu: 300m
       memory: 256Mi
   config:
-    nextPublicApiBaseUrl: http://api.haint.fyi:31437/api
-    authUrl: http://frontend-next.haint.fyi:31437
-    authIssuer: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
+    nextPublicApiBaseUrl: http://api.haint.fyi/api
+    authUrl: http://frontend-next.haint.fyi
+    authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
     authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
     authClientId: angular-client
     authClientSecret: ""
