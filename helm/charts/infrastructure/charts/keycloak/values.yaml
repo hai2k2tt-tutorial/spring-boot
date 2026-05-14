@@ -2,7 +2,7 @@ namespace: microservices
 
 dbPassword: password
 adminPassword: admin
-hostname: keycloak.haint.fyi
+hostname: https://keycloak.haint.fyi
 redirectUris:
   - https://frontend-next.haint.fyi
   - https://frontend-next.haint.fyi/*

@@ -13,7 +13,7 @@ data:
   kc_hostname: {{ .Values.hostname | quote }}
   kc_proxy_headers: 'xforwarded'
   kc_hostname_strict: 'false'
-  kc_hostname_strict_https: 'false'
+  kc_hostname_strict_https: 'true'
   keycloak-realm-import.json: |-
     {
       "id": "7cad500c-0823-4235-a8b5-c3e34bacfdef",

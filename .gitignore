@@ -42,3 +42,6 @@ build/
 
 ### Helm ###
 helm/**/*.tgz
+
+tls.crt
+tls.key

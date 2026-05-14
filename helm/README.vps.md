@@ -174,6 +174,8 @@ kubectl -n microservices create secret tls haint-fyi-tls \
 
 For production, use a publicly trusted certificate instead of a self-signed one. The Gateway listener can keep the same secret name as long as the certificate secret is `haint-fyi-tls`.
 
+Keycloak in this chart is configured to keep HTTP enabled internally behind the Gateway, but to treat its public hostname as HTTPS. That avoids public redirects and OIDC helper pages falling back to `http://`.
+
 ## Install prerequisites
 
 Make sure these are available on the VPS or on the machine you use to administer the cluster:
