@@ -326,8 +326,8 @@ applications:
     springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
   apiGateway:
     enabled: true
-    image: hai2k2tt/api-gateway:latest
-    imagePullPolicy: IfNotPresent
+    image: docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT
+    imagePullPolicy: Always
     replicaCount: 1
     service:
       port: 9000
@@ -342,8 +342,8 @@ applications:
       issuerUri: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
   productService:
     enabled: true
-    image: hai2k2tt/product-service:1.0-SNAPSHOT
-    imagePullPolicy: IfNotPresent
+    image: docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
+    imagePullPolicy: Always
     replicaCount: 1
     service:
       port: 8080
@@ -358,8 +358,8 @@ applications:
       mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
   orderService:
     enabled: true
-    image: hai2k2tt/order-service:1.0-SNAPSHOT
-    imagePullPolicy: IfNotPresent
+    image: docker.io/hai2k2tt/order-service:1.0-SNAPSHOT
+    imagePullPolicy: Always
     replicaCount: 1
     service:
       port: 8081
@@ -375,8 +375,8 @@ applications:
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   inventoryService:
     enabled: true
-    image: hai2k2tt/inventory-service:1.0-SNAPSHOT
-    imagePullPolicy: IfNotPresent
+    image: docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT
+    imagePullPolicy: Always
     replicaCount: 1
     service:
       port: 8082
@@ -391,8 +391,8 @@ applications:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
   notificationService:
     enabled: true
-    image: hai2k2tt/notification-service:1.0-SNAPSHOT
-    imagePullPolicy: IfNotPresent
+    image: docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT
+    imagePullPolicy: Always
     replicaCount: 1
     service:
       port: 8083

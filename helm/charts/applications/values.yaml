@@ -13,8 +13,8 @@ commonConfig:
 
 apiGateway:
   enabled: true
-  image: hai2k2tt/api-gateway:latest
-  imagePullPolicy: IfNotPresent
+  image: docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT
+  imagePullPolicy: Always
   replicaCount: 1
   service:
     port: 9000
@@ -30,8 +30,8 @@ apiGateway:
 
 productService:
   enabled: true
-  image: hai2k2tt/product-service:1.0-SNAPSHOT
-  imagePullPolicy: IfNotPresent
+  image: docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
+  imagePullPolicy: Always
   replicaCount: 1
   service:
     port: 8080
@@ -47,8 +47,8 @@ productService:
 
 orderService:
   enabled: true
-  image: hai2k2tt/order-service:1.0-SNAPSHOT
-  imagePullPolicy: IfNotPresent
+  image: docker.io/hai2k2tt/order-service:1.0-SNAPSHOT
+  imagePullPolicy: Always
   replicaCount: 1
   service:
     port: 8081
@@ -65,8 +65,8 @@ orderService:
 
 inventoryService:
   enabled: true
-  image: hai2k2tt/inventory-service:1.0-SNAPSHOT
-  imagePullPolicy: IfNotPresent
+  image: docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT
+  imagePullPolicy: Always
   replicaCount: 1
   service:
     port: 8082
@@ -82,8 +82,8 @@ inventoryService:
 
 notificationService:
   enabled: true
-  image: hai2k2tt/notification-service:1.0-SNAPSHOT
-  imagePullPolicy: IfNotPresent
+  image: docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT
+  imagePullPolicy: Always
   replicaCount: 1
   service:
     port: 8083
