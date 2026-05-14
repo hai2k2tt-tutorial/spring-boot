@@ -16,3 +16,23 @@ For local `kind`, this repo exposes the Gateway listener on:
 
 Those host ports map to the NodePorts configured in [values.yaml](./values.yaml)
 and in [k8s/kind/kind-config.yaml](../../kind/kind-config.yaml).
+
+To use hostname-based routes locally, add hostnames that point to `127.0.0.1`,
+for example:
+
+```text
+127.0.0.1 frontend.local
+127.0.0.1 frontend-next.local
+127.0.0.1 api.local
+127.0.0.1 keycloak.local
+127.0.0.1 kafka-ui.local
+127.0.0.1 grafana.local
+127.0.0.1 tempo.local
+127.0.0.1 prometheus.local
+127.0.0.1 mailhog.local
+127.0.0.1 schema-registry.local
+127.0.0.1 loki.local
+```
+
+Then access services through the Gateway on port `8080`, for example
+`http://kafka-ui.local:8080/` or `http://keycloak.local:8080/`.

@@ -32,6 +32,8 @@ spec:
             - name: mysql-initdb
               mountPath: /docker-entrypoint-initdb.d/init.sql
               subPath: init.sql
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: mysql-data
           persistentVolumeClaim:

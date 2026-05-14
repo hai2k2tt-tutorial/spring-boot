@@ -1,5 +1,7 @@
 # Microservices Helm Install
 
+For a VPS or existing Kubernetes cluster deployment, see [README.vps.md](./README.vps.md).
+
 This repo should be deployed to `kind`, not Docker Desktop Kubernetes.
 
 There are two Helm releases:
@@ -22,6 +24,15 @@ context and use the `kind` cluster for this repo.
 Create the cluster:
 
 ```bash
+./helm/scripts/create-kind-cluster.sh
+```
+
+That config creates 3 nodes total: 1 `control-plane` and 2 `worker` nodes.
+If the `microservices` kind cluster already exists, delete and recreate it so the
+new node layout is applied:
+
+```bash
+kind delete cluster --name microservices
 ./helm/scripts/create-kind-cluster.sh
 ```
 
@@ -72,7 +83,18 @@ Wait for the controller:
 kubectl wait --timeout=5m -n nginx-gateway deployment/ngf-nginx-gateway-fabric --for=condition=Available
 ```
 
-## 4. Install the microservices stack
+## 4. Install Metrics Server
+
+To enable `kubectl top` on this `kind` cluster:
+
+```bash
+./helm/scripts/install-metrics-server.sh
+```
+
+This installs Metrics Server `v0.8.1` and adds `--kubelet-insecure-tls`,
+which is typically needed for local `kind` kubelet certificates.
+
+## 5. Install the microservices stack
 
 ```bash
 helm dependency update helm
@@ -81,23 +103,48 @@ helm upgrade --install microservices helm \
   --create-namespace
 ```
 
-## 5. Verify
+## 6. Verify
 
 ```bash
+kubectl top nodes
+kubectl top pods -n microservices
 kubectl get pods -n nginx-gateway
 kubectl get pods -n microservices
 kubectl get gatewayclass
 kubectl get gateway,httproute -n microservices
 ```
 
-## 6. Access services
+## 7. Access services
 
-- `http://localhost:8080/`
-- `http://localhost:8080/keycloak`
-- `http://localhost:8080/kafka-ui`
-- `http://localhost:8080/grafana`
-- `http://localhost:8080/prometheus`
-- `http://localhost:8080/mailhog`
+Add local hostnames that point to `127.0.0.1`, for example:
+
+```text
+127.0.0.1 frontend.local
+127.0.0.1 frontend-next.local
+127.0.0.1 api.local
+127.0.0.1 keycloak.local
+127.0.0.1 kafka-ui.local
+127.0.0.1 grafana.local
+127.0.0.1 tempo.local
+127.0.0.1 prometheus.local
+127.0.0.1 mailhog.local
+127.0.0.1 schema-registry.local
+127.0.0.1 loki.local
+```
+
+Then use the gateway on host port `8080` with those hostnames:
+
+- `http://frontend.local:8080/`
+- `http://frontend-next.local:8080/`
+- `http://api.local:8080/`
+- `http://keycloak.local:8080/`
+- `http://kafka-ui.local:8080/`
+- `http://grafana.local:8080/`
+- `http://tempo.local:8080/`
+- `http://prometheus.local:8080/`
+- `http://mailhog.local:8080/`
+- `http://schema-registry.local:8080/`
+- `http://loki.local:8080/`
 
 ## Layout
 

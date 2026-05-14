@@ -18,8 +18,15 @@ apiGateway:
   replicaCount: 1
   service:
     port: 9000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   config:
-    issuerUri: http://keycloak:8080/realms/spring-microservices-security-realm
+    issuerUri: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
 
 productService:
   enabled: true
@@ -28,6 +35,13 @@ productService:
   replicaCount: 1
   service:
     port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   config:
     mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
 
@@ -38,6 +52,13 @@ orderService:
   replicaCount: 1
   service:
     port: 8081
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   config:
     datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
     schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
@@ -49,6 +70,13 @@ inventoryService:
   replicaCount: 1
   service:
     port: 8082
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   config:
     datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
 
@@ -59,6 +87,13 @@ notificationService:
   replicaCount: 1
   service:
     port: 8083
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   config:
     schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
 
@@ -69,6 +104,13 @@ frontend:
   replicaCount: 1
   service:
     port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
 
 frontendNext:
   enabled: true
@@ -77,3 +119,19 @@ frontendNext:
   replicaCount: 1
   service:
     port: 3001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  config:
+    nextPublicApiBaseUrl: http://api.haint.fyi:31437/api
+    authUrl: http://frontend-next.haint.fyi:31437
+    authIssuer: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
+    authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
+    authClientId: angular-client
+    authClientSecret: ""
+    authScope: openid profile offline_access
+    authSecret: replace-with-a-long-random-string

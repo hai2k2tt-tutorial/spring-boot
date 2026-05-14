@@ -30,6 +30,8 @@ spec:
               readOnly: true
             - name: tempo-tmp
               mountPath: /tmp/tempo
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: tempo-config
           configMap:

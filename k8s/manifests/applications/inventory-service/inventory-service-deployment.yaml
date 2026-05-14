@@ -15,6 +15,13 @@ spec:
       containers:
         - name: inventory-service
           image: hai2k2tt/inventory-service:1.0-SNAPSHOT
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           env:
             - name: SPRING_DATASOURCE_URL
               valueFrom:

@@ -36,3 +36,5 @@ spec:
                 configMapKeyRef:
                   name: kafka-ui-config
                   key: dynamic_config_enabled
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}

@@ -31,3 +31,5 @@ spec:
                 configMapKeyRef:
                   name: zookeeper-config
                   key: zookeeper_tick_time
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}

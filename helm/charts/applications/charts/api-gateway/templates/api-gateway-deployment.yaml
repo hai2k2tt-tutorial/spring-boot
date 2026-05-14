@@ -53,4 +53,6 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: INVENTORY_SERVICE_URL
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
 {{- end }}

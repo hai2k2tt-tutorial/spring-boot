@@ -37,3 +37,5 @@ spec:
                 configMapKeyRef:
                   name: schema-registry-config
                   key: schema_registry_listeners
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}

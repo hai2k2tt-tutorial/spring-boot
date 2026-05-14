@@ -15,5 +15,12 @@ spec:
       containers:
         - name: frontend
           image: hai2k2tt/frontend:latest
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
           ports:
             - containerPort: 80

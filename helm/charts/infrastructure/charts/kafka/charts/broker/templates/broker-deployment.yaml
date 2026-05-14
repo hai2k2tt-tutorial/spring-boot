@@ -48,3 +48,5 @@ spec:
                 configMapKeyRef:
                   name: kafka-broker-config
                   key: kafka_offsets_topic_replication_factor
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}

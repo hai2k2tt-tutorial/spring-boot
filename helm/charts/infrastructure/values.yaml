@@ -5,6 +5,13 @@ mysql:
   fullnameOverride: mysql
   image: mysql:8.3.0
   replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
   rootPassword: mysql
   persistence:
     enabled: true
@@ -20,6 +27,13 @@ mongodb:
   fullnameOverride: mongodb
   image: mongo:7.0.5
   replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
   rootUsername: root
   rootPassword: password
   database: product-service
@@ -34,6 +48,13 @@ kafka:
   broker:
     image: confluentinc/cp-kafka:7.5.0
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
     serviceName: broker
     brokerId: "1"
     zookeeperConnect: zookeeper:2181
@@ -43,12 +64,26 @@ kafka:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
     serviceName: zookeeper
     clientPort: "2181"
     tickTime: "2000"
   schemaRegistry:
     image: confluentinc/cp-schema-registry:7.5.0
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
     serviceName: schema-registry
     hostName: schema-registry
     kafkaStoreBootstrapServers: broker:29092
@@ -56,6 +91,13 @@ kafka:
   ui:
     image: provectuslabs/kafka-ui:latest
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
     serviceName: kafka-ui
     clustersName: local
     clustersBootstrapServers: broker:29092
@@ -66,8 +108,20 @@ keycloak:
   fullnameOverride: keycloak
   image: quay.io/keycloak/keycloak:24.0.1
   replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
   adminUser: admin
   adminPassword: admin
+  hostname: http://keycloak.haint.fyi:31437
+  redirectUris:
+    - http://frontend-next.haint.fyi:31437
+    - http://frontend-next.haint.fyi:31437/*
+    - http://frontend-next.haint.fyi:31437/api/auth/callback/keycloak
   db:
     vendor: MYSQL
     host: keycloak-mysql
@@ -84,6 +138,13 @@ keycloak-mysql:
   fullnameOverride: keycloak-mysql
   image: mysql:8
   replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
   rootPassword: root
   database: keycloak
   user: keycloak
@@ -97,14 +158,28 @@ keycloak-mysql:
 mailhog:
   enabled: true
   fullnameOverride: mailhog
-  image: mailhog/mailhog:v1.0.1
+  image: axllent/mailpit:v1.27
   replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
 
 observability:
   enabled: true
   grafana:
     image: grafana/grafana:10.1.0
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
     anonymousEnabled: "true"
     anonymousOrgRole: Admin
     disableLoginForm: "true"
@@ -158,6 +233,13 @@ observability:
   prometheus:
     image: prom/prometheus:v2.46.0
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
     configYml: |
       global:
         scrape_interval: 2s
@@ -167,37 +249,51 @@ observability:
         - job_name: 'api-gateway'
           metrics_path: '/actuator/prometheus'
           static_configs:
-            - targets: [ 'host.docker.internal:9000' ]
+            - targets: [ 'api-gateway.microservices.svc.cluster.local:9000' ]
         - job_name: 'product-service'
           metrics_path: '/actuator/prometheus'
           static_configs:
-            - targets: [ 'host.docker.internal:8080' ]
+            - targets: [ 'product-service.microservices.svc.cluster.local:8080' ]
               labels:
                 application: 'Product Service'
         - job_name: 'order-service'
           metrics_path: '/actuator/prometheus'
           static_configs:
-            - targets: [ 'host.docker.internal:8081' ]
+            - targets: [ 'order-service.microservices.svc.cluster.local:8081' ]
               labels:
                 application: 'Order Service'
         - job_name: 'inventory-service'
           metrics_path: '/actuator/prometheus'
           static_configs:
-            - targets: [ 'host.docker.internal:8082' ]
+            - targets: [ 'inventory-service.microservices.svc.cluster.local:8082' ]
               labels:
                 application: 'Inventory Service'
         - job_name: 'notification-service'
           metrics_path: '/actuator/prometheus'
           static_configs:
-            - targets: [ 'host.docker.internal:8083' ]
+            - targets: [ 'notification-service.microservices.svc.cluster.local:8083' ]
               labels:
                 application: 'Notification Service'
   loki:
     image: grafana/loki:main
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
   tempo:
     image: grafana/tempo:2.2.2
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
     storage:
       size: 1Gi
       storageClassName: standard

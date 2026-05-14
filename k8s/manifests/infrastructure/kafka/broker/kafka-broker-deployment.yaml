@@ -19,7 +19,13 @@ spec:
       containers:
         - image: confluentinc/cp-kafka:7.5.0
           name: broker
-          resources: { }
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           ports:
             - containerPort: 9092
             - containerPort: 29092

@@ -8,6 +8,13 @@ infrastructure:
     fullnameOverride: mysql
     image: mysql:8.3.0
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
     rootPassword: mysql
     persistence:
       enabled: true
@@ -23,6 +30,13 @@ infrastructure:
     fullnameOverride: mongodb
     image: mongo:7.0.5
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
     rootUsername: root
     rootPassword: password
     database: product-service
@@ -37,6 +51,13 @@ infrastructure:
     broker:
       image: confluentinc/cp-kafka:7.5.0
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
       serviceName: broker
       brokerId: "1"
       zookeeperConnect: zookeeper:2181
@@ -46,12 +67,26 @@ infrastructure:
     zookeeper:
       image: confluentinc/cp-zookeeper:7.5.0
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       serviceName: zookeeper
       clientPort: "2181"
       tickTime: "2000"
     schemaRegistry:
       image: confluentinc/cp-schema-registry:7.5.0
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       serviceName: schema-registry
       hostName: schema-registry
       kafkaStoreBootstrapServers: broker:29092
@@ -59,6 +94,13 @@ infrastructure:
     ui:
       image: provectuslabs/kafka-ui:latest
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 250m
+          memory: 256Mi
       serviceName: kafka-ui
       clustersName: local
       clustersBootstrapServers: broker:29092
@@ -69,8 +111,20 @@ infrastructure:
     fullnameOverride: keycloak
     image: quay.io/keycloak/keycloak:24.0.1
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
     adminUser: admin
     adminPassword: admin
+    hostname: http://keycloak.haint.fyi:31437
+    redirectUris:
+      - http://frontend-next.haint.fyi:31437
+      - http://frontend-next.haint.fyi:31437/*
+      - http://frontend-next.haint.fyi:31437/api/auth/callback/keycloak
     db:
       vendor: MYSQL
       host: keycloak-mysql
@@ -87,6 +141,13 @@ infrastructure:
     fullnameOverride: keycloak-mysql
     image: mysql:8
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
     rootPassword: root
     database: keycloak
     user: keycloak
@@ -100,14 +161,28 @@ infrastructure:
   mailhog:
     enabled: true
     fullnameOverride: mailhog
-    image: mailhog/mailhog:v1.0.1
+    image: axllent/mailpit:v1.27
     replicaCount: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
 
   observability:
     enabled: true
     grafana:
       image: grafana/grafana:10.1.0
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       anonymousEnabled: "true"
       anonymousOrgRole: Admin
       disableLoginForm: "true"
@@ -161,6 +236,13 @@ infrastructure:
     prometheus:
       image: prom/prometheus:v2.46.0
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
       configYml: |
         global:
           scrape_interval: 2s
@@ -170,37 +252,51 @@ infrastructure:
           - job_name: 'api-gateway'
             metrics_path: '/actuator/prometheus'
             static_configs:
-              - targets: [ 'host.docker.internal:9000' ]
+              - targets: [ 'api-gateway.microservices.svc.cluster.local:9000' ]
           - job_name: 'product-service'
             metrics_path: '/actuator/prometheus'
             static_configs:
-              - targets: [ 'host.docker.internal:8080' ]
+              - targets: [ 'product-service.microservices.svc.cluster.local:8080' ]
                 labels:
                   application: 'Product Service'
           - job_name: 'order-service'
             metrics_path: '/actuator/prometheus'
             static_configs:
-              - targets: [ 'host.docker.internal:8081' ]
+              - targets: [ 'order-service.microservices.svc.cluster.local:8081' ]
                 labels:
                   application: 'Order Service'
           - job_name: 'inventory-service'
             metrics_path: '/actuator/prometheus'
             static_configs:
-              - targets: [ 'host.docker.internal:8082' ]
+              - targets: [ 'inventory-service.microservices.svc.cluster.local:8082' ]
                 labels:
                   application: 'Inventory Service'
           - job_name: 'notification-service'
             metrics_path: '/actuator/prometheus'
             static_configs:
-              - targets: [ 'host.docker.internal:8083' ]
+              - targets: [ 'notification-service.microservices.svc.cluster.local:8083' ]
                 labels:
                   application: 'Notification Service'
     loki:
       image: grafana/loki:main
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
     tempo:
       image: grafana/tempo:2.2.2
       replicaCount: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       storage:
         size: 1Gi
         storageClassName: standard
@@ -235,8 +331,15 @@ applications:
     replicaCount: 1
     service:
       port: 9000
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
     config:
-      issuerUri: http://keycloak:8080/realms/spring-microservices-security-realm
+      issuerUri: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
   productService:
     enabled: true
     image: hai2k2tt/product-service:1.0-SNAPSHOT
@@ -244,6 +347,13 @@ applications:
     replicaCount: 1
     service:
       port: 8080
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
     config:
       mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
   orderService:
@@ -253,6 +363,13 @@ applications:
     replicaCount: 1
     service:
       port: 8081
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
     config:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
@@ -263,6 +380,13 @@ applications:
     replicaCount: 1
     service:
       port: 8082
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 768Mi
     config:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
   notificationService:
@@ -272,6 +396,13 @@ applications:
     replicaCount: 1
     service:
       port: 8083
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
     config:
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   frontend:
@@ -281,6 +412,13 @@ applications:
     replicaCount: 1
     service:
       port: 80
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
   frontendNext:
     enabled: true
     image: hai2k2tt/frontend-next:latest
@@ -288,6 +426,22 @@ applications:
     replicaCount: 1
     service:
       port: 3001
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+    config:
+      nextPublicApiBaseUrl: http://api.haint.fyi:31437/api
+      authUrl: http://frontend-next.haint.fyi:31437
+      authIssuer: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm
+      authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
+      authClientId: angular-client
+      authClientSecret: ""
+      authScope: openid profile offline_access
+      authSecret: replace-with-a-long-random-string
 
 k8sGateway:
   enabled: true
@@ -299,32 +453,48 @@ k8sGateway:
       - name: http
         port: 80
         protocol: HTTP
-  route:
-    name: infrastructure-routes
-    serviceName: api-gateway
-    servicePort: 9000
-    infrastructureRoutes:
-      - path: /keycloak
-        backendRefName: keycloak
-        backendRefPort: 8080
-      - path: /kafka-ui
-        backendRefName: kafka-ui
-        backendRefPort: 8080
-      - path: /grafana
-        backendRefName: grafana
-        backendRefPort: 3000
-      - path: /tempo
-        backendRefName: tempo
-        backendRefPort: 3100
-      - path: /prometheus
-        backendRefName: prometheus
-        backendRefPort: 9090
-      - path: /mailhog
-        backendRefName: mailhog
-        backendRefPort: 8025
-      - path: /schema-registry
-        backendRefName: schema-registry
-        backendRefPort: 8081
-      - path: /loki
-        backendRefName: loki
-        backendRefPort: 3100
+  routes:
+    - name: frontend-route
+      hostname: frontend.haint.fyi
+      backendRefName: frontend
+      backendRefPort: 80
+    - name: frontend-next-route
+      hostname: frontend-next.haint.fyi
+      backendRefName: frontend-next
+      backendRefPort: 3001
+    - name: api-route
+      hostname: api.haint.fyi
+      backendRefName: api-gateway
+      backendRefPort: 9000
+    - name: keycloak-route
+      hostname: keycloak.haint.fyi
+      backendRefName: keycloak
+      backendRefPort: 8080
+    - name: kafka-ui-route
+      hostname: kafka-ui.haint.fyi
+      backendRefName: kafka-ui
+      backendRefPort: 8080
+    - name: grafana-route
+      hostname: grafana.haint.fyi
+      backendRefName: grafana
+      backendRefPort: 3000
+    - name: tempo-route
+      hostname: tempo.haint.fyi
+      backendRefName: tempo
+      backendRefPort: 3100
+    - name: prometheus-route
+      hostname: prometheus.haint.fyi
+      backendRefName: prometheus
+      backendRefPort: 9090
+    - name: mailhog-route
+      hostname: mailhog.haint.fyi
+      backendRefName: mailhog
+      backendRefPort: 8025
+    - name: schema-registry-route
+      hostname: schema-registry.haint.fyi
+      backendRefName: schema-registry
+      backendRefPort: 8081
+    - name: loki-route
+      hostname: loki.haint.fyi
+      backendRefName: loki
+      backendRefPort: 3100

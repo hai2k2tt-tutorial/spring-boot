@@ -18,7 +18,13 @@ spec:
       containers:
         - image: confluentinc/cp-schema-registry:7.5.0
           name: schema-registry
-          resources: { }
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           ports:
             - containerPort: 8081
           env:

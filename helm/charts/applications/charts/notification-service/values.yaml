@@ -5,5 +5,12 @@ imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:
   port: 8083
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 config:
   schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081

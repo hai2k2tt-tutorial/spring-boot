@@ -39,6 +39,8 @@ spec:
           volumeMounts:
             - name: mongodb-data
               mountPath: /data/db
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: mongodb-data
           persistentVolumeClaim:

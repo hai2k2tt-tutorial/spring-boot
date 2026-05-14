@@ -1,3 +1,11 @@
 namespace: microservices
+image: axllent/mailpit:v1.27
 
 # No secrets for this chart
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

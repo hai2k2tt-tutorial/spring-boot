@@ -5,5 +5,12 @@ imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:
   port: 9000
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 config:
-  issuerUri: http://keycloak:8080/realms/spring-microservices-security-realm
+  issuerUri: http://keycloak.haint.fyi:31437/realms/spring-microservices-security-realm

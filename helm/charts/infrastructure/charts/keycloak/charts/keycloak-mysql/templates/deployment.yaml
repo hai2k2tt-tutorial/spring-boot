@@ -44,6 +44,8 @@ spec:
           volumeMounts:
             - name: keycloak-mysql-data
               mountPath: /var/lib/mysql
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: keycloak-mysql-data
           persistentVolumeClaim:

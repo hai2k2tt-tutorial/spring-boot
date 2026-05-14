@@ -2,7 +2,18 @@ namespace: microservices
 
 dbPassword: password
 adminPassword: admin
+hostname: http://keycloak.haint.fyi:31437
+redirectUris:
+  - http://frontend-next.haint.fyi:31437
+  - http://frontend-next.haint.fyi:31437/*
+  - http://frontend-next.haint.fyi:31437/api/auth/callback/keycloak
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
 keycloak-mysql:
   rootPassword: root
   password: password
-

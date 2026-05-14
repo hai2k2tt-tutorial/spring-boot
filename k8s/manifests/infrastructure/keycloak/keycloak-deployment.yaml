@@ -18,7 +18,13 @@ spec:
       containers:
         - image: quay.io/keycloak/keycloak:24.0.1
           name: keycloak
-          resources: { }
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           ports:
             - containerPort: 8080
           args: ["start-dev", "--import-realm"]
@@ -62,6 +68,16 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: kc_http_enabled
+                  name: keycloak-config
+            - name: KC_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: kc_hostname
+                  name: keycloak-config
+            - name: KC_PROXY_HEADERS
+              valueFrom:
+                configMapKeyRef:
+                  key: kc_proxy_headers
                   name: keycloak-config
             - name: KC_HOSTNAME_STRICT
               valueFrom:

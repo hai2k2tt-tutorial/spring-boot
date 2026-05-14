@@ -1,18 +1,34 @@
-import NextAuth from "next-auth";
+import NextAuth, { customFetch } from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
 import type { JWT } from "next-auth/jwt";
 
 const issuer = process.env.AUTH_ISSUER;
+const internalIssuer = process.env.AUTH_ISSUER_INTERNAL ?? issuer;
 const clientId = process.env.AUTH_CLIENT_ID;
 const clientSecret = process.env.AUTH_CLIENT_SECRET;
 const scope = process.env.AUTH_SCOPE ?? "openid profile offline_access";
 
+const oidcFetch: typeof fetch = async (input, init) => {
+  if (!issuer || !internalIssuer || issuer === internalIssuer) {
+    return fetch(input, init);
+  }
+
+  const requestUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+
+  if (!requestUrl.startsWith(issuer)) {
+    return fetch(input, init);
+  }
+
+  const rewrittenUrl = `${internalIssuer}${requestUrl.slice(issuer.length)}`;
+  return fetch(rewrittenUrl, init);
+};
+
 async function refreshAccessToken(token: JWT): Promise<JWT> {
-  if (!issuer || !clientId || !token.refreshToken) {
+  if (!internalIssuer || !clientId || !token.refreshToken) {
     return { ...token, error: "RefreshAccessTokenError" };
   }
 
-  const response = await fetch(`${issuer}/protocol/openid-connect/token`, {
+  const response = await fetch(`${internalIssuer}/protocol/openid-connect/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -54,16 +70,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ? [
         Keycloak({
           issuer,
+          wellKnown: internalIssuer ? `${internalIssuer}/.well-known/openid-configuration` : undefined,
           clientId,
           clientSecret,
-          authorization: {
-            params: {
-              scope,
-            },
-          },
+          authorization: issuer
+            ? {
+                url: `${issuer}/protocol/openid-connect/auth`,
+                params: {
+                  scope,
+                },
+              }
+            : undefined,
+          token: internalIssuer ? `${internalIssuer}/protocol/openid-connect/token` : undefined,
+          userinfo: internalIssuer ? `${internalIssuer}/protocol/openid-connect/userinfo` : undefined,
           client: {
             token_endpoint_auth_method: clientSecret ? "client_secret_post" : "none",
           },
+          [customFetch]: oidcFetch,
           profile(profile) {
             return {
               id: String(profile.sub),

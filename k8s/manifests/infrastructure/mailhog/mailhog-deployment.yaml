@@ -18,7 +18,13 @@ spec:
       containers:
         - image: mailhog/mailhog:v1.0.1
           name: mailhog
-          resources: { }
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
           ports:
             - containerPort: 1025
             - containerPort: 8025

@@ -21,3 +21,5 @@ spec:
           ports:
             - containerPort: 3100
           args: ["-config.file=/etc/loki/local-config.yaml"]
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}

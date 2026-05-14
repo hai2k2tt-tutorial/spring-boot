@@ -27,7 +27,7 @@
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
   "sslRequired": "none",
-  "registrationAllowed": false,
+      "registrationAllowed": true,
   "registrationEmailAsUsername": false,
   "rememberMe": false,
   "verifyEmail": false,
@@ -646,7 +646,10 @@
       "redirectUris": [
         "http://localhost:4200",
         "http://localhost:3001",
-        "http://localhost:3001/auth/callback"
+        "http://localhost:3001/auth/callback",
+        "http://frontend-next.local:8080",
+        "http://frontend-next.local:8080/*",
+        "http://frontend-next.local:8080/api/auth/callback/keycloak"
       ],
       "webOrigins": [
         "*"

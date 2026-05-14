@@ -5,4 +5,4 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-exec "${REPO_ROOT}/k8s/kind/create-kind-cluster.sh"
+exec "${REPO_ROOT}/k8s/manifests/metrics-server/install.sh"

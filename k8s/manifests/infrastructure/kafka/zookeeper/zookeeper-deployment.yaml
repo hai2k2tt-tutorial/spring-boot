@@ -18,7 +18,13 @@ spec:
       containers:
         - image: confluentinc/cp-zookeeper:7.5.0
           name: zookeeper
-          resources: { }
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           ports:
             - containerPort: 2181
           env:

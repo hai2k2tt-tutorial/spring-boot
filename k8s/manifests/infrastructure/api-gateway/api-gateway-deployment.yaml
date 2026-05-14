@@ -19,6 +19,13 @@ spec:
         - image: api-gateway:0.0.1-SNAPSHOT
           name: api-gateway
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           ports:
             - containerPort: 9000
           env:

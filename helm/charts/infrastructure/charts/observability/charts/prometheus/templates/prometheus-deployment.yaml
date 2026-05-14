@@ -29,6 +29,8 @@ spec:
               mountPath: /etc/prometheus/prometheus.yml
               subPath: prometheus.yml
               readOnly: true
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: prometheus-config
           configMap:

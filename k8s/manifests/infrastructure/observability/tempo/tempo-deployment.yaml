@@ -19,7 +19,13 @@ spec:
       containers:
         - image: grafana/tempo:2.2.2
           name: tempo
-          resources: { }
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           ports:
             - containerPort: 3100
             - containerPort: 9411

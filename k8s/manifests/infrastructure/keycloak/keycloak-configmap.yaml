@@ -9,6 +9,8 @@ data:
   db_user: 'keycloak'
   keycloak_admin: 'admin'
   kc_http_enabled: 'true'
+  kc_hostname: 'keycloak.local'
+  kc_proxy_headers: 'xforwarded'
   kc_hostname_strict: 'false'
   kc_hostname_strict_https: 'false'
   keycloak-realm-import.json: |-
@@ -41,7 +43,7 @@ data:
       "oauth2DevicePollingInterval": 5,
       "enabled": true,
       "sslRequired": "none",
-      "registrationAllowed": false,
+      "registrationAllowed": true,
       "registrationEmailAsUsername": false,
       "rememberMe": false,
       "verifyEmail": false,
@@ -658,7 +660,10 @@ data:
           "alwaysDisplayInConsole": false,
           "clientAuthenticatorType": "client-secret",
           "redirectUris": [
-            "http://localhost:4200"
+            "http://localhost:4200",
+            "http://frontend-next.local:8080",
+            "http://frontend-next.local:8080/*",
+            "http://frontend-next.local:8080/api/auth/callback/keycloak"
           ],
           "webOrigins": [
             "*"
@@ -2328,4 +2333,3 @@ data:
         "policies": []
       }
     }
-
