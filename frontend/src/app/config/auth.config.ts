@@ -15,6 +15,7 @@ export const authConfig: PassedInitialConfig = {
     clientId: 'angular-client',
     scope: 'openid profile offline_access',
     responseType: 'code',
+    disablePkce: true,
     silentRenew: true,
     useRefreshToken: true,
     renewTimeBeforeTokenExpiresInSeconds: 30,
