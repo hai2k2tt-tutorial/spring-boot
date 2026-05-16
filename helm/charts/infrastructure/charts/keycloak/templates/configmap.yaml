@@ -9,11 +9,11 @@ data:
   db_database: 'keycloak'
   db_user: 'keycloak'
   keycloak_admin: 'admin'
-  kc_http_enabled: 'true'
+  kc_http_enabled: {{ .Values.kcHttpEnabled | default "true" | quote }}
   kc_hostname: {{ .Values.hostname | quote }}
   kc_proxy_headers: 'xforwarded'
-  kc_hostname_strict: 'false'
-  kc_hostname_strict_https: 'true'
+  kc_hostname_strict: {{ .Values.kcHostnameStrict | default "false" | quote }}
+  kc_hostname_strict_https: {{ .Values.kcHostnameStrictHttps | default "false" | quote }}
   keycloak-realm-import.json: |-
     {
       "id": "7cad500c-0823-4235-a8b5-c3e34bacfdef",

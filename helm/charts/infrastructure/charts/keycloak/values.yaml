@@ -2,11 +2,16 @@ namespace: microservices
 
 dbPassword: password
 adminPassword: admin
-hostname: https://keycloak.haint.fyi
+hostname: http://keycloak.haint.fyi
 redirectUris:
-  - https://frontend-next.haint.fyi
-  - https://frontend-next.haint.fyi/*
-  - https://frontend-next.haint.fyi/api/auth/callback/keycloak
+  - http://frontend.haint.fyi
+  - http://frontend.haint.fyi/*
+  - http://frontend-next.haint.fyi
+  - http://frontend-next.haint.fyi/*
+  - http://frontend-next.haint.fyi/api/auth/callback/keycloak
+kcHttpEnabled: "true"
+kcHostnameStrict: "false"
+kcHostnameStrictHttps: "false"
 resources:
   requests:
     cpu: 250m

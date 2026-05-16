@@ -119,6 +119,8 @@ keycloak:
   adminPassword: admin
   hostname: keycloak.haint.fyi
   redirectUris:
+    - http://frontend.haint.fyi
+    - http://frontend.haint.fyi/*
     - http://frontend-next.haint.fyi
     - http://frontend-next.haint.fyi/*
     - http://frontend-next.haint.fyi/api/auth/callback/keycloak
