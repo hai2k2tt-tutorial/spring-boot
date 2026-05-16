@@ -12,6 +12,8 @@ export const authConfig: PassedInitialConfig = {
     authority,
     redirectUrl: origin,
     postLogoutRedirectUri: origin,
+    postLoginRoute: '/',
+    unauthorizedRoute: '/',
     clientId: 'angular-client',
     scope: 'openid profile offline_access',
     responseType: 'code',
