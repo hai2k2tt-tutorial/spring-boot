@@ -77,6 +77,11 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
      config:
        issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
 
+   infrastructure:
+     keycloak:
+       # KC_HOSTNAME must be a bare hostname in this chart. Do not include http://.
+       hostname: keycloak.haint.fyi
+
    frontendNext:
      config:
        nextPublicApiBaseUrl: http://api.haint.fyi/api
@@ -150,7 +155,7 @@ The chart now includes:
 
 There is no HTTPS listener and no TLS secret requirement in the HTTP-only setup.
 
-Keycloak in this chart is configured with HTTP enabled and `KC_HOSTNAME_STRICT_HTTPS=false`, so its public hostname and OIDC issuer can use `http://`.
+Keycloak in this chart is configured with HTTP enabled and `KC_HOSTNAME_STRICT_HTTPS=false`. Keep the Keycloak `hostname` value as a bare host such as `keycloak.haint.fyi`; use full `http://...` URLs only for OIDC issuer URLs and redirect URIs.
 
 ## Install prerequisites
 
