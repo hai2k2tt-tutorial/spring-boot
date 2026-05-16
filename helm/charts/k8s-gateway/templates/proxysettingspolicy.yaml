@@ -1,0 +1,17 @@
+{{- range .Values.proxySettingsPolicies }}
+---
+apiVersion: gateway.nginx.org/v1alpha1
+kind: ProxySettingsPolicy
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  targetRefs:
+{{ toYaml .targetRefs | indent 4 }}
+  buffering:
+{{ toYaml .buffering | indent 4 }}
+{{- with .timeout }}
+  timeout:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}
