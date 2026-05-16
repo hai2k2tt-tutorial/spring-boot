@@ -15,6 +15,7 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 ## What this chart installs
 
 - `microservices` namespace
+- Metrics Server for `kubectl top` and the Kubernetes resource metrics API
 - Infrastructure: MySQL, MongoDB, Kafka, Keycloak, Mailpit, Grafana, Prometheus, Loki, Tempo
 - Applications: API gateway, product service, order service, inventory service, notification service, frontend, frontend-next
 - Gateway API resources: `Gateway` and `HTTPRoute`
@@ -298,6 +299,15 @@ helm upgrade --install microservices helm \
   --create-namespace
 ```
 
+Metrics Server is enabled by default in the umbrella chart:
+
+```yaml
+metricsServer:
+  enabled: true
+```
+
+The chart deploys Metrics Server `v0.8.1` with `--kubelet-insecure-tls`, which is commonly required on small VPS clusters where kubelet serving certificates do not match the node names used by Metrics Server.
+
 For an existing VPS checkout, pull the latest chart changes and redeploy:
 
 ```bash
@@ -328,6 +338,13 @@ kubectl rollout status deployment/frontend -n microservices --timeout=300s
 kubectl rollout status deployment/frontend-next -n microservices --timeout=300s
 ```
 
+Wait for Metrics Server:
+
+```bash
+kubectl rollout status deployment/metrics-server -n microservices --timeout=180s
+kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=180s
+```
+
 ## Verify
 
 ```bash
@@ -335,6 +352,9 @@ kubectl get pods -n nginx-gateway
 kubectl get pods -n microservices
 kubectl get gateway,httproute -n microservices
 kubectl get gatewayclass
+kubectl get apiservice v1beta1.metrics.k8s.io
+kubectl top nodes
+kubectl top pods -n microservices
 ```
 
 Confirm the deployed images:
@@ -349,13 +369,6 @@ kubectl describe deploy \
   frontend \
   frontend-next \
   -n microservices | egrep "^(Name:|Replicas:|    Image:)"
-```
-
-If you installed metrics-server, you can also check:
-
-```bash
-kubectl top nodes
-kubectl top pods -n microservices
 ```
 
 ## Access the services
@@ -387,6 +400,72 @@ If you want a single checklist for the VPS install, update these files:
 - `helm/charts/applications/values.yaml`
 - `helm/charts/infrastructure/charts/keycloak/values.yaml`
 - `helm/charts/infrastructure/charts/observability/charts/prometheus/templates/prometheus-configmap.yaml`
+
+## Basic Helm maintenance commands
+
+Run these from `/root/spring-boot` on the control plane server unless noted otherwise.
+
+Show installed releases:
+
+```bash
+helm list -A
+```
+
+Refresh local chart dependencies after pulling repo changes:
+
+```bash
+helm dependency build helm
+```
+
+Preview rendered Kubernetes manifests without applying them:
+
+```bash
+helm template microservices helm --namespace microservices
+```
+
+Upgrade or install the cluster stack:
+
+```bash
+helm upgrade --install microservices helm \
+  --namespace microservices \
+  --create-namespace
+```
+
+Check release history:
+
+```bash
+helm history microservices -n microservices
+```
+
+Rollback to a previous revision:
+
+```bash
+helm rollback microservices <revision> -n microservices
+```
+
+Show the currently deployed values:
+
+```bash
+helm get values microservices -n microservices
+```
+
+Show all computed values, including chart defaults:
+
+```bash
+helm get values microservices -n microservices --all
+```
+
+Show rendered manifests from the current release:
+
+```bash
+helm get manifest microservices -n microservices
+```
+
+Uninstall the stack:
+
+```bash
+helm uninstall microservices -n microservices
+```
 
 ## Notes
 

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: metrics-server
+description: Kubernetes Metrics Server for kubectl top and resource metrics API
+type: application
+version: 0.1.0
+appVersion: "0.8.1"

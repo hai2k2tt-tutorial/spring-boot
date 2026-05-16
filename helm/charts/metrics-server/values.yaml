@@ -1,0 +1,36 @@
+enabled: true
+
+fullnameOverride: metrics-server
+
+image:
+  repository: registry.k8s.io/metrics-server/metrics-server
+  tag: v0.8.1
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  port: 443
+  targetPort: https
+
+containerPort: 10250
+
+args:
+  - --cert-dir=/tmp
+  - --secure-port=10250
+  - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+  - --kubelet-use-node-status-port
+  - --metric-resolution=15s
+  - --kubelet-insecure-tls
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi
+  limits:
+    cpu: 500m
+    memory: 500Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

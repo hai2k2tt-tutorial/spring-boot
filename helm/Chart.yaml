@@ -5,6 +5,11 @@ type: application
 version: 0.1.0
 appVersion: "1.0.0"
 dependencies:
+  - name: metrics-server
+    alias: metricsServer
+    version: 0.1.0
+    repository: "file://charts/metrics-server"
+    condition: metricsServer.enabled
   - name: infrastructure
     version: 0.1.0
     repository: "file://charts/infrastructure"

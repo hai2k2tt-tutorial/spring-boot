@@ -1,4 +1,7 @@
 dependencies:
+- name: metrics-server
+  repository: file://charts/metrics-server
+  version: 0.1.0
 - name: infrastructure
   repository: file://charts/infrastructure
   version: 0.1.0
@@ -8,5 +11,5 @@ dependencies:
 - name: k8s-gateway
   repository: file://charts/k8s-gateway
   version: 0.1.0
-digest: sha256:94935b5600c82952f53db61c5dcfb69ed58b4d0dca96cfeff8c602641cdc9653
-generated: "2026-05-11T15:49:26.507968+07:00"
+digest: sha256:9ed94d4f5eca3b893eacbd0434322bdb499c5a24fec1ba68884a5ab31875a5aa
+generated: "2026-05-16T17:03:57.967429+07:00"

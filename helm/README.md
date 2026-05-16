@@ -83,18 +83,7 @@ Wait for the controller:
 kubectl wait --timeout=5m -n nginx-gateway deployment/ngf-nginx-gateway-fabric --for=condition=Available
 ```
 
-## 4. Install Metrics Server
-
-To enable `kubectl top` on this `kind` cluster:
-
-```bash
-./helm/scripts/install-metrics-server.sh
-```
-
-This installs Metrics Server `v0.8.1` and adds `--kubelet-insecure-tls`,
-which is typically needed for local `kind` kubelet certificates.
-
-## 5. Install the microservices stack
+## 4. Install the microservices stack
 
 ```bash
 helm dependency update helm
@@ -103,7 +92,21 @@ helm upgrade --install microservices helm \
   --create-namespace
 ```
 
-## 6. Verify
+Metrics Server is installed by the umbrella chart by default through the
+`metricsServer.enabled` value. It uses Metrics Server `v0.8.1` and adds
+`--kubelet-insecure-tls`, which is typically needed for local `kind` kubelet
+certificates.
+
+To disable it:
+
+```bash
+helm upgrade --install microservices helm \
+  --namespace microservices \
+  --create-namespace \
+  --set metricsServer.enabled=false
+```
+
+## 5. Verify
 
 ```bash
 kubectl top nodes
@@ -114,7 +117,7 @@ kubectl get gatewayclass
 kubectl get gateway,httproute -n microservices
 ```
 
-## 7. Access services
+## 6. Access services
 
 Add local hostnames that point to `127.0.0.1`, for example:
 
