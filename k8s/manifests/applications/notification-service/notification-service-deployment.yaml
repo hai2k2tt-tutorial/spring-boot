@@ -14,24 +14,29 @@ spec:
     spec:
       containers:
         - name: notification-service
-          image: hai2k2tt/notification-service:1.0-SNAPSHOT
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+          image: docker.io/hai2k2tt/notification-service:2-amd64
+          ports:
+            - containerPort: 8083
           env:
-            - name: SPRING_KAFKA_BOOTSTRAP-SERVERS
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
               valueFrom:
                 configMapKeyRef:
-                  key: SPRING_KAFKA_BOOTSTRAP-SERVERS
+                  key: SPRING_KAFKA_BOOTSTRAP_SERVERS
                   name: common-config
             - name: SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL
               valueFrom:
                 configMapKeyRef:
                   key: SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL
+                  name: notification-service-config
+            - name: SPRING_MAIL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_MAIL_HOST
+                  name: notification-service-config
+            - name: SPRING_MAIL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_MAIL_PORT
                   name: notification-service-config
             - name: LOKI_URL
               valueFrom:
@@ -43,3 +48,10 @@ spec:
                 configMapKeyRef:
                   key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
                   name: common-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

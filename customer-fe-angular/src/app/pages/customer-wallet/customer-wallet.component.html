@@ -1,0 +1,53 @@
+<main class="page-shell">
+  <section class="hero-panel">
+    <div>
+      <p class="eyebrow">Customer Wallet</p>
+      <h1>Balance, payments, and recent orders</h1>
+      <p class="supporting">
+        This workspace complements the Next customer portal with a lighter storefront account view in Angular.
+      </p>
+    </div>
+    <div class="wallet-tile">
+      <span>Available balance</span>
+      <strong>{{ currency }} {{ walletBalance }}</strong>
+    </div>
+  </section>
+
+  <section class="two-column">
+    <div class="surface">
+      <h2>Payment history</h2>
+      <div class="stack-list">
+        <div class="list-row" *ngFor="let entry of paymentEntries">
+          <div>
+            <p class="row-title">{{ entry.method }}</p>
+            <p class="row-meta">{{ entry.createdAt }}</p>
+          </div>
+          <div class="row-end">
+            <span class="status-pill" [class.success]="entry.status === 'SUCCESS'" [class.failed]="entry.status === 'FAILED'">
+              {{ entry.status }}
+            </span>
+            <p class="row-value">{{ currency }} {{ entry.amount }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="surface">
+      <h2>Recent orders</h2>
+      <div class="stack-list">
+        <div class="list-row" *ngFor="let order of recentOrders">
+          <div>
+            <p class="row-title">{{ order.orderNumber }}</p>
+            <p class="row-meta">{{ order.itemSummary }} • {{ order.createdAt }}</p>
+          </div>
+          <div class="row-end">
+            <span class="status-pill" [class.success]="order.status === 'PAID'" [class.failed]="order.status === 'CANCELED'">
+              {{ order.status }}
+            </span>
+            <p class="row-value">{{ currency }} {{ order.totalAmount }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>

@@ -11,7 +11,15 @@ spec:
   hostnames:
     - {{ .hostname | quote }}
   rules:
+{{- if .matches }}
+    - matches:
+{{ toYaml .matches | indent 8 }}
+      backendRefs:
+        - name: {{ .backendRefName }}
+          port: {{ .backendRefPort }}
+{{- else }}
     - backendRefs:
         - name: {{ .backendRefName }}
           port: {{ .backendRefPort }}
+{{- end }}
 {{- end }}

@@ -6,6 +6,8 @@ metadata:
   namespace: {{ .Values.namespace }}
 data:
   SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: {{ .Values.config.schemaRegistryUrl | quote }}
+  SPRING_MAIL_HOST: {{ .Values.config.mailHost | quote }}
+  SPRING_MAIL_PORT: {{ .Values.config.mailPort | quote }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -41,6 +43,16 @@ spec:
                 configMapKeyRef:
                   name: notification-service-config
                   key: SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL
+            - name: SPRING_MAIL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: notification-service-config
+                  key: SPRING_MAIL_HOST
+            - name: SPRING_MAIL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: notification-service-config
+                  key: SPRING_MAIL_PORT
             - name: LOKI_URL
               valueFrom:
                 configMapKeyRef:

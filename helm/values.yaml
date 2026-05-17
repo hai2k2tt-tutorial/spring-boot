@@ -37,7 +37,7 @@ infrastructure:
       CREATE DATABASE IF NOT EXISTS inventory_service;
 
   mongodb:
-    enabled: true
+    enabled: false
     fullnameOverride: mongodb
     image: mongo:7.0.5
     replicaCount: 1
@@ -56,6 +56,32 @@ infrastructure:
       storageClassName: standard
       size: 1Gi
       hostPath: /data/mongodb
+
+  postgres:
+    enabled: true
+    fullnameOverride: postgres
+    image: postgres:16-alpine
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    user: postgres
+    password: postgres
+    database: postgres
+    persistence:
+      enabled: true
+      storageClassName: standard
+      size: 1Gi
+      hostPath: /data/postgres
+    initSql: |
+      CREATE DATABASE product_service;
+      CREATE DATABASE payment_service;
+      CREATE DATABASE shop_service;
+      CREATE DATABASE customer_service;
 
   kafka:
     enabled: true
@@ -133,11 +159,17 @@ infrastructure:
     adminPassword: admin
     hostname: keycloak.haint.fyi
     redirectUris:
-      - http://frontend.haint.fyi
-      - http://frontend.haint.fyi/*
-      - http://frontend-next.haint.fyi
-      - http://frontend-next.haint.fyi/*
-      - http://frontend-next.haint.fyi/api/auth/callback/keycloak
+      - http://admin-fe.haint.fyi
+      - http://admin-fe.haint.fyi/*
+      - http://admin-fe.haint.fyi/api/auth/callback/keycloak
+      - http://shop-fe.haint.fyi
+      - http://shop-fe.haint.fyi/*
+      - http://shop-fe.haint.fyi/api/auth/callback/keycloak
+      - http://customer-fe-next.haint.fyi
+      - http://customer-fe-next.haint.fyi/*
+      - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
+      - http://customer-fe-angular.haint.fyi
+      - http://customer-fe-angular.haint.fyi/*
     db:
       vendor: MYSQL
       host: keycloak-mysql
@@ -290,6 +322,24 @@ infrastructure:
               - targets: [ 'notification-service.microservices.svc.cluster.local:8083' ]
                 labels:
                   application: 'Notification Service'
+          - job_name: 'payment-service'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'payment-service.microservices.svc.cluster.local:8085' ]
+                labels:
+                  application: 'Payment Service'
+          - job_name: 'shop-service'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'shop-service.microservices.svc.cluster.local:8086' ]
+                labels:
+                  application: 'Shop Service'
+          - job_name: 'customer-service'
+            metrics_path: '/actuator/prometheus'
+            static_configs:
+              - targets: [ 'customer-service.microservices.svc.cluster.local:8087' ]
+                labels:
+                  application: 'Customer Service'
     loki:
       image: grafana/loki:main
       replicaCount: 1
@@ -339,7 +389,7 @@ applications:
     springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
   apiGateway:
     enabled: true
-    image: docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT
+    image: docker.io/hai2k2tt/api-gateway:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -350,12 +400,12 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
     config:
       issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
   productService:
     enabled: true
-    image: docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
+    image: docker.io/hai2k2tt/product-service:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -366,12 +416,12 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 768Mi
+        memory: 512Mi
     config:
-      mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
+      datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service
   orderService:
     enabled: true
-    image: docker.io/hai2k2tt/order-service:1.0-SNAPSHOT
+    image: docker.io/hai2k2tt/order-service:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -382,13 +432,13 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 768Mi
+        memory: 512Mi
     config:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   inventoryService:
     enabled: true
-    image: docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT
+    image: docker.io/hai2k2tt/inventory-service:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -399,12 +449,12 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 768Mi
+        memory: 512Mi
     config:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
   notificationService:
     enabled: true
-    image: docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT
+    image: docker.io/hai2k2tt/notification-service:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -415,12 +465,134 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
     config:
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
-  frontend:
+      mailHost: mailhog.microservices.svc.cluster.local
+      mailPort: "1025"
+  paymentService:
     enabled: true
-    image: docker.io/hai2k2tt/frontend:amd64
+    image: docker.io/hai2k2tt/payment-service:2-amd64
+    imagePullPolicy: Always
+    replicaCount: 1
+    service:
+      port: 8085
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    config:
+      datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/payment_service
+  shopService:
+    enabled: true
+    image: docker.io/hai2k2tt/shop-service:2-amd64
+    imagePullPolicy: Always
+    replicaCount: 1
+    service:
+      port: 8086
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    config:
+      datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/shop_service
+  customerService:
+    enabled: true
+    image: docker.io/hai2k2tt/customer-service:2-amd64
+    imagePullPolicy: Always
+    replicaCount: 1
+    service:
+      port: 8087
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    config:
+      datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
+  adminFe:
+    enabled: true
+    image: docker.io/hai2k2tt/admin-fe:2
+    imagePullPolicy: Always
+    replicaCount: 1
+    service:
+      port: 3002
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+    config:
+      apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
+      nextPublicApiBaseUrl: http://api.haint.fyi/api
+      authUrl: http://admin-fe.haint.fyi
+      authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+      authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
+      authClientId: angular-client
+      authClientSecret: ""
+      authScope: openid profile offline_access
+      authSecret: replace-with-a-long-random-string
+  shopFe:
+    enabled: true
+    image: docker.io/hai2k2tt/shop-fe:2
+    imagePullPolicy: Always
+    replicaCount: 1
+    service:
+      port: 3003
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+    config:
+      apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
+      nextPublicApiBaseUrl: http://api.haint.fyi/api
+      authUrl: http://shop-fe.haint.fyi
+      authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+      authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
+      authClientId: angular-client
+      authClientSecret: ""
+      authScope: openid profile offline_access
+      authSecret: replace-with-a-long-random-string
+  customerFeNext:
+    enabled: true
+    image: docker.io/hai2k2tt/customer-fe-next:2
+    imagePullPolicy: Always
+    replicaCount: 1
+    service:
+      port: 3004
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+    config:
+      apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
+      nextPublicApiBaseUrl: http://api.haint.fyi/api
+      authUrl: http://customer-fe-next.haint.fyi
+      authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+      authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
+      authClientId: angular-client
+      authClientSecret: ""
+      authScope: openid profile offline_access
+      authSecret: replace-with-a-long-random-string
+  customerFeAngular:
+    enabled: true
+    image: docker.io/hai2k2tt/customer-fe-angular:2
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -432,29 +604,8 @@ applications:
       limits:
         cpu: 200m
         memory: 128Mi
-  frontendNext:
-    enabled: true
-    image: docker.io/hai2k2tt/frontend-next:amd64
-    imagePullPolicy: Always
-    replicaCount: 1
-    service:
-      port: 3001
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-    limits:
-      cpu: 300m
-      memory: 256Mi
     config:
-      nextPublicApiBaseUrl: http://api.haint.fyi/api
-      authUrl: http://frontend-next.haint.fyi
-      authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
-      authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm
-      authClientId: angular-client
-      authClientSecret: ""
-      authScope: openid profile offline_access
-      authSecret: replace-with-a-long-random-string
+      apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
 
 k8sGateway:
   enabled: true
@@ -467,14 +618,30 @@ k8sGateway:
         port: 80
         protocol: HTTP
   routes:
-    - name: frontend-route
-      hostname: frontend.haint.fyi
-      backendRefName: frontend
+    - name: admin-fe-route
+      hostname: admin-fe.haint.fyi
+      backendRefName: admin-fe
+      backendRefPort: 3002
+    - name: shop-fe-route
+      hostname: shop-fe.haint.fyi
+      backendRefName: shop-fe
+      backendRefPort: 3003
+    - name: customer-fe-next-route
+      hostname: customer-fe-next.haint.fyi
+      backendRefName: customer-fe-next
+      backendRefPort: 3004
+    - name: customer-fe-angular-api-route
+      hostname: customer-fe-angular.haint.fyi
+      backendRefName: api-gateway
+      backendRefPort: 9000
+      matches:
+        - path:
+            type: PathPrefix
+            value: /api
+    - name: customer-fe-angular-route
+      hostname: customer-fe-angular.haint.fyi
+      backendRefName: customer-fe-angular
       backendRefPort: 80
-    - name: frontend-next-route
-      hostname: frontend-next.haint.fyi
-      backendRefName: frontend-next
-      backendRefPort: 3001
     - name: api-route
       hostname: api.haint.fyi
       backendRefName: api-gateway
@@ -512,11 +679,33 @@ k8sGateway:
       backendRefName: loki
       backendRefPort: 3100
   proxySettingsPolicies:
-    - name: frontend-next-proxy-buffers
+    - name: admin-fe-proxy-buffers
       targetRefs:
         - group: gateway.networking.k8s.io
           kind: HTTPRoute
-          name: frontend-next-route
+          name: admin-fe-route
+      buffering:
+        bufferSize: 32k
+        buffers:
+          number: 8
+          size: 32k
+        busyBuffersSize: 64k
+    - name: shop-fe-proxy-buffers
+      targetRefs:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          name: shop-fe-route
+      buffering:
+        bufferSize: 32k
+        buffers:
+          number: 8
+          size: 32k
+        busyBuffersSize: 64k
+    - name: customer-fe-next-proxy-buffers
+      targetRefs:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          name: customer-fe-next-route
       buffering:
         bufferSize: 32k
         buffers:

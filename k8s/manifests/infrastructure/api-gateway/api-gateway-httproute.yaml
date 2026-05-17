@@ -1,30 +1,76 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: frontend-route
+  name: admin-fe-route
 spec:
   parentRefs:
     - name: api-gateway
   hostnames:
-    - frontend.local
+    - admin-fe.local
   rules:
     - backendRefs:
-        - name: frontend
-          port: 80
+        - name: admin-fe
+          port: 3002
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: frontend-next-route
+  name: shop-fe-route
 spec:
   parentRefs:
     - name: api-gateway
   hostnames:
-    - frontend-next.local
+    - shop-fe.local
   rules:
     - backendRefs:
-        - name: frontend-next
-          port: 3001
+        - name: shop-fe
+          port: 3003
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: customer-fe-next-route
+spec:
+  parentRefs:
+    - name: api-gateway
+  hostnames:
+    - customer-fe-next.local
+  rules:
+    - backendRefs:
+        - name: customer-fe-next
+          port: 3004
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: customer-fe-angular-api-route
+spec:
+  parentRefs:
+    - name: api-gateway
+  hostnames:
+    - customer-fe-angular.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: api-gateway
+          port: 9000
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: customer-fe-angular-route
+spec:
+  parentRefs:
+    - name: api-gateway
+  hostnames:
+    - customer-fe-angular.local
+  rules:
+    - backendRefs:
+        - name: customer-fe-angular
+          port: 80
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

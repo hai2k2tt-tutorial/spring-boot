@@ -4,3 +4,5 @@ metadata:
   name: notification-service-config
 data:
   SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: "http://schema-registry.microservices.svc.cluster.local:8081"
+  SPRING_MAIL_HOST: "mailhog.microservices.svc.cluster.local"
+  SPRING_MAIL_PORT: "1025"

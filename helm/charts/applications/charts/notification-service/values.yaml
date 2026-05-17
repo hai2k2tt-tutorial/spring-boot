@@ -1,6 +1,6 @@
 enabled: true
 namespace: microservices
-image: hai2k2tt/notification-service:1.0-SNAPSHOT
+image: docker.io/hai2k2tt/notification-service:2-amd64
 imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:
@@ -14,3 +14,5 @@ resources:
     memory: 512Mi
 config:
   schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
+  mailHost: mailhog.microservices.svc.cluster.local
+  mailPort: "1025"

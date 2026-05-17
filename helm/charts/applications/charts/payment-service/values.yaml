@@ -1,0 +1,16 @@
+enabled: true
+namespace: microservices
+image: docker.io/hai2k2tt/payment-service:2-amd64
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 8085
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+config:
+  datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/payment_service

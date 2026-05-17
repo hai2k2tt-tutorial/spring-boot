@@ -4,11 +4,17 @@ dbPassword: password
 adminPassword: admin
 hostname: keycloak.haint.fyi
 redirectUris:
-  - http://frontend.haint.fyi
-  - http://frontend.haint.fyi/*
-  - http://frontend-next.haint.fyi
-  - http://frontend-next.haint.fyi/*
-  - http://frontend-next.haint.fyi/api/auth/callback/keycloak
+  - http://admin-fe.haint.fyi
+  - http://admin-fe.haint.fyi/*
+  - http://admin-fe.haint.fyi/api/auth/callback/keycloak
+  - http://shop-fe.haint.fyi
+  - http://shop-fe.haint.fyi/*
+  - http://shop-fe.haint.fyi/api/auth/callback/keycloak
+  - http://customer-fe-next.haint.fyi
+  - http://customer-fe-next.haint.fyi/*
+  - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
+  - http://customer-fe-angular.haint.fyi
+  - http://customer-fe-angular.haint.fyi/*
 kcHttpEnabled: "true"
 kcHostnameStrict: "false"
 kcHostnameStrictHttps: "false"

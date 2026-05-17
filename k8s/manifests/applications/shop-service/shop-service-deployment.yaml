@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shop-service
+  template:
+    metadata:
+      labels:
+        app: shop-service
+    spec:
+      containers:
+        - name: shop-service
+          image: docker.io/hai2k2tt/shop-service:2-amd64
+          ports:
+            - containerPort: 8086
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-service-config
+                  key: SPRING_DATASOURCE_URL
+            - name: LOKI_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: LOKI_URL
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

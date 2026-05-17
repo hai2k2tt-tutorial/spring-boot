@@ -661,9 +661,17 @@ data:
           "clientAuthenticatorType": "client-secret",
           "redirectUris": [
             "http://localhost:4200",
-            "http://frontend-next.local:8080",
-            "http://frontend-next.local:8080/*",
-            "http://frontend-next.local:8080/api/auth/callback/keycloak"
+            "http://admin-fe.local",
+            "http://admin-fe.local/*",
+            "http://admin-fe.local/api/auth/callback/keycloak",
+            "http://shop-fe.local",
+            "http://shop-fe.local/*",
+            "http://shop-fe.local/api/auth/callback/keycloak",
+            "http://customer-fe-next.local",
+            "http://customer-fe-next.local/*",
+            "http://customer-fe-next.local/api/auth/callback/keycloak",
+            "http://customer-fe-angular.local",
+            "http://customer-fe-angular.local/*"
           ],
           "webOrigins": [
             "*"

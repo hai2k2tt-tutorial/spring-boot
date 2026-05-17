@@ -14,7 +14,40 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: hai2k2tt/api-gateway:latest
+          image: docker.io/hai2k2tt/api-gateway:2-amd64
+          ports:
+            - containerPort: 9000
+          env:
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+            - name: LOKI_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: LOKI_URL
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+            - name: PRODUCT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: PRODUCT_SERVICE_URL
+            - name: ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: ORDER_SERVICE_URL
+            - name: INVENTORY_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: INVENTORY_SERVICE_URL
           resources:
             requests:
               cpu: 100m
@@ -22,36 +55,3 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-          ports:
-            - containerPort: 9000
-          env:
-            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI
-              valueFrom:
-                configMapKeyRef:
-                  key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI
-                  name: api-gateway-config
-            - name: LOKI_URL
-              valueFrom:
-                configMapKeyRef:
-                  key: LOKI_URL
-                  name: common-config
-            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-                  name: common-config
-            - name: PRODUCT_SERVICE_URL
-              valueFrom:
-                configMapKeyRef:
-                  key: PRODUCT_SERVICE_URL
-                  name: common-config
-            - name: ORDER_SERVICE_URL
-              valueFrom:
-                configMapKeyRef:
-                  key: ORDER_SERVICE_URL
-                  name: common-config
-            - name: INVENTORY_SERVICE_URL
-              valueFrom:
-                configMapKeyRef:
-                  key: INVENTORY_SERVICE_URL
-                  name: common-config

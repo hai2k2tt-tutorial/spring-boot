@@ -14,7 +14,25 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: hai2k2tt/product-service:1.0-SNAPSHOT
+          image: docker.io/hai2k2tt/product-service:2-amd64
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: product-service-config
+                  key: SPRING_DATASOURCE_URL
+            - name: LOKI_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: LOKI_URL
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
           resources:
             requests:
               cpu: 100m
@@ -22,19 +40,3 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-          env:
-            - name: SPRING_DATA_MONGODB_URI
-              valueFrom:
-                configMapKeyRef:
-                  key: SPRING_DATA_MONGODB_URI
-                  name: product-service-config
-            - name: LOKI_URL
-              valueFrom:
-                configMapKeyRef:
-                  key: LOKI_URL
-                  name: common-config
-            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-                  name: common-config

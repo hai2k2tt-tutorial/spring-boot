@@ -5,7 +5,7 @@ metadata:
   name: product-service-config
   namespace: {{ .Values.namespace }}
 data:
-  SPRING_DATA_MONGODB_URI: {{ .Values.config.mongodbUri | quote }}
+  SPRING_DATASOURCE_URL: {{ .Values.config.datasourceUrl | quote }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,11 +31,11 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
           env:
-            - name: SPRING_DATA_MONGODB_URI
+            - name: SPRING_DATASOURCE_URL
               valueFrom:
                 configMapKeyRef:
                   name: product-service-config
-                  key: SPRING_DATA_MONGODB_URI
+                  key: SPRING_DATASOURCE_URL
             - name: LOKI_URL
               valueFrom:
                 configMapKeyRef:

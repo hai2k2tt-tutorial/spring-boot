@@ -1,6 +1,6 @@
 enabled: true
 namespace: microservices
-image: hai2k2tt/product-service:1.0-SNAPSHOT
+image: docker.io/hai2k2tt/product-service:2-amd64
 imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:
@@ -13,4 +13,4 @@ resources:
     cpu: 500m
     memory: 512Mi
 config:
-  mongodbUri: mongodb://root:password@mongodb.microservices.svc.cluster.local:27017/product-service?authSource=admin
+  datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service

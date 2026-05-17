@@ -23,7 +23,7 @@ mysql:
     CREATE DATABASE IF NOT EXISTS inventory_service;
 
 mongodb:
-  enabled: true
+  enabled: false
   fullnameOverride: mongodb
   image: mongo:7.0.5
   replicaCount: 1
@@ -42,6 +42,32 @@ mongodb:
     storageClassName: standard
     size: 1Gi
     hostPath: /data/mongodb
+
+postgres:
+  enabled: true
+  fullnameOverride: postgres
+  image: postgres:16-alpine
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  user: postgres
+  password: postgres
+  database: postgres
+  persistence:
+    enabled: true
+    storageClassName: standard
+    size: 1Gi
+    hostPath: /data/postgres
+  initSql: |
+    CREATE DATABASE product_service;
+    CREATE DATABASE payment_service;
+    CREATE DATABASE shop_service;
+    CREATE DATABASE customer_service;
 
 kafka:
   enabled: true
@@ -119,11 +145,17 @@ keycloak:
   adminPassword: admin
   hostname: keycloak.haint.fyi
   redirectUris:
-    - http://frontend.haint.fyi
-    - http://frontend.haint.fyi/*
-    - http://frontend-next.haint.fyi
-    - http://frontend-next.haint.fyi/*
-    - http://frontend-next.haint.fyi/api/auth/callback/keycloak
+    - http://admin-fe.haint.fyi
+    - http://admin-fe.haint.fyi/*
+    - http://admin-fe.haint.fyi/api/auth/callback/keycloak
+    - http://shop-fe.haint.fyi
+    - http://shop-fe.haint.fyi/*
+    - http://shop-fe.haint.fyi/api/auth/callback/keycloak
+    - http://customer-fe-next.haint.fyi
+    - http://customer-fe-next.haint.fyi/*
+    - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
+    - http://customer-fe-angular.haint.fyi
+    - http://customer-fe-angular.haint.fyi/*
   db:
     vendor: MYSQL
     host: keycloak-mysql
@@ -276,6 +308,24 @@ observability:
             - targets: [ 'notification-service.microservices.svc.cluster.local:8083' ]
               labels:
                 application: 'Notification Service'
+        - job_name: 'payment-service'
+          metrics_path: '/actuator/prometheus'
+          static_configs:
+            - targets: [ 'payment-service.microservices.svc.cluster.local:8085' ]
+              labels:
+                application: 'Payment Service'
+        - job_name: 'shop-service'
+          metrics_path: '/actuator/prometheus'
+          static_configs:
+            - targets: [ 'shop-service.microservices.svc.cluster.local:8086' ]
+              labels:
+                application: 'Shop Service'
+        - job_name: 'customer-service'
+          metrics_path: '/actuator/prometheus'
+          static_configs:
+            - targets: [ 'customer-service.microservices.svc.cluster.local:8087' ]
+              labels:
+                application: 'Customer Service'
   loki:
     image: grafana/loki:main
     replicaCount: 1

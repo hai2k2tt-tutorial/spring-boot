@@ -1,0 +1,16 @@
+enabled: true
+namespace: microservices
+image: docker.io/hai2k2tt/customer-fe-angular:2
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 80
+config:
+  apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

@@ -14,7 +14,9 @@ spec:
     spec:
       containers:
         - name: inventory-service
-          image: hai2k2tt/inventory-service:1.0-SNAPSHOT
+          image: docker.io/hai2k2tt/inventory-service:2-amd64
+          ports:
+            - containerPort: 8082
           resources:
             requests:
               cpu: 100m

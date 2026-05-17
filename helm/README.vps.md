@@ -179,16 +179,16 @@ git clone https://github.com/hai2k2tt-tutorial/spring-boot.git /root/spring-boot
 cd /root/spring-boot
 ```
 
-## Build and publish amd64 images
+## Build and publish multi-arch images
 
-The VPS Kubernetes nodes are `linux/amd64`. Images built on an Apple Silicon Mac default to `linux/arm64` unless you explicitly set the platform. If an arm64-only image is deployed to this cluster, pods fail with errors like:
+Local Docker on Apple Silicon uses `linux/arm64` by default, while the VPS Kubernetes nodes are `linux/amd64`. Publishing a multi-arch tag lets both environments use the same image reference. If you publish only arm64 and deploy it to the VPS, pods fail with errors like:
 
 ```text
 no match for platform in manifest
 exec /cnb/process/web: exec format error
 ```
 
-Build and push custom images with Docker Buildx before deploying.
+Build and push the application images before deploying.
 
 Create or select a multi-arch builder:
 
@@ -197,71 +197,46 @@ docker buildx create --use --name multiarch || docker buildx use multiarch
 docker buildx inspect --bootstrap
 ```
 
-Spring Boot service images used by the chart:
+Then publish the repo images with the shared script:
 
 ```bash
-docker buildx build --platform linux/amd64 \
-  -t docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT \
-  --push ./api-gateway
+export DOCKER_USERNAME=hai2k2tt
+export DOCKER_PASSWORD='...'
+export IMAGE_TAG=2
+export PLATFORMS=linux/amd64,linux/arm64
 
-docker buildx build --platform linux/amd64 \
-  -t docker.io/hai2k2tt/product-service:1.0-SNAPSHOT \
-  --push ./product-service
-
-docker buildx build --platform linux/amd64 \
-  -t docker.io/hai2k2tt/order-service:1.0-SNAPSHOT \
-  --push ./order-service
-
-docker buildx build --platform linux/amd64 \
-  -t docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT \
-  --push ./inventory-service
-
-docker buildx build --platform linux/amd64 \
-  -t docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT \
-  --push ./notification-service
+./scripts/docker-build-v2.sh
 ```
 
-Frontend images use separate amd64 tags so the existing arm64 `latest` tags can remain available:
+The script does two different things:
+
+- Spring Boot services are built once per platform with `spring-boot:build-image`, pushed as arch-specific tags, and then combined into a single multi-arch manifest tag such as `docker.io/hai2k2tt/api-gateway:2`.
+- Frontend apps are built with `docker buildx build --platform linux/amd64,linux/arm64 --push` and published directly as multi-arch tags.
+
+You can verify a published tag contains both architectures:
 
 ```bash
-docker buildx build --platform linux/amd64 \
-  -t docker.io/hai2k2tt/frontend:amd64 \
-  --push ./frontend
-
-docker buildx build --platform linux/amd64 \
-  -t docker.io/hai2k2tt/frontend-next:amd64 \
-  --push ./frontend-next
+docker buildx imagetools inspect docker.io/hai2k2tt/api-gateway:2
+docker buildx imagetools inspect docker.io/hai2k2tt/admin-fe:2
 ```
 
-Verify the pushed manifests contain `linux/amd64`:
+If you need an amd64-only publish for debugging, set:
 
 ```bash
-docker buildx imagetools inspect docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT
-docker buildx imagetools inspect docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
-docker buildx imagetools inspect docker.io/hai2k2tt/order-service:1.0-SNAPSHOT
-docker buildx imagetools inspect docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT
-docker buildx imagetools inspect docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT
-docker buildx imagetools inspect docker.io/hai2k2tt/frontend:amd64
-docker buildx imagetools inspect docker.io/hai2k2tt/frontend-next:amd64
+export PLATFORMS=linux/amd64
+./scripts/docker-build-v2.sh
 ```
 
-The Helm chart is configured to deploy these image tags:
+The Helm values should reference the manifest tag, not an architecture-specific suffix. For example:
 
 ```yaml
-apiGateway:
-  image: docker.io/hai2k2tt/api-gateway:0.0.1-SNAPSHOT
-productService:
-  image: docker.io/hai2k2tt/product-service:1.0-SNAPSHOT
-orderService:
-  image: docker.io/hai2k2tt/order-service:1.0-SNAPSHOT
-inventoryService:
-  image: docker.io/hai2k2tt/inventory-service:1.0-SNAPSHOT
-notificationService:
-  image: docker.io/hai2k2tt/notification-service:1.0-SNAPSHOT
-frontend:
-  image: docker.io/hai2k2tt/frontend:amd64
-frontendNext:
-  image: docker.io/hai2k2tt/frontend-next:amd64
+image: docker.io/hai2k2tt/api-gateway:2
+```
+
+and not:
+
+```yaml
+image: docker.io/hai2k2tt/api-gateway:2-amd64
 ```
 
 All custom application images use `imagePullPolicy: Always` so Kubernetes pulls rebuilt tags instead of reusing stale cached images.

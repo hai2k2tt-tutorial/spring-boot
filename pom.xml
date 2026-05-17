@@ -19,6 +19,9 @@
     <module>order-service</module>
     <module>inventory-service</module>
     <module>notification-service</module>
+    <module>payment-service</module>
+    <module>shop-service</module>
+    <module>customer-service</module>
   </modules>
 
   <properties>
@@ -31,6 +34,8 @@
     <avro.version>1.12.1</avro.version>
     <docker.username>hai2k2tt</docker.username>
     <docker.password>${env.DOCKER_PASSWORD}</docker.password>
+    <docker.image.tag>2</docker.image.tag>
+    <docker.builder.image>paketobuildpacks/ubuntu-noble-builder:latest</docker.builder.image>
   </properties>
 
   <dependencyManagement>
@@ -53,8 +58,8 @@
         <version>3.4.13</version>
         <configuration>
           <image>
-            <name>docker.io/${docker.username}/${project.artifactId}:${project.version}</name>
-            <builder>paketobuildpacks/builder-jammy-base</builder>
+            <name>docker.io/${docker.username}/${project.artifactId}:${docker.image.tag}</name>
+            <builder>${docker.builder.image}</builder>
             <env>
             <BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
             </env>

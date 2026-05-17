@@ -1,0 +1,152 @@
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hero-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.hero-panel h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 2rem;
+}
+
+.supporting {
+  margin: 0.75rem 0 0;
+  max-width: 44rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.hero-summary {
+  min-width: 13rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.hero-summary span {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.hero-summary strong {
+  color: #0f172a;
+  font-size: 1.5rem;
+}
+
+.feedback {
+  margin: 0;
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.catalog-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.catalog-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.catalog-card__body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.catalog-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.catalog-card__title {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.catalog-card__meta,
+.catalog-card__description {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.catalog-card__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+}
+
+.catalog-card__foot label {
+  display: grid;
+  gap: 0.35rem;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.catalog-card__foot input,
+.catalog-card__foot button {
+  min-height: 2.5rem;
+  border-radius: 8px;
+}
+
+.catalog-card__foot input {
+  border: 1px solid #cbd5e1;
+  padding: 0 0.75rem;
+}
+
+.catalog-card__foot button {
+  border: 0;
+  padding: 0 1rem;
+  background: #0f172a;
+  color: white;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-panel,
+  .catalog-grid {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+}

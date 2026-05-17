@@ -1,0 +1,24 @@
+namespace: microservices
+fullnameOverride: postgres
+image: postgres:16-alpine
+replicaCount: 1
+user: postgres
+password: postgres
+database: postgres
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+persistence:
+  enabled: true
+  storageClassName: standard
+  size: 1Gi
+  hostPath: /data/postgres
+initSql: |
+  CREATE DATABASE product_service;
+  CREATE DATABASE payment_service;
+  CREATE DATABASE shop_service;
+  CREATE DATABASE customer_service;

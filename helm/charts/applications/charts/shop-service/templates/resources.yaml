@@ -1,0 +1,67 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-service-config
+  namespace: {{ .Values.namespace }}
+data:
+  SPRING_DATASOURCE_URL: {{ .Values.config.datasourceUrl | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-service
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: shop-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: shop-service
+  template:
+    metadata:
+      labels:
+        app: shop-service
+    spec:
+      containers:
+        - name: shop-service
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-service-config
+                  key: SPRING_DATASOURCE_URL
+            - name: LOKI_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: LOKI_URL
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-service
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: shop-service
+spec:
+  type: ClusterIP
+  selector:
+    app: shop-service
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+{{- end }}

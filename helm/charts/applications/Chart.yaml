@@ -30,12 +30,38 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/notification-service"
     condition: notificationService.enabled
-  - name: frontend
+  - name: payment-service
+    alias: paymentService
     version: 0.1.0
-    repository: "file://charts/frontend"
-    condition: frontend.enabled
-  - name: frontend-next
-    alias: frontendNext
+    repository: "file://charts/payment-service"
+    condition: paymentService.enabled
+  - name: shop-service
+    alias: shopService
     version: 0.1.0
-    repository: "file://charts/frontend-next"
-    condition: frontendNext.enabled
+    repository: "file://charts/shop-service"
+    condition: shopService.enabled
+  - name: customer-service
+    alias: customerService
+    version: 0.1.0
+    repository: "file://charts/customer-service"
+    condition: customerService.enabled
+  - name: admin-fe
+    alias: adminFe
+    version: 0.1.0
+    repository: "file://charts/admin-fe"
+    condition: adminFe.enabled
+  - name: shop-fe
+    alias: shopFe
+    version: 0.1.0
+    repository: "file://charts/shop-fe"
+    condition: shopFe.enabled
+  - name: customer-fe-next
+    alias: customerFeNext
+    version: 0.1.0
+    repository: "file://charts/customer-fe-next"
+    condition: customerFeNext.enabled
+  - name: customer-fe-angular
+    alias: customerFeAngular
+    version: 0.1.0
+    repository: "file://charts/customer-fe-angular"
+    condition: customerFeAngular.enabled

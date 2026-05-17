@@ -1,146 +1,339 @@
-version: '4'
 services:
-  mongodb:
-    image: mongo:7.0.5
-    container_name: mongodb
-    ports:
-      - "27018:27017"
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: product-service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
     volumes:
-      - ./data/mongodb:/data/db
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   mysql:
-    image: mysql:8.3.0
+    image: mysql:8.4
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: mysql
     ports:
       - "3306:3306"
     volumes:
-      - ./data/mysql:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -hmysql -uroot -pmysql"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    hostname: zookeeper
+    image: confluentinc/cp-zookeeper:7.8.0
     container_name: zookeeper
-    ports:
-      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
 
   broker:
-    image: confluentinc/cp-kafka:7.5.0
+    image: confluentinc/cp-kafka:7.8.0
     container_name: broker
-    ports:
-      - "9092:9092"
-      - "29092:29092"
     depends_on:
       - zookeeper
+    ports:
+      - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.5.0
-    hostname: schema-registry
+    image: confluentinc/cp-schema-registry:7.8.0
     container_name: schema-registry
     depends_on:
       - broker
     ports:
-      - "8085:8081"
+      - "8084:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
-      SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
   kafka-ui:
-    container_name: kafka-ui
     image: provectuslabs/kafka-ui:latest
-    ports:
-      - "8086:8080"
+    container_name: kafka-ui
     depends_on:
       - broker
+      - schema-registry
+    ports:
+      - "8090:8080"
     environment:
-      KAFKA_CLUSTERS_NAME: local
-      KAFKA_CLUSTERS_BOOTSTRAPSERVERS: broker:29092
-      #      KAFKA_CLUSTERS_SCHEMAREGISTRY: http://schema-registry:8081
-      DYNAMIC_CONFIG_ENABLED: 'true'
-  keycloak-mysql:
-    container_name: keycloak-mysql
-    image: mysql:8
-    volumes:
-      - ./volume-data/mysql_keycloak_data:/var/lib/mysql
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+
+  keycloak-db:
+    image: mysql:8.4
+    container_name: keycloak-db
     environment:
-      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: keycloak
+      MYSQL_ROOT_PASSWORD: mysql
       MYSQL_USER: keycloak
-      MYSQL_PASSWORD: password
+      MYSQL_PASSWORD: keycloak
+    ports:
+      - "3307:3306"
+    volumes:
+      - keycloak-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -hkeycloak-db -uroot -pmysql"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
     container_name: keycloak
-    image: quay.io/keycloak/keycloak:24.0.1
-    command: [ "start-dev", "--import-realm" ]
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    command:
+      - start-dev
+      - --import-realm
     environment:
-      DB_VENDOR: MYSQL
-      DB_ADDR: keycloak-mysql
-      DB_DATABASE: keycloak
-      DB_USER: keycloak
-      DB_PASSWORD: password
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HTTP_ENABLED: 'true'
-      KC_HOSTNAME_STRICT: 'false'
-      KC_HOSTNAME_STRICT_HTTPS: 'false'
+      KC_DB: mysql
+      KC_DB_URL: jdbc:mysql://keycloak-db:3306/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
     ports:
       - "8181:8080"
     volumes:
-      - ./docker/keycloak/realms/:/opt/keycloak/data/import/
-    depends_on:
-      - keycloak-mysql
+      - ./docker/keycloak/realms:/opt/keycloak/data/import:ro
+
   loki:
-    image: grafana/loki:main
+    image: grafana/loki:3.1.1
     container_name: loki
-    command: [ "-config.file=/etc/loki/local-config.yaml" ]
     ports:
       - "3100:3100"
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+
   prometheus:
-    image: prom/prometheus:v2.46.0
+    image: prom/prometheus:v2.54.1
     container_name: prometheus
-    command:
-      - --enable-feature=exemplar-storage
-      - --config.file=/etc/prometheus/prometheus.yml
-    volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
       - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
   tempo:
-    image: grafana/tempo:2.2.2
+    image: grafana/tempo:2.6.1
     container_name: tempo
-    command: [ "-config.file=/etc/tempo.yaml" ]
-    volumes:
-      - ./docker/tempo/tempo.yml:/etc/tempo.yaml:ro
-      - ./data/tempo:/tmp/tempo
     ports:
-      - "3110:3100"  # Tempo
-      - "9411:9411" # zipkin
-  grafana:
-    image: grafana/grafana:10.1.0
-    container_name: grafana
+      - "3200:3200"
+      - "9411:9411"
+    command: ["-config.file=/etc/tempo.yml"]
     volumes:
-      - ./docker/grafana:/etc/grafana/provisioning/datasources:ro
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - ./docker/tempo/tempo.yml:/etc/tempo.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
     ports:
       - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./docker/grafana/dashboard.json:/var/lib/grafana/dashboards/dashboard.json:ro
+
   mailhog:
-    image: mailhog/mailhog:v1.0.1
+    image: mailhog/mailhog:latest
     container_name: mailhog
     ports:
       - "1025:1025"
       - "8025:8025"
+
+  product-service:
+    image: docker.io/hai2k2tt/product-service:2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  inventory-service:
+    image: docker.io/hai2k2tt/inventory-service:2
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/inventory_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: mysql
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  order-service:
+    image: docker.io/hai2k2tt/order-service:2
+    depends_on:
+      mysql:
+        condition: service_healthy
+      inventory-service:
+        condition: service_started
+      broker:
+        condition: service_started
+      schema-registry:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/order_service
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: mysql
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  notification-service:
+    image: docker.io/hai2k2tt/notification-service:2
+    depends_on:
+      broker:
+        condition: service_started
+      schema-registry:
+        condition: service_started
+      mailhog:
+        condition: service_started
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_MAIL_HOST: mailhog
+      SPRING_MAIL_PORT: 1025
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  payment-service:
+    image: docker.io/hai2k2tt/payment-service:2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  shop-service:
+    image: docker.io/hai2k2tt/shop-service:2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/shop_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  customer-service:
+    image: docker.io/hai2k2tt/customer-service:2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  api-gateway:
+    image: docker.io/hai2k2tt/api-gateway:2
+    depends_on:
+      keycloak:
+        condition: service_started
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+    ports:
+      - "9000:9000"
+    environment:
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/spring-microservices-security-realm
+      PRODUCT_SERVICE_URL: http://product-service:8080
+      ORDER_SERVICE_URL: http://order-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+
+  admin-fe:
+    build:
+      context: ./admin-fe
+      dockerfile: Dockerfile
+    image: docker.io/hai2k2tt/admin-fe:2
+    depends_on:
+      - api-gateway
+    ports:
+      - "3002:3002"
+
+  shop-fe:
+    build:
+      context: ./shop-fe
+      dockerfile: Dockerfile
+    image: docker.io/hai2k2tt/shop-fe:2
+    depends_on:
+      - api-gateway
+    ports:
+      - "3003:3003"
+
+  customer-fe-next:
+    build:
+      context: ./customer-fe-next
+      dockerfile: Dockerfile
+    image: docker.io/hai2k2tt/customer-fe-next:2
+    depends_on:
+      - api-gateway
+    ports:
+      - "3004:3004"
+
+  customer-fe-angular:
+    build:
+      context: ./customer-fe-angular
+      dockerfile: Dockerfile
+    image: docker.io/hai2k2tt/customer-fe-angular:2
+    depends_on:
+      - api-gateway
+    ports:
+      - "4201:80"
+
+volumes:
+  postgres-data:
+  mysql-data:
+  keycloak-mysql-data:
+  grafana-data:

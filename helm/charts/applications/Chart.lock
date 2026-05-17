@@ -14,11 +14,26 @@ dependencies:
 - name: notification-service
   repository: file://charts/notification-service
   version: 0.1.0
-- name: frontend
-  repository: file://charts/frontend
+- name: payment-service
+  repository: file://charts/payment-service
   version: 0.1.0
-- name: frontend-next
-  repository: file://charts/frontend-next
+- name: shop-service
+  repository: file://charts/shop-service
   version: 0.1.0
-digest: sha256:7c225ec8a4df7331d0bfdeb0f05ea603e0b07f27dbb7770d93f2bd0738ef937c
-generated: "2026-05-10T15:21:34.664412+07:00"
+- name: customer-service
+  repository: file://charts/customer-service
+  version: 0.1.0
+- name: admin-fe
+  repository: file://charts/admin-fe
+  version: 0.1.0
+- name: shop-fe
+  repository: file://charts/shop-fe
+  version: 0.1.0
+- name: customer-fe-next
+  repository: file://charts/customer-fe-next
+  version: 0.1.0
+- name: customer-fe-angular
+  repository: file://charts/customer-fe-angular
+  version: 0.1.0
+digest: sha256:2fb83a193e6d9226d4d48b230e5ae45e4e6318b9a2ba532e5c28f3fd2f2ecba8
+generated: "2026-05-18T01:19:13.066018+07:00"

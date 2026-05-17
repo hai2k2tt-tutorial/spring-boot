@@ -5,6 +5,9 @@ dependencies:
 - name: mongodb
   repository: file://charts/mongodb
   version: 0.1.0
+- name: postgres
+  repository: file://charts/postgres
+  version: 0.1.0
 - name: kafka
   repository: file://charts/kafka
   version: 0.1.0
@@ -17,5 +20,5 @@ dependencies:
 - name: observability
   repository: file://charts/observability
   version: 0.1.0
-digest: sha256:c097a904d7f46f5d75d0e25bf2939c87b46b23b818ce9f742df5561972cf76b3
-generated: "2026-05-08T17:17:46.167812+07:00"
+digest: sha256:e159907a106a4bb1bcb326077b8c7514f9c42162f17455d4ad33a3f15398ce83
+generated: "2026-05-18T01:19:13.067163+07:00"
