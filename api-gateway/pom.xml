@@ -68,29 +68,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <!-- Use Jib as an alternative image builder that does not require the Docker daemon API negotiation
-                 issues. `jib:buildTar` produces a portable image tar that can be loaded with `docker load -i`.
-                 This avoids the spring-boot:maven-plugin build-image path which currently calls an old
-                 Docker API version on some systems. -->
-            <plugin>
-                <groupId>com.google.cloud.tools</groupId>
-                <artifactId>jib-maven-plugin</artifactId>
-                <version>3.4.0</version>
-                <configuration>
-                    <from>
-                        <!-- Use a Java 21 compatible base image -->
-                        <image>eclipse-temurin:21-jre</image>
-                    </from>
-                    <to>
-                        <image>api-gateway:0.0.1-SNAPSHOT</image>
-                    </to>
-                    <container>
-                        <mainClass>com.techie.microservices.gateway.ApiGatewayApplication</mainClass>
-                    </container>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>
