@@ -2,10 +2,7 @@ package com.techie.microservices.inventory.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -13,26 +10,28 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "t_inventory")
+@Table(name = "t_sku")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Inventory {
+public class Sku {
     @Id
     @Column(length = 36, nullable = false)
     private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sku_id", nullable = false)
-    private Sku sku;
+    @Column(nullable = false, length = 36)
+    private String productId;
 
-    @Column(nullable = false)
-    private Integer quantity;
+    @Column(nullable = false, unique = true)
+    private String skuCode;
+
+    private BigDecimal priceOverride;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

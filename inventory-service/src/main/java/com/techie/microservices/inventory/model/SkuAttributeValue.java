@@ -13,16 +13,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "t_inventory")
+@Table(name = "t_sku_attribute_value")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Inventory {
+public class SkuAttributeValue {
     @Id
     @Column(length = 36, nullable = false)
     private String id;
@@ -31,24 +30,14 @@ public class Inventory {
     @JoinColumn(name = "sku_id", nullable = false)
     private Sku sku;
 
-    @Column(nullable = false)
-    private Integer quantity;
-
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
-
-    @Column(nullable = false)
-    private Instant updatedAt;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "attribute_value_id", nullable = false)
+    private AttributeValue attributeValue;
 
     @PrePersist
     void prePersist() {
         if (id == null) {
             id = UUID.randomUUID().toString();
         }
-        Instant now = Instant.now();
-        if (createdAt == null) {
-            createdAt = now;
-        }
-        updatedAt = now;
     }
 }

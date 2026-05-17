@@ -2,10 +2,9 @@ package com.techie.microservices.inventory.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -17,22 +16,28 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "t_inventory")
+@Table(name = "t_attribute")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Inventory {
+public class Attribute {
     @Id
     @Column(length = 36, nullable = false)
     private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "sku_id", nullable = false)
-    private Sku sku;
+    @Column(nullable = false, length = 36)
+    private String productId;
+
+    @Column(nullable = false, length = 100)
+    private String code;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AttributeInputType inputType;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
