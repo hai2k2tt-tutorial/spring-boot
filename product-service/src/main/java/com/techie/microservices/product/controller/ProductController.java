@@ -1,8 +1,8 @@
 package com.techie.microservices.product.controller;
 
-import com.techie.microservices.product.dto.ProductRequest;
-import com.techie.microservices.product.dto.ProductResponse;
+import com.techie.microservices.product.dto.ProductRequestDto;
 import com.techie.microservices.product.service.ProductService;
+import com.techie.microservices.product.vo.ProductResponseVo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -18,13 +18,13 @@ public class ProductController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductResponse createProduct(@RequestBody ProductRequest productRequest) {
-        return productService.createProduct(productRequest);
+    public ProductResponseVo createProduct(@RequestBody ProductRequestDto productRequestDto) {
+        return productService.createProduct(productRequestDto);
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<ProductResponse> getAllProducts() {
+    public List<ProductResponseVo> getAllProducts() {
         return productService.getAllProducts();
     }
 }

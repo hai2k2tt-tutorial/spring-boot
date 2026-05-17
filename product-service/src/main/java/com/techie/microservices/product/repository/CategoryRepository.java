@@ -1,9 +1,9 @@
 package com.techie.microservices.product.repository;
 
-import com.techie.microservices.product.model.Product;
+import com.techie.microservices.product.model.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
 
-public interface ProductRepository extends JpaRepository<Product, UUID> {
+public interface CategoryRepository extends JpaRepository<Category, UUID> {
 }

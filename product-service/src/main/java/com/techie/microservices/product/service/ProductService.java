@@ -1,12 +1,18 @@
 package com.techie.microservices.product.service;
 
-import com.techie.microservices.product.dto.ProductRequest;
-import com.techie.microservices.product.dto.ProductResponse;
+import com.techie.microservices.product.dto.ProductRequestDto;
+import com.techie.microservices.product.mapper.ProductMapper;
+import com.techie.microservices.product.model.Category;
 import com.techie.microservices.product.model.Product;
+import com.techie.microservices.product.repository.CategoryRepository;
 import com.techie.microservices.product.repository.ProductRepository;
+import com.techie.microservices.product.vo.ProductResponseVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -15,27 +21,25 @@ import java.util.List;
 @Slf4j
 public class ProductService {
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
 
-    public ProductResponse createProduct(ProductRequest productRequest) {
-        Product product = Product.builder()
-                .name(productRequest.name())
-                .description(productRequest.description())
-                .skuCode(productRequest.skuCode())
-                .price(productRequest.price())
-                .build();
+    @Transactional
+    public ProductResponseVo createProduct(ProductRequestDto productRequestDto) {
+        Category category = categoryRepository.findById(productRequestDto.categoryId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
+
+        Product product = productMapper.toEntity(productRequestDto, category);
         productRepository.save(product);
         log.info("Product created successfully");
-        return new ProductResponse(product.getId(), product.getName(), product.getDescription(),
-                product.getSkuCode(),
-                product.getPrice());
+        return productMapper.toVo(product);
     }
 
-    public List<ProductResponse> getAllProducts() {
+    @Transactional(readOnly = true)
+    public List<ProductResponseVo> getAllProducts() {
         return productRepository.findAll()
                 .stream()
-                .map(product -> new ProductResponse(product.getId(), product.getName(), product.getDescription(),
-                        product.getSkuCode(),
-                        product.getPrice()))
+                .map(productMapper::toVo)
                 .toList();
     }
 }

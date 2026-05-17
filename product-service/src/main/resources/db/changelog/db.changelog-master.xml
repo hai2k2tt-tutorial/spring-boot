@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.31.xsd">
+
+    <changeSet id="1-create-category-and-product-tables" author="codex">
+        <createTable tableName="t_category">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_id" type="UUID"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="t_category"
+                baseColumnNames="parent_id"
+                constraintName="fk_category_parent"
+                referencedTableName="t_category"
+                referencedColumnNames="id"/>
+
+        <createIndex tableName="t_category" indexName="idx_category_parent_id">
+            <column name="parent_id"/>
+        </createIndex>
+
+        <createTable tableName="t_product">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="shop_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="price" type="NUMERIC(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_url" type="VARCHAR(1024)"/>
+            <column name="category_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="t_product"
+                baseColumnNames="category_id"
+                constraintName="fk_product_category"
+                referencedTableName="t_category"
+                referencedColumnNames="id"/>
+
+        <createIndex tableName="t_product" indexName="idx_product_category_id">
+            <column name="category_id"/>
+        </createIndex>
+
+        <createIndex tableName="t_product" indexName="idx_product_shop_id">
+            <column name="shop_id"/>
+        </createIndex>
+
+        <sql>
+            ALTER TABLE t_product
+            ADD CONSTRAINT chk_product_status
+            CHECK (status IN ('DRAFT', 'ACTIVE', 'ARCHIVED'));
+        </sql>
+
+        <rollback>
+            <dropTable tableName="t_product"/>
+            <dropTable tableName="t_category"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
