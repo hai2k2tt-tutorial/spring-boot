@@ -1,14 +1,16 @@
 package com.techie.microservices.order.controller;
 
-import com.techie.microservices.order.dto.OrderRequest;
+import com.techie.microservices.order.dto.OrderCreateRequestDto;
 import com.techie.microservices.order.service.OrderService;
+import com.techie.microservices.order.vo.OrderResponseVo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/order")
@@ -20,12 +22,13 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public String placeOrder(@RequestBody OrderRequest orderRequest) {
-        orderService.placeOrder(orderRequest);
-        return "Order Placed Successfully";
+    public OrderResponseVo placeOrder(@RequestBody OrderCreateRequestDto orderCreateRequestDto) {
+        return orderService.placeOrder(orderCreateRequestDto);
     }
 
-    public CompletableFuture<String> fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException) {
-        return CompletableFuture.supplyAsync(() -> "Oops! Something went wrong, please order after some time!");
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<OrderResponseVo> getOrders(@RequestParam(required = false) UUID customerId) {
+        return orderService.getOrders(customerId);
     }
 }

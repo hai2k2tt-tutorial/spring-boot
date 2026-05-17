@@ -1,5 +1,6 @@
 package com.techie.microservices.order.client;
 
+import com.techie.microservices.order.dto.InventoryCheckResponseDto;
 import groovy.util.logging.Slf4j;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -13,13 +14,13 @@ public interface InventoryClient {
 
     Logger log = LoggerFactory.getLogger(InventoryClient.class);
 
-    @GetExchange("/api/inventory")
+    @GetExchange("/api/inventory/stock-check")
     @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
     @Retry(name = "inventory")
-    boolean isInStock(@RequestParam String skuCode, @RequestParam Integer quantity);
+    InventoryCheckResponseDto isInStock(@RequestParam String skuCode, @RequestParam Integer quantity);
 
-    default boolean fallbackMethod(String code, Integer quantity, Throwable throwable) {
+    default InventoryCheckResponseDto fallbackMethod(String code, Integer quantity, Throwable throwable) {
         log.info("Cannot get inventory for skucode {}, failure reason: {}", code, throwable.getMessage());
-        return false;
+        return new InventoryCheckResponseDto(code, quantity, false);
     }
 }
