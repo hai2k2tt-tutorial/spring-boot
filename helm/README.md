@@ -122,8 +122,10 @@ kubectl get gateway,httproute -n microservices
 Add local hostnames that point to `127.0.0.1`, for example:
 
 ```text
-127.0.0.1 frontend.local
-127.0.0.1 frontend-next.local
+127.0.0.1 admin-fe.local
+127.0.0.1 shop-fe.local
+127.0.0.1 customer-fe-next.local
+127.0.0.1 customer-fe-angular.local
 127.0.0.1 api.local
 127.0.0.1 keycloak.local
 127.0.0.1 kafka-ui.local
@@ -137,8 +139,10 @@ Add local hostnames that point to `127.0.0.1`, for example:
 
 Then use the gateway on host port `8080` with those hostnames:
 
-- `http://frontend.local:8080/`
-- `http://frontend-next.local:8080/`
+- `http://admin-fe.local:8080/`
+- `http://shop-fe.local:8080/`
+- `http://customer-fe-next.local:8080/`
+- `http://customer-fe-angular.local:8080/`
 - `http://api.local:8080/`
 - `http://keycloak.local:8080/`
 - `http://kafka-ui.local:8080/`

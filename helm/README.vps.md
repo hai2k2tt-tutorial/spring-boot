@@ -17,7 +17,7 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 - `microservices` namespace
 - Metrics Server for `kubectl top` and the Kubernetes resource metrics API
 - Infrastructure: MySQL, MongoDB, Kafka, Keycloak, Mailpit, Grafana, Prometheus, Loki, Tempo
-- Applications: API gateway, product service, order service, inventory service, notification service, frontend, frontend-next
+- Applications: API gateway, product service, order service, inventory service, notification service, admin-fe, shop-fe, customer-fe-next, customer-fe-angular
 - Gateway API resources: `Gateway` and `HTTPRoute`
 
 ## Before you install
@@ -47,8 +47,10 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 
    Recommended hostnames for this setup:
 
-   - `frontend.haint.fyi`
-   - `frontend-next.haint.fyi`
+   - `admin-fe.haint.fyi`
+   - `shop-fe.haint.fyi`
+   - `customer-fe-next.haint.fyi`
+   - `customer-fe-angular.haint.fyi`
    - `api.haint.fyi`
    - `keycloak.haint.fyi`
    - `kafka-ui.haint.fyi`
@@ -64,9 +66,15 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    At minimum, adjust these values in `helm/charts/applications/values.yaml`:
 
    - `apiGateway.config.issuerUri`
-   - `frontendNext.config.nextPublicApiBaseUrl`
-   - `frontendNext.config.authUrl`
-   - `frontendNext.config.authIssuer`
+   - `adminFe.config.nextPublicApiBaseUrl`
+   - `adminFe.config.authUrl`
+   - `adminFe.config.authIssuer`
+   - `shopFe.config.nextPublicApiBaseUrl`
+   - `shopFe.config.authUrl`
+   - `shopFe.config.authIssuer`
+   - `customerFeNext.config.nextPublicApiBaseUrl`
+   - `customerFeNext.config.authUrl`
+   - `customerFeNext.config.authIssuer`
 
    Keep the internal cluster DNS entries if they still match your service names.
 
@@ -82,10 +90,10 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
        # KC_HOSTNAME must be a bare hostname in this chart. Do not include http://.
        hostname: keycloak.haint.fyi
 
-   frontendNext:
+   customerFeNext:
      config:
        nextPublicApiBaseUrl: http://api.haint.fyi/api
-       authUrl: http://frontend-next.haint.fyi
+       authUrl: http://customer-fe-next.haint.fyi
        authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
    ```
 
@@ -94,11 +102,17 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    The chart defaults now include:
 
    ```text
-   http://frontend.haint.fyi
-   http://frontend.haint.fyi/*
-   http://frontend-next.haint.fyi
-   http://frontend-next.haint.fyi/*
-   http://frontend-next.haint.fyi/api/auth/callback/keycloak
+   http://admin-fe.haint.fyi
+   http://admin-fe.haint.fyi/*
+   http://admin-fe.haint.fyi/api/auth/callback/keycloak
+   http://shop-fe.haint.fyi
+   http://shop-fe.haint.fyi/*
+   http://shop-fe.haint.fyi/api/auth/callback/keycloak
+   http://customer-fe-next.haint.fyi
+   http://customer-fe-next.haint.fyi/*
+   http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
+   http://customer-fe-angular.haint.fyi
+   http://customer-fe-angular.haint.fyi/*
    ```
 
 6. Review Prometheus scrape targets if you need metrics.
@@ -145,7 +159,7 @@ nginx:
     type: ClusterIP
 ```
 
-The control-plane toleration is required because the public DNS points to `103.6.234.153`, which is the `k8s-master` node. Running the gateway data plane on that node lets normal browser URLs like `http://frontend.haint.fyi/` reach Kubernetes directly on port `80`.
+The control-plane toleration is required because the public DNS points to `103.6.234.153`, which is the `k8s-master` node. Running the gateway data plane on that node lets normal browser URLs like `http://admin-fe.haint.fyi/` reach Kubernetes directly on port `80`.
 
 ## HTTP configuration
 
@@ -302,8 +316,8 @@ helm upgrade --install microservices helm \
 If you republished an image tag and want to force fresh pods immediately:
 
 ```bash
-kubectl rollout restart deploy/frontend deploy/frontend-next -n microservices
-kubectl rollout restart deploy/api-gateway deploy/product-service deploy/order-service deploy/inventory-service deploy/notification-service -n microservices
+kubectl rollout restart deploy/admin-fe deploy/shop-fe deploy/customer-fe-next deploy/customer-fe-angular -n microservices
+kubectl rollout restart deploy/api-gateway deploy/product-service deploy/order-service deploy/inventory-service deploy/notification-service deploy/payment-service deploy/shop-service deploy/customer-service -n microservices
 ```
 
 Wait for application rollouts:
@@ -314,8 +328,13 @@ kubectl rollout status deployment/product-service -n microservices --timeout=300
 kubectl rollout status deployment/order-service -n microservices --timeout=300s
 kubectl rollout status deployment/inventory-service -n microservices --timeout=300s
 kubectl rollout status deployment/notification-service -n microservices --timeout=300s
-kubectl rollout status deployment/frontend -n microservices --timeout=300s
-kubectl rollout status deployment/frontend-next -n microservices --timeout=300s
+kubectl rollout status deployment/payment-service -n microservices --timeout=300s
+kubectl rollout status deployment/shop-service -n microservices --timeout=300s
+kubectl rollout status deployment/customer-service -n microservices --timeout=300s
+kubectl rollout status deployment/admin-fe -n microservices --timeout=300s
+kubectl rollout status deployment/shop-fe -n microservices --timeout=300s
+kubectl rollout status deployment/customer-fe-next -n microservices --timeout=300s
+kubectl rollout status deployment/customer-fe-angular -n microservices --timeout=300s
 ```
 
 Wait for Metrics Server:
@@ -346,8 +365,13 @@ kubectl describe deploy \
   order-service \
   inventory-service \
   notification-service \
-  frontend \
-  frontend-next \
+  payment-service \
+  shop-service \
+  customer-service \
+  admin-fe \
+  shop-fe \
+  customer-fe-next \
+  customer-fe-angular \
   -n microservices | egrep "^(Name:|Replicas:|    Image:)"
 ```
 
@@ -359,8 +383,10 @@ Service map for `haint.fyi`, assuming you kept the same route names:
 
 | Service | Hostname | Backend port | Public URL |
 | --- | --- | --- | --- |
-| frontend | `frontend.haint.fyi` | `80` | `http://frontend.haint.fyi/` |
-| frontend-next | `frontend-next.haint.fyi` | `3001` | `http://frontend-next.haint.fyi/` |
+| admin-fe | `admin-fe.haint.fyi` | `3002` | `http://admin-fe.haint.fyi/` |
+| shop-fe | `shop-fe.haint.fyi` | `3003` | `http://shop-fe.haint.fyi/` |
+| customer-fe-next | `customer-fe-next.haint.fyi` | `3004` | `http://customer-fe-next.haint.fyi/` |
+| customer-fe-angular | `customer-fe-angular.haint.fyi` | `80` | `http://customer-fe-angular.haint.fyi/` |
 | api-gateway | `api.haint.fyi` | `9000` | `http://api.haint.fyi/` |
 | keycloak | `keycloak.haint.fyi` | `8080` | `http://keycloak.haint.fyi/` |
 | kafka-ui | `kafka-ui.haint.fyi` | `8080` | `http://kafka-ui.haint.fyi/` |
@@ -451,5 +477,4 @@ helm uninstall microservices -n microservices
 
 - The chart now defines only an HTTP Gateway listener.
 - HTTP-only public access is not recommended for real production traffic. Use a public CA-issued certificate and restore HTTPS when this deployment handles real users or sensitive data.
-- Keep `frontend:latest` and `frontend-next:latest` for arm64 if you still use them elsewhere. The VPS chart intentionally uses `frontend:amd64` and `frontend-next:amd64`.
 - The local `kind` install guide in `README.md` still applies to Docker-based development, but it is not the right path for this VPS deployment.
