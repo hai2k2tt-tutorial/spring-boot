@@ -7,13 +7,13 @@
 
     <changeSet id="1-create-order-tables" author="codex">
         <createTable tableName="t_order">
-            <column name="id" type="CHAR(36)">
+            <column name="id" type="VARCHAR(36)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="order_number" type="VARCHAR(255)">
                 <constraints nullable="false" unique="true"/>
             </column>
-            <column name="customer_id" type="CHAR(36)">
+            <column name="customer_id" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
             <column name="status" type="VARCHAR(32)">
@@ -31,19 +31,19 @@
         </createTable>
 
         <createTable tableName="t_order_item">
-            <column name="id" type="CHAR(36)">
+            <column name="id" type="VARCHAR(36)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="order_id" type="CHAR(36)">
+            <column name="order_id" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="sku_id" type="CHAR(36)">
+            <column name="sku_id" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="product_id" type="CHAR(36)">
+            <column name="product_id" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="shop_id" type="CHAR(36)">
+            <column name="shop_id" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
             <column name="price" type="NUMERIC(19,2)">
