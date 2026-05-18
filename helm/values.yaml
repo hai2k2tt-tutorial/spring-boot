@@ -400,7 +400,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
   productService:
@@ -416,7 +416,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service
   orderService:
@@ -432,7 +432,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
@@ -449,7 +449,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
   notificationService:
@@ -465,7 +465,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
       mailHost: mailhog.microservices.svc.cluster.local
@@ -483,7 +483,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/payment_service
   shopService:
@@ -499,7 +499,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/shop_service
   customerService:
@@ -515,7 +515,7 @@ applications:
         memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
   adminFe:
