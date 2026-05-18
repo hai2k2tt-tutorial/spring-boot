@@ -1,7 +1,7 @@
 namespace: microservices
 
 mysql:
-  enabled: true
+  enabled: false
   fullnameOverride: mysql
   image: mysql:8.3.0
   replicaCount: 1
@@ -144,18 +144,7 @@ keycloak:
   adminUser: admin
   adminPassword: admin
   hostname: keycloak.haint.fyi
-  redirectUris:
-    - http://admin-fe.haint.fyi
-    - http://admin-fe.haint.fyi/*
-    - http://admin-fe.haint.fyi/api/auth/callback/keycloak
-    - http://shop-fe.haint.fyi
-    - http://shop-fe.haint.fyi/*
-    - http://shop-fe.haint.fyi/api/auth/callback/keycloak
-    - http://customer-fe-next.haint.fyi
-    - http://customer-fe-next.haint.fyi/*
-    - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
-    - http://customer-fe-angular.haint.fyi
-    - http://customer-fe-angular.haint.fyi/*
+  redirectUris: []
   db:
     vendor: MYSQL
     host: keycloak-mysql

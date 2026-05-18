@@ -15,7 +15,7 @@ metricsServer:
 infrastructure:
   namespace: microservices
   mysql:
-    enabled: true
+    enabled: false
     fullnameOverride: mysql
     image: mysql:8.3.0
     replicaCount: 1
@@ -158,18 +158,7 @@ infrastructure:
     adminUser: admin
     adminPassword: admin
     hostname: keycloak.haint.fyi
-    redirectUris:
-      - http://admin-fe.haint.fyi
-      - http://admin-fe.haint.fyi/*
-      - http://admin-fe.haint.fyi/api/auth/callback/keycloak
-      - http://shop-fe.haint.fyi
-      - http://shop-fe.haint.fyi/*
-      - http://shop-fe.haint.fyi/api/auth/callback/keycloak
-      - http://customer-fe-next.haint.fyi
-      - http://customer-fe-next.haint.fyi/*
-      - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
-      - http://customer-fe-angular.haint.fyi
-      - http://customer-fe-angular.haint.fyi/*
+    redirectUris: []
     db:
       vendor: MYSQL
       host: keycloak-mysql
@@ -422,7 +411,7 @@ applications:
   orderService:
     enabled: true
     image: docker.io/hai2k2tt/order-service:2-amd64
-    imagePullPolicy: Always
+    imagePullPolicy: IfNotPresent
     replicaCount: 1
     service:
       port: 8081
@@ -434,12 +423,12 @@ applications:
         cpu: 500m
         memory: 1Gi
     config:
-      datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
+      datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/order_service
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   inventoryService:
     enabled: true
     image: docker.io/hai2k2tt/inventory-service:2-amd64
-    imagePullPolicy: Always
+    imagePullPolicy: IfNotPresent
     replicaCount: 1
     service:
       port: 8082
@@ -451,7 +440,7 @@ applications:
         cpu: 500m
         memory: 1Gi
     config:
-      datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
+      datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/inventory_service
   notificationService:
     enabled: true
     image: docker.io/hai2k2tt/notification-service:2-amd64
@@ -519,7 +508,7 @@ applications:
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
   adminFe:
-    enabled: true
+    enabled: false
     image: docker.io/hai2k2tt/admin-fe:2
     imagePullPolicy: Always
     replicaCount: 1
@@ -543,7 +532,7 @@ applications:
       authScope: openid profile offline_access
       authSecret: replace-with-a-long-random-string
   shopFe:
-    enabled: true
+    enabled: false
     image: docker.io/hai2k2tt/shop-fe:2
     imagePullPolicy: Always
     replicaCount: 1
@@ -567,7 +556,7 @@ applications:
       authScope: openid profile offline_access
       authSecret: replace-with-a-long-random-string
   customerFeNext:
-    enabled: true
+    enabled: false
     image: docker.io/hai2k2tt/customer-fe-next:2
     imagePullPolicy: Always
     replicaCount: 1
@@ -591,7 +580,7 @@ applications:
       authScope: openid profile offline_access
       authSecret: replace-with-a-long-random-string
   customerFeAngular:
-    enabled: true
+    enabled: false
     image: docker.io/hai2k2tt/customer-fe-angular:2
     imagePullPolicy: Always
     replicaCount: 1
@@ -618,30 +607,6 @@ k8sGateway:
         port: 80
         protocol: HTTP
   routes:
-    - name: admin-fe-route
-      hostname: admin-fe.haint.fyi
-      backendRefName: admin-fe
-      backendRefPort: 3002
-    - name: shop-fe-route
-      hostname: shop-fe.haint.fyi
-      backendRefName: shop-fe
-      backendRefPort: 3003
-    - name: customer-fe-next-route
-      hostname: customer-fe-next.haint.fyi
-      backendRefName: customer-fe-next
-      backendRefPort: 3004
-    - name: customer-fe-angular-api-route
-      hostname: customer-fe-angular.haint.fyi
-      backendRefName: api-gateway
-      backendRefPort: 9000
-      matches:
-        - path:
-            type: PathPrefix
-            value: /api
-    - name: customer-fe-angular-route
-      hostname: customer-fe-angular.haint.fyi
-      backendRefName: customer-fe-angular
-      backendRefPort: 80
     - name: api-route
       hostname: api.haint.fyi
       backendRefName: api-gateway
@@ -678,37 +643,4 @@ k8sGateway:
       hostname: loki.haint.fyi
       backendRefName: loki
       backendRefPort: 3100
-  proxySettingsPolicies:
-    - name: admin-fe-proxy-buffers
-      targetRefs:
-        - group: gateway.networking.k8s.io
-          kind: HTTPRoute
-          name: admin-fe-route
-      buffering:
-        bufferSize: 32k
-        buffers:
-          number: 8
-          size: 32k
-        busyBuffersSize: 64k
-    - name: shop-fe-proxy-buffers
-      targetRefs:
-        - group: gateway.networking.k8s.io
-          kind: HTTPRoute
-          name: shop-fe-route
-      buffering:
-        bufferSize: 32k
-        buffers:
-          number: 8
-          size: 32k
-        busyBuffersSize: 64k
-    - name: customer-fe-next-proxy-buffers
-      targetRefs:
-        - group: gateway.networking.k8s.io
-          kind: HTTPRoute
-          name: customer-fe-next-route
-      buffering:
-        bufferSize: 32k
-        buffers:
-          number: 8
-          size: 32k
-        busyBuffersSize: 64k
+  proxySettingsPolicies: []

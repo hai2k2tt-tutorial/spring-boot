@@ -11,7 +11,7 @@ resources:
     memory: 256Mi
   limits:
     cpu: 500m
-    memory: 512Mi
+    memory: 1Gi
 config:
   schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   mailHost: mailhog.microservices.svc.cluster.local

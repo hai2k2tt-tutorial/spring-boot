@@ -48,7 +48,7 @@ productService:
 orderService:
   enabled: true
   image: docker.io/hai2k2tt/order-service:2-amd64
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   replicaCount: 1
   service:
     port: 8081
@@ -60,13 +60,13 @@ orderService:
       cpu: 500m
       memory: 1Gi
   config:
-    datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service
+    datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/order_service
     schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
 
 inventoryService:
   enabled: true
   image: docker.io/hai2k2tt/inventory-service:2-amd64
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
   replicaCount: 1
   service:
     port: 8082
@@ -78,7 +78,7 @@ inventoryService:
       cpu: 500m
       memory: 1Gi
   config:
-    datasourceUrl: jdbc:mysql://mysql.microservices.svc.cluster.local:3306/inventory_service
+    datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/inventory_service
 
 notificationService:
   enabled: true
@@ -151,7 +151,7 @@ customerService:
     datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
 
 adminFe:
-  enabled: true
+  enabled: false
   image: docker.io/hai2k2tt/admin-fe:2
   imagePullPolicy: Always
   replicaCount: 1
@@ -176,7 +176,7 @@ adminFe:
     authSecret: replace-with-a-long-random-string
 
 shopFe:
-  enabled: true
+  enabled: false
   image: docker.io/hai2k2tt/shop-fe:2
   imagePullPolicy: Always
   replicaCount: 1
@@ -201,7 +201,7 @@ shopFe:
     authSecret: replace-with-a-long-random-string
 
 customerFeNext:
-  enabled: true
+  enabled: false
   image: docker.io/hai2k2tt/customer-fe-next:2
   imagePullPolicy: Always
   replicaCount: 1
@@ -226,7 +226,7 @@ customerFeNext:
     authSecret: replace-with-a-long-random-string
 
 customerFeAngular:
-  enabled: true
+  enabled: false
   image: docker.io/hai2k2tt/customer-fe-angular:2
   imagePullPolicy: Always
   replicaCount: 1

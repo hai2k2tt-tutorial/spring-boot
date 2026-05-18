@@ -8,30 +8,6 @@ gateway:
       port: 80
       protocol: HTTP
 routes:
-  - name: admin-fe-route
-    hostname: admin-fe.haint.fyi
-    backendRefName: admin-fe
-    backendRefPort: 3002
-  - name: shop-fe-route
-    hostname: shop-fe.haint.fyi
-    backendRefName: shop-fe
-    backendRefPort: 3003
-  - name: customer-fe-next-route
-    hostname: customer-fe-next.haint.fyi
-    backendRefName: customer-fe-next
-    backendRefPort: 3004
-  - name: customer-fe-angular-api-route
-    hostname: customer-fe-angular.haint.fyi
-    backendRefName: api-gateway
-    backendRefPort: 9000
-    matches:
-      - path:
-          type: PathPrefix
-          value: /api
-  - name: customer-fe-angular-route
-    hostname: customer-fe-angular.haint.fyi
-    backendRefName: customer-fe-angular
-    backendRefPort: 80
   - name: api-route
     hostname: api.haint.fyi
     backendRefName: api-gateway
@@ -69,37 +45,4 @@ routes:
     backendRefName: loki
     backendRefPort: 3100
 
-proxySettingsPolicies:
-  - name: admin-fe-proxy-buffers
-    targetRefs:
-      - group: gateway.networking.k8s.io
-        kind: HTTPRoute
-        name: admin-fe-route
-    buffering:
-      bufferSize: 32k
-      buffers:
-        number: 8
-        size: 32k
-      busyBuffersSize: 64k
-  - name: shop-fe-proxy-buffers
-    targetRefs:
-      - group: gateway.networking.k8s.io
-        kind: HTTPRoute
-        name: shop-fe-route
-    buffering:
-      bufferSize: 32k
-      buffers:
-        number: 8
-        size: 32k
-      busyBuffersSize: 64k
-  - name: customer-fe-next-proxy-buffers
-    targetRefs:
-      - group: gateway.networking.k8s.io
-        kind: HTTPRoute
-        name: customer-fe-next-route
-    buffering:
-      bufferSize: 32k
-      buffers:
-        number: 8
-        size: 32k
-      busyBuffersSize: 64k
+proxySettingsPolicies: []

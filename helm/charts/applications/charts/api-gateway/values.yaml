@@ -11,6 +11,6 @@ resources:
     memory: 256Mi
   limits:
     cpu: 500m
-    memory: 512Mi
+    memory: 1Gi
 config:
   issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
