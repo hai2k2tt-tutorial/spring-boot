@@ -3,5 +3,5 @@ kind: ConfigMap
 metadata:
   name: order-service-config
 data:
-  SPRING_DATASOURCE_URL: "jdbc:mysql://mysql.microservices.svc.cluster.local:3306/order_service"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/order_service"
   SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: "http://schema-registry.microservices.svc.cluster.local:8081"
