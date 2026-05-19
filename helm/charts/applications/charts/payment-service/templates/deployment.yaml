@@ -1,31 +1,23 @@
 {{- if .Values.enabled }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: product-service-config
-  namespace: {{ .Values.namespace }}
-data:
-  SPRING_DATASOURCE_URL: {{ .Values.config.datasourceUrl | quote }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: product-service
+  name: payment-service
   namespace: {{ .Values.namespace }}
   labels:
-    app: product-service
+    app: payment-service
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: product-service
+      app: payment-service
   template:
     metadata:
       labels:
-        app: product-service
+        app: payment-service
     spec:
       containers:
-        - name: product-service
+        - name: payment-service
           image: {{ .Values.image }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
@@ -34,7 +26,7 @@ spec:
             - name: SPRING_DATASOURCE_URL
               valueFrom:
                 configMapKeyRef:
-                  name: product-service-config
+                  name: payment-service-config
                   key: SPRING_DATASOURCE_URL
             - name: LOKI_URL
               valueFrom:
@@ -48,20 +40,4 @@ spec:
                   key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: product-service
-  namespace: {{ .Values.namespace }}
-  labels:
-    app: product-service
-spec:
-  type: ClusterIP
-  selector:
-    app: product-service
-  ports:
-    - protocol: TCP
-      port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.port }}
 {{- end }}

@@ -1,31 +1,23 @@
 {{- if .Values.enabled }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: shop-service-config
-  namespace: {{ .Values.namespace }}
-data:
-  SPRING_DATASOURCE_URL: {{ .Values.config.datasourceUrl | quote }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: shop-service
+  name: inventory-service
   namespace: {{ .Values.namespace }}
   labels:
-    app: shop-service
+    app: inventory-service
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: shop-service
+      app: inventory-service
   template:
     metadata:
       labels:
-        app: shop-service
+        app: inventory-service
     spec:
       containers:
-        - name: shop-service
+        - name: inventory-service
           image: {{ .Values.image }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           ports:
@@ -34,7 +26,7 @@ spec:
             - name: SPRING_DATASOURCE_URL
               valueFrom:
                 configMapKeyRef:
-                  name: shop-service-config
+                  name: inventory-service-config
                   key: SPRING_DATASOURCE_URL
             - name: LOKI_URL
               valueFrom:
@@ -48,20 +40,4 @@ spec:
                   key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: shop-service
-  namespace: {{ .Values.namespace }}
-  labels:
-    app: shop-service
-spec:
-  type: ClusterIP
-  selector:
-    app: shop-service
-  ports:
-    - protocol: TCP
-      port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.port }}
 {{- end }}

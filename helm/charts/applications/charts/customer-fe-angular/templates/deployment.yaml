@@ -1,0 +1,35 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-fe-angular
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: customer-fe-angular
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: customer-fe-angular
+  template:
+    metadata:
+      labels:
+        app: customer-fe-angular
+    spec:
+      containers:
+        - name: customer-fe-angular
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: customer-fe-angular-nginx
+{{- end }}
