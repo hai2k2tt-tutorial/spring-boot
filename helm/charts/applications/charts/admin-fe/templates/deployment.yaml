@@ -45,20 +45,4 @@ spec:
             - containerPort: {{ .Values.service.port }}
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: admin-fe
-  namespace: {{ .Values.namespace }}
-  labels:
-    app: admin-fe
-spec:
-  type: ClusterIP
-  selector:
-    app: admin-fe
-  ports:
-    - protocol: TCP
-      port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.port }}
 {{- end }}

@@ -1,4 +1,4 @@
-# 🚀 DB & Feature Update Plan (Admin + User + Payment)
+#  DB & Feature Update Plan (Admin + User + Payment)
 
 This document describes the **new database structure**, **service responsibilities**, and **implementation roadmap** for upcoming features:
 
@@ -29,38 +29,9 @@ This document describes the **new database structure**, **service responsibiliti
 
 ---
 
-## 🛠️ Migration Strategy
+# ️ Updated DB Schema (Proposed)
 
-All database-backed services should follow one migration standard:
-
-- use **Liquibase**
-- use the **same shared Spring Boot parent and module dependency baseline** as the existing microservices
-- do not keep a separate Spring Boot starter parent or drift to a different Spring Boot version per service
-- do **not** run schema migration automatically during application startup
-- run DB changes manually by command during local setup, CI/CD, or release steps
-- keep rollback definitions in Liquibase changesets
-- support at least:
-  - `status`
-  - `update`
-  - `rollback`
-  - optional `tag` / `rollbackTag`
-
-### Service migration concern
-
-| Service | Migration concern |
-|--------|-------------------|
-| **Product Service** | Already moving to Liquibase manual migration flow |
-| **Inventory Service** | Move to Liquibase manual migration flow and implement EAV + SKU schema |
-| **Order Service** | Move to Liquibase manual migration flow and implement order + order_items schema |
-| **Shop Auth Service** | Start directly with Liquibase manual migration setup and the shared dependency/version baseline |
-| **Customer Auth Service** | Start directly with Liquibase manual migration setup and the shared dependency/version baseline |
-| **Payment Service** | Start directly with Liquibase manual migration setup |
-
----
-
-# 🗃️ Updated DB Schema (Proposed)
-
-## 🧱 Product Service (Postgres)
+##  Product Service (Postgres)
 **Products + hierarchical categories** (no SKU here)
 
 ```
@@ -88,7 +59,7 @@ t_product
 
 ---
 
-## 📦 Inventory Service (EAV)
+##  Inventory Service (EAV)
 Each SKU is a **unique combination** of attribute values for a product.
 
 ```
@@ -138,7 +109,7 @@ t_inventory
 
 ---
 
-## 🧾 Order Service
+##  Order Service
 Now 1 order has **many items** and each item belongs to a shop.
 
 ```
@@ -165,7 +136,7 @@ t_order_item
 
 ---
 
-## 🏪 Shop Auth Service
+##  Shop Auth Service
 Separate auth + profile + balance for shops.
 
 ```
@@ -197,15 +168,9 @@ t_shop_wallet
 - updated_at
 ```
 
-Implementation note:
-
-- `shop-service` should use the same Spring Boot baseline and dependency conventions as the existing microservices modules.
-- `shop-service` should use DTO for request payloads, VO for response payloads, and dedicated mapper classes for entity conversion.
-- `shop-service` should use Liquibase with manual `status`, `update`, and rollback commands instead of auto-running schema migration on application startup.
-
 ---
 
-## 👤 Customer Auth Service
+##  Customer Auth Service
 Separate auth + profile + balance for customers.
 
 ```
@@ -237,15 +202,9 @@ t_customer_wallet
 - updated_at
 ```
 
-Implementation note:
-
-- `customer-service` should use the same Spring Boot baseline and dependency conventions as the existing microservices modules.
-- `customer-service` should use DTO for request payloads, VO for response payloads, and dedicated mapper classes for entity conversion.
-- `customer-service` should use Liquibase with manual `status`, `update`, and rollback commands instead of auto-running schema migration on application startup.
-
 ---
 
-## 💳 Payment Service
+##  Payment Service
 
 ```
 t_payment
@@ -269,15 +228,9 @@ t_payment_history (optional)
 - created_at
 ```
 
-Implementation note:
-
-- `payment-service` should use the same Spring Boot baseline as the existing microservices modules.
-- `payment-service` should use DTO for request payloads, VO for response payloads, and dedicated mapper classes for entity conversion.
-- `payment-service` should use Liquibase with manual `status`, `update`, and rollback commands instead of auto-running schema migration on application startup.
-
 ---
 
-# 👑 Admin Features (FE)
+#  Admin Features (FE)
 
 Admin can:
 
@@ -289,7 +242,7 @@ Admin can:
 
 ---
 
-# 📊 Admin Reports
+#  Admin Reports
 
 - All timestamps in CSV reports will use **ISO-8601 format** in **UTC** (e.g., `2023-10-25T12:34:56Z`).
 - CSV reports will have **fixed columns** as defined per report type (e.g., orders, payments, inventory, etc.).
@@ -297,7 +250,7 @@ Admin can:
 
 ---
 
-# 🏪 Shop Features (FE)
+#  Shop Features (FE)
 
 Shop can:
 
@@ -308,7 +261,7 @@ Shop can:
 
 ---
 
-# 👤 Customer Features (FE)
+#  Customer Features (FE)
 
 Customer can:
 
@@ -371,7 +324,7 @@ Customer can:
 
 ---
 
-# 🔜 Next Steps
+#  Next Steps
 
 - [ ] Decide authentication method (Keycloak or internal)
 - [ ] Finalize EAV attribute dictionary rules

@@ -28,10 +28,20 @@ public class Routes {
     @Value("${inventory.service.url}")
     private String inventoryServiceUrl;
 
+    @Value("${payment.service.url}")
+    private String paymentServiceUrl;
+
+    @Value("${shop.service.url}")
+    private String shopServiceUrl;
+
+    @Value("${customer.service.url}")
+    private String customerServiceUrl;
+
     @Bean
     public RouterFunction<ServerResponse> productServiceRoute() {
         return GatewayRouterFunctions.route("product_service")
-                .route(RequestPredicates.path("/api/product"), HandlerFunctions.http(productServiceUrl))
+                .route(RequestPredicates.path("/api/product/**"), HandlerFunctions.http(productServiceUrl))
+                .route(RequestPredicates.path("/api/categories/**"), HandlerFunctions.http(productServiceUrl))
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("productServiceCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))
                 .build();
@@ -50,7 +60,7 @@ public class Routes {
     @Bean
     public RouterFunction<ServerResponse> orderServiceRoute() {
         return GatewayRouterFunctions.route("order_service")
-                .route(RequestPredicates.path("/api/order"), HandlerFunctions.http(orderServiceUrl))
+                .route(RequestPredicates.path("/api/order/**"), HandlerFunctions.http(orderServiceUrl))
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("orderServiceCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))
                 .build();
@@ -69,7 +79,7 @@ public class Routes {
     @Bean
     public RouterFunction<ServerResponse> inventoryServiceRoute() {
         return GatewayRouterFunctions.route("inventory_service")
-                .route(RequestPredicates.path("/api/inventory"), HandlerFunctions.http(inventoryServiceUrl))
+                .route(RequestPredicates.path("/api/inventory/**"), HandlerFunctions.http(inventoryServiceUrl))
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("inventoryServiceCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))
                 .build();
@@ -80,6 +90,63 @@ public class Routes {
         return GatewayRouterFunctions.route("inventory_service_swagger")
                 .route(RequestPredicates.path("/aggregate/inventory-service/v3/api-docs"), HandlerFunctions.http(inventoryServiceUrl))
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("inventoryServiceSwaggerCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .filter(setPath("/api-docs"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> paymentServiceRoute() {
+        return GatewayRouterFunctions.route("payment_service")
+                .route(RequestPredicates.path("/api/payments/**"), HandlerFunctions.http(paymentServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("paymentServiceCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> paymentServiceSwaggerRoute() {
+        return GatewayRouterFunctions.route("payment_service_swagger")
+                .route(RequestPredicates.path("/aggregate/payment-service/v3/api-docs"), HandlerFunctions.http(paymentServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("paymentServiceSwaggerCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .filter(setPath("/api-docs"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> shopServiceRoute() {
+        return GatewayRouterFunctions.route("shop_service")
+                .route(RequestPredicates.path("/api/shops/**"), HandlerFunctions.http(shopServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("shopServiceCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> shopServiceSwaggerRoute() {
+        return GatewayRouterFunctions.route("shop_service_swagger")
+                .route(RequestPredicates.path("/aggregate/shop-service/v3/api-docs"), HandlerFunctions.http(shopServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("shopServiceSwaggerCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .filter(setPath("/api-docs"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> customerServiceRoute() {
+        return GatewayRouterFunctions.route("customer_service")
+                .route(RequestPredicates.path("/api/customers/**"), HandlerFunctions.http(customerServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("customerServiceCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> customerServiceSwaggerRoute() {
+        return GatewayRouterFunctions.route("customer_service_swagger")
+                .route(RequestPredicates.path("/aggregate/customer-service/v3/api-docs"), HandlerFunctions.http(customerServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("customerServiceSwaggerCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))
                 .filter(setPath("/api-docs"))
                 .build();

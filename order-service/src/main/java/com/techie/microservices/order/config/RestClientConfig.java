@@ -19,14 +19,14 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class RestClientConfig {
 
-    @Value("${inventory.service.url}")
-    private String inventoryServiceUrl;
+    @Value("${api.gateway.url}")
+    private String apiGatewayUrl;
     private final ObservationRegistry observationRegistry;
 
     @Bean
     public InventoryClient inventoryClient() {
         RestClient restClient = RestClient.builder()
-                .baseUrl(inventoryServiceUrl)
+                .baseUrl(apiGatewayUrl)
                 .requestFactory(getClientRequestFactory())
                 .observationRegistry(observationRegistry)
                 .build();

@@ -6,7 +6,11 @@ metadata:
 data:
   LOKI_URL: {{ .Values.commonConfig.lokiUrl | quote }}
   MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: {{ .Values.commonConfig.managementZipkinTracingEndpoint | quote }}
+  API_GATEWAY_URL: {{ .Values.commonConfig.apiGatewayUrl | quote }}
   PRODUCT_SERVICE_URL: {{ .Values.commonConfig.productServiceUrl | quote }}
   ORDER_SERVICE_URL: {{ .Values.commonConfig.orderServiceUrl | quote }}
   INVENTORY_SERVICE_URL: {{ .Values.commonConfig.inventoryServiceUrl | quote }}
+  PAYMENT_SERVICE_URL: {{ .Values.commonConfig.paymentServiceUrl | quote }}
+  SHOP_SERVICE_URL: {{ .Values.commonConfig.shopServiceUrl | quote }}
+  CUSTOMER_SERVICE_URL: {{ .Values.commonConfig.customerServiceUrl | quote }}
   SPRING_KAFKA_BOOTSTRAP_SERVERS: {{ .Values.commonConfig.springKafkaBootstrapServers | quote }}

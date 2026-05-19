@@ -6,9 +6,13 @@ gatewayApi:
 commonConfig:
   lokiUrl: http://loki.microservices.svc.cluster.local:3100/loki/api/v1/push
   managementZipkinTracingEndpoint: http://tempo.microservices.svc.cluster.local:9411
+  apiGatewayUrl: http://api-gateway.microservices.svc.cluster.local:9000
   productServiceUrl: http://product-service.microservices.svc.cluster.local:8080
   orderServiceUrl: http://order-service.microservices.svc.cluster.local:8081
   inventoryServiceUrl: http://inventory-service.microservices.svc.cluster.local:8082
+  paymentServiceUrl: http://payment-service.microservices.svc.cluster.local:8085
+  shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
+  customerServiceUrl: http://customer-service.microservices.svc.cluster.local:8087
   springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
 
 apiGateway:
