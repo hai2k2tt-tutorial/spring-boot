@@ -1,0 +1,17 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: customer-fe-angular-api-route
+spec:
+  parentRefs:
+    - name: api-gateway
+  hostnames:
+    - customer-fe-angular.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: api-gateway
+          port: 9000

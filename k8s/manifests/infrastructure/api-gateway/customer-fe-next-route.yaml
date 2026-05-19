@@ -1,0 +1,13 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: customer-fe-next-route
+spec:
+  parentRefs:
+    - name: api-gateway
+  hostnames:
+    - customer-fe-next.local
+  rules:
+    - backendRefs:
+        - name: customer-fe-next
+          port: 3004
