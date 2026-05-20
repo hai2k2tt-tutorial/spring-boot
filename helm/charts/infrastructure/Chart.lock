@@ -1,7 +1,4 @@
 dependencies:
-- name: mysql
-  repository: file://charts/mysql
-  version: 0.1.0
 - name: mongodb
   repository: file://charts/mongodb
   version: 0.1.0
@@ -20,5 +17,5 @@ dependencies:
 - name: observability
   repository: file://charts/observability
   version: 0.1.0
-digest: sha256:e159907a106a4bb1bcb326077b8c7514f9c42162f17455d4ad33a3f15398ce83
-generated: "2026-05-18T01:19:13.067163+07:00"
+digest: sha256:6f6c3299a30f2bda88086f5a068b2d2cd14a15e9b28cb0d8285f8680d80e877e
+generated: "2026-05-20T14:56:49.560113+07:00"

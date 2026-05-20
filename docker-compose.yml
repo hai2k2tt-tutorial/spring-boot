@@ -16,22 +16,6 @@ services:
       timeout: 5s
       retries: 10
 
-  mysql:
-    image: mysql:8.4
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: mysql
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -hmysql -uroot -pmysql"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.8.0
     container_name: zookeeper
@@ -389,6 +373,5 @@ services:
 
 volumes:
   postgres-data:
-  mysql-data:
   keycloak-mysql-data:
   grafana-data:
