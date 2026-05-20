@@ -136,7 +136,18 @@ infrastructure:
     adminUser: admin
     adminPassword: admin
     hostname: keycloak.haint.fyi
-    redirectUris: []
+    redirectUris:
+      - http://admin-fe.haint.fyi
+      - http://admin-fe.haint.fyi/*
+      - http://admin-fe.haint.fyi/api/auth/callback/keycloak
+      - http://shop-fe.haint.fyi
+      - http://shop-fe.haint.fyi/*
+      - http://shop-fe.haint.fyi/api/auth/callback/keycloak
+      - http://customer-fe-next.haint.fyi
+      - http://customer-fe-next.haint.fyi/*
+      - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
+      - http://customer-fe-angular.haint.fyi
+      - http://customer-fe-angular.haint.fyi/*
     db:
       vendor: MYSQL
       host: keycloak-mysql
