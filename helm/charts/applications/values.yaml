@@ -155,7 +155,7 @@ customerService:
     datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
 
 adminFe:
-  enabled: false
+  enabled: true
   image: docker.io/hai2k2tt/admin-fe:2
   imagePullPolicy: Always
   replicaCount: 1
@@ -180,7 +180,7 @@ adminFe:
     authSecret: replace-with-a-long-random-string
 
 shopFe:
-  enabled: false
+  enabled: true
   image: docker.io/hai2k2tt/shop-fe:2
   imagePullPolicy: Always
   replicaCount: 1
@@ -205,7 +205,7 @@ shopFe:
     authSecret: replace-with-a-long-random-string
 
 customerFeNext:
-  enabled: false
+  enabled: true
   image: docker.io/hai2k2tt/customer-fe-next:2
   imagePullPolicy: Always
   replicaCount: 1
@@ -230,7 +230,7 @@ customerFeNext:
     authSecret: replace-with-a-long-random-string
 
 customerFeAngular:
-  enabled: false
+  enabled: true
   image: docker.io/hai2k2tt/customer-fe-angular:2
   imagePullPolicy: Always
   replicaCount: 1
