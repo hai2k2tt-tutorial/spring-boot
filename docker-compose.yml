@@ -168,7 +168,7 @@ services:
       - "8025:8025"
 
   product-service:
-    image: docker.io/hai2k2tt/product-service:2
+    image: docker.io/hai2k2tt/product-service:2-amd64
     depends_on:
       postgres:
         condition: service_healthy
@@ -179,11 +179,12 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   inventory-service:
-    image: docker.io/hai2k2tt/inventory-service:2
+    image: docker.io/hai2k2tt/inventory-service:2-amd64
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     ports:
       - "8082:8082"
@@ -192,11 +193,12 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   order-service:
-    image: docker.io/hai2k2tt/order-service:2
+    image: docker.io/hai2k2tt/order-service:2-amd64
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       inventory-service:
         condition: service_started
@@ -214,9 +216,10 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
       SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   notification-service:
-    image: docker.io/hai2k2tt/notification-service:2
+    image: docker.io/hai2k2tt/notification-service:2-amd64
     depends_on:
       broker:
         condition: service_started
@@ -232,9 +235,10 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
       SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   payment-service:
-    image: docker.io/hai2k2tt/payment-service:2
+    image: docker.io/hai2k2tt/payment-service:2-amd64
     depends_on:
       postgres:
         condition: service_healthy
@@ -245,9 +249,10 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   shop-service:
-    image: docker.io/hai2k2tt/shop-service:2
+    image: docker.io/hai2k2tt/shop-service:2-amd64
     depends_on:
       postgres:
         condition: service_healthy
@@ -258,9 +263,10 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   customer-service:
-    image: docker.io/hai2k2tt/customer-service:2
+    image: docker.io/hai2k2tt/customer-service:2-amd64
     depends_on:
       postgres:
         condition: service_healthy
@@ -271,9 +277,10 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   api-gateway:
-    image: docker.io/hai2k2tt/api-gateway:2
+    image: docker.io/hai2k2tt/api-gateway:2-amd64
     depends_on:
       keycloak:
         condition: service_started
@@ -283,14 +290,24 @@ services:
         condition: service_started
       inventory-service:
         condition: service_started
+      payment-service:
+        condition: service_started
+      shop-service:
+        condition: service_started
+      customer-service:
+        condition: service_started
     ports:
       - "9000:9000"
     environment:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/spring-microservices-security-realm
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
       PRODUCT_SERVICE_URL: http://product-service:8080
       ORDER_SERVICE_URL: http://order-service:8081
       INVENTORY_SERVICE_URL: http://inventory-service:8082
-      LOKI_URL: http://loki:3100/loki/api/v1/push
+      PAYMENT_SERVICE_URL: http://payment-service:8085
+      SHOP_SERVICE_URL: http://shop-service:8086
+      CUSTOMER_SERVICE_URL: http://customer-service:8087
 
   admin-fe:
     build:
@@ -299,8 +316,20 @@ services:
     image: docker.io/hai2k2tt/admin-fe:2
     depends_on:
       - api-gateway
+      - keycloak
     ports:
       - "3002:3002"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3002
+      NEXTAUTH_URL: http://localhost:3002
+      AUTH_ISSUER: http://localhost:8181/realms/spring-microservices-security-realm
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/spring-microservices-security-realm
+      AUTH_CLIENT_ID: angular-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_SECRET: replace-with-a-long-random-string
 
   shop-fe:
     build:
@@ -309,8 +338,20 @@ services:
     image: docker.io/hai2k2tt/shop-fe:2
     depends_on:
       - api-gateway
+      - keycloak
     ports:
       - "3003:3003"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3003
+      NEXTAUTH_URL: http://localhost:3003
+      AUTH_ISSUER: http://localhost:8181/realms/spring-microservices-security-realm
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/spring-microservices-security-realm
+      AUTH_CLIENT_ID: angular-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_SECRET: replace-with-a-long-random-string
 
   customer-fe-next:
     build:
@@ -319,8 +360,20 @@ services:
     image: docker.io/hai2k2tt/customer-fe-next:2
     depends_on:
       - api-gateway
+      - keycloak
     ports:
       - "3004:3004"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3004
+      NEXTAUTH_URL: http://localhost:3004
+      AUTH_ISSUER: http://localhost:8181/realms/spring-microservices-security-realm
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/spring-microservices-security-realm
+      AUTH_CLIENT_ID: angular-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_SECRET: replace-with-a-long-random-string
 
   customer-fe-angular:
     build:
@@ -330,7 +383,9 @@ services:
     depends_on:
       - api-gateway
     ports:
-      - "4201:80"
+      - "3001:80"
+    volumes:
+      - ./docker/customer-fe-angular/default.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   postgres-data:

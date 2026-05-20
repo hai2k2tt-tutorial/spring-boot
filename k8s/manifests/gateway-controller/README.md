@@ -21,8 +21,10 @@ To use hostname-based routes locally, add hostnames that point to `127.0.0.1`,
 for example:
 
 ```text
-127.0.0.1 frontend.local
-127.0.0.1 frontend-next.local
+127.0.0.1 admin-fe.local
+127.0.0.1 shop-fe.local
+127.0.0.1 customer-fe-next.local
+127.0.0.1 customer-fe-angular.local
 127.0.0.1 api.local
 127.0.0.1 keycloak.local
 127.0.0.1 kafka-ui.local

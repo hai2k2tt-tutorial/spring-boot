@@ -647,9 +647,23 @@
         "http://localhost:4200",
         "http://localhost:3001",
         "http://localhost:3001/auth/callback",
-        "http://frontend-next.local:8080",
-        "http://frontend-next.local:8080/*",
-        "http://frontend-next.local:8080/api/auth/callback/keycloak"
+        "http://localhost:3002",
+        "http://localhost:3002/api/auth/callback/keycloak",
+        "http://localhost:3003",
+        "http://localhost:3003/api/auth/callback/keycloak",
+        "http://localhost:3004",
+        "http://localhost:3004/api/auth/callback/keycloak",
+        "http://admin-fe.local:8080",
+        "http://admin-fe.local:8080/*",
+        "http://admin-fe.local:8080/api/auth/callback/keycloak",
+        "http://shop-fe.local:8080",
+        "http://shop-fe.local:8080/*",
+        "http://shop-fe.local:8080/api/auth/callback/keycloak",
+        "http://customer-fe-next.local:8080",
+        "http://customer-fe-next.local:8080/*",
+        "http://customer-fe-next.local:8080/api/auth/callback/keycloak",
+        "http://customer-fe-angular.local:8080",
+        "http://customer-fe-angular.local:8080/*"
       ],
       "webOrigins": [
         "*"

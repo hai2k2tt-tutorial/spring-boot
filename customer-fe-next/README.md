@@ -1,6 +1,6 @@
-# frontend-next
+# customer-fe-next
 
-Next.js port of the Angular storefront in `../frontend`.
+Next.js customer storefront.
 
 ## Features
 
@@ -20,7 +20,7 @@ Next.js port of the Angular storefront in `../frontend`.
 
 Default URLs:
 
-- App: `http://localhost:3001`
+- App: `http://localhost:3004`
 - API gateway: `http://localhost:9000/api`
 - Keycloak: `http://localhost:8181`
 
