@@ -621,4 +621,20 @@ k8sGateway:
       hostname: loki.haint.fyi
       backendRefName: loki
       backendRefPort: 3100
+    - name: admin-fe-route
+      hostname: admin-fe.haint.fyi
+      backendRefName: admin-fe
+      backendRefPort: 3002
+    - name: shop-fe-route
+      hostname: shop-fe.haint.fyi
+      backendRefName: shop-fe
+      backendRefPort: 3003
+    - name: customer-fe-next-route
+      hostname: customer-fe-next.haint.fyi
+      backendRefName: customer-fe-next
+      backendRefPort: 3004
+    - name: customer-fe-angular-route
+      hostname: customer-fe-angular.haint.fyi
+      backendRefName: customer-fe-angular
+      backendRefPort: 80
   proxySettingsPolicies: []
