@@ -1,6 +1,7 @@
 # Microservices Helm Install
 
 For a VPS or existing Kubernetes cluster deployment, see [README.vps.md](./README.vps.md).
+For automatic deployment from CI/CD, see [README.cicd.md](./README.cicd.md).
 
 This repo should be deployed to `kind`, not Docker Desktop Kubernetes.
 
