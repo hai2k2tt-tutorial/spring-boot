@@ -61,4 +61,24 @@ routes:
     backendRefName: customer-fe-angular
     backendRefPort: 80
 
-proxySettingsPolicies: []
+proxySettingsPolicies:
+  - name: frontend-proxy-settings
+    targetRefs:
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: admin-fe-route
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: shop-fe-route
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: customer-fe-next-route
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: customer-fe-angular-route
+    buffering:
+      bufferSize: 32k
+      buffers:
+        number: 8
+        size: 32k
+      busyBuffersSize: 64k
