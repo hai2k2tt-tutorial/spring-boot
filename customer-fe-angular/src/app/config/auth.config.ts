@@ -1,6 +1,6 @@
 import { PassedInitialConfig } from 'angular-auth-oidc-client';
 
-const realmPath = '/realms/spring-microservices-security-realm';
+const realmPath = '/realms/ecommerce-customer';
 const { hostname, origin, protocol } = window.location;
 
 const authority = hostname === 'localhost'
@@ -14,7 +14,7 @@ export const authConfig: PassedInitialConfig = {
     postLogoutRedirectUri: origin,
     postLoginRoute: '/',
     unauthorizedRoute: '/',
-    clientId: 'angular-client',
+    clientId: 'customer-fe-client',
     scope: 'openid profile offline_access',
     responseType: 'code',
     disablePkce: true,

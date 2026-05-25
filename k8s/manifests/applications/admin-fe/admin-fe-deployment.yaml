@@ -27,11 +27,11 @@ spec:
             - name: NEXTAUTH_URL
               value: "http://admin-fe.haint.fyi"
             - name: AUTH_ISSUER
-              value: "http://keycloak.haint.fyi/realms/spring-microservices-security-realm"
+              value: "http://keycloak.haint.fyi/realms/ecommerce-admin"
             - name: AUTH_ISSUER_INTERNAL
-              value: "http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm"
+              value: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin"
             - name: AUTH_CLIENT_ID
-              value: "angular-client"
+              value: "admin-fe-client"
             - name: AUTH_CLIENT_SECRET
               value: ""
             - name: AUTH_SCOPE

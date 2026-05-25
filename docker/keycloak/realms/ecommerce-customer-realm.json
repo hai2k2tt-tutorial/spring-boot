@@ -1,0 +1,71 @@
+{
+  "realm": "ecommerce-customer",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "customer",
+        "description": "Customer frontend users",
+        "composite": false,
+        "clientRole": false,
+        "attributes": {}
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "customer-fe-client",
+      "name": "Customer Frontend",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "redirectUris": [
+        "http://localhost:4200",
+        "http://localhost:3004",
+        "http://localhost:3004/api/auth/callback/keycloak",
+        "http://customer-fe-next.local:8080",
+        "http://customer-fe-next.local:8080/*",
+        "http://customer-fe-next.local:8080/api/auth/callback/keycloak",
+        "http://customer-fe-next.haint.fyi",
+        "http://customer-fe-next.haint.fyi/*",
+        "http://customer-fe-next.haint.fyi/api/auth/callback/keycloak",
+        "http://customer-fe-angular.local:8080",
+        "http://customer-fe-angular.local:8080/*",
+        "http://customer-fe-angular.haint.fyi",
+        "http://customer-fe-angular.haint.fyi/*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "oidc.ciba.grant.enabled": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ]
+}

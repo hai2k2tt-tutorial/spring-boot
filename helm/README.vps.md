@@ -83,7 +83,9 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    ```yaml
    apiGateway:
      config:
-       issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+       customerIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-customer
+       shopIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-shop
+       adminIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-admin
 
    infrastructure:
      keycloak:
@@ -94,7 +96,7 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
      config:
        nextPublicApiBaseUrl: http://api.haint.fyi/api
        authUrl: http://customer-fe-next.haint.fyi
-       authIssuer: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+       authIssuer: http://keycloak.haint.fyi/realms/ecommerce-customer
    ```
 
 5. Review Keycloak redirect URIs.
@@ -222,15 +224,49 @@ export PLATFORMS=linux/amd64,linux/arm64
 ./scripts/docker-build-v2.sh
 ```
 
-The script does two different things:
-
-- Spring Boot services are built once per platform with `spring-boot:build-image`, pushed as arch-specific tags, and then combined into a single multi-arch manifest tag such as `docker.io/hai2k2tt/api-gateway:2`.
-- Frontend apps are built with `docker buildx build --platform linux/amd64,linux/arm64 --push` and published directly as multi-arch tags.
-
-You can verify a published tag contains both architectures:
+To rebuild only the API gateway and frontend images as amd64, arm64, and multi-arch tags:
 
 ```bash
+export DOCKER_USERNAME=hai2k2tt
+export DOCKER_PASSWORD='...'
+export IMAGE_TAG=2
+export PLATFORMS=linux/amd64,linux/arm64
+export BACKEND_MODULES="api-gateway"
+export FRONTEND_APPS="admin-fe shop-fe customer-fe-next customer-fe-angular"
+
+./scripts/docker-build-v2.sh
+```
+
+The script does two different things:
+
+- Spring Boot services are packaged with Maven, then built once per platform with `docker buildx build` using `docker/spring-boot/Dockerfile`.
+- Frontend apps are built once per platform with `docker buildx build`.
+- For each image, the script pushes architecture-specific tags such as `:2-amd64` and `:2-arm64`, then creates the shared multi-arch manifest tag `:2`.
+- Each architecture build is retried and verified in Docker Hub before the manifest tag is created. This helps recover from long Docker Hub or BuildKit push hangs.
+
+The retry defaults are:
+
+```bash
+export BUILD_RETRIES=3
+export BUILD_TIMEOUT_SECONDS=3600
+export RETRY_DELAY_SECONDS=15
+export REGISTRY_VERIFY_RETRIES=6
+export REGISTRY_VERIFY_DELAY_SECONDS=10
+export DOCKER_BUILD_PROGRESS=plain
+export RESUME_PUBLISHED_IMAGES=false
+```
+
+For a failed partial publish, set `RESUME_PUBLISHED_IMAGES=true` before rerunning the script. Existing architecture tags are reused, missing tags are built, and the shared manifest tag is recreated after verification.
+
+You can verify the separate architecture tags and the shared multi-arch tag:
+
+```bash
+docker buildx imagetools inspect docker.io/hai2k2tt/api-gateway:2-amd64
+docker buildx imagetools inspect docker.io/hai2k2tt/api-gateway:2-arm64
 docker buildx imagetools inspect docker.io/hai2k2tt/api-gateway:2
+
+docker buildx imagetools inspect docker.io/hai2k2tt/admin-fe:2-amd64
+docker buildx imagetools inspect docker.io/hai2k2tt/admin-fe:2-arm64
 docker buildx imagetools inspect docker.io/hai2k2tt/admin-fe:2
 ```
 

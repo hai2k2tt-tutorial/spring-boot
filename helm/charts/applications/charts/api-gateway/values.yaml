@@ -1,6 +1,6 @@
 enabled: true
 namespace: microservices
-image: docker.io/hai2k2tt/api-gateway:2-amd64
+image: docker.io/hai2k2tt/api-gateway:2
 imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:
@@ -13,4 +13,6 @@ resources:
     cpu: 500m
     memory: 1Gi
 config:
-  issuerUri: http://keycloak.haint.fyi/realms/spring-microservices-security-realm
+  customerIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-customer
+  shopIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-shop
+  adminIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-admin

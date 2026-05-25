@@ -3,4 +3,6 @@ kind: ConfigMap
 metadata:
   name: api-gateway-config
 data:
-  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/spring-microservices-security-realm"
+  APP_SECURITY_CUSTOMER_ISSUER_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer"
+  APP_SECURITY_SHOP_ISSUER_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop"
+  APP_SECURITY_ADMIN_ISSUER_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin"

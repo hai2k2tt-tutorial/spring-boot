@@ -1,3 +1,10 @@
 .angular
 dist
 node_modules
+coverage
+.cache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env*.local

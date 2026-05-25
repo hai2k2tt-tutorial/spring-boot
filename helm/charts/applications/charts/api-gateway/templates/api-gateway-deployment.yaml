@@ -23,11 +23,21 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
           env:
-            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+            - name: APP_SECURITY_CUSTOMER_ISSUER_URI
               valueFrom:
                 configMapKeyRef:
                   name: api-gateway-config
-                  key: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+                  key: APP_SECURITY_CUSTOMER_ISSUER_URI
+            - name: APP_SECURITY_SHOP_ISSUER_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: APP_SECURITY_SHOP_ISSUER_URI
+            - name: APP_SECURITY_ADMIN_ISSUER_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: APP_SECURITY_ADMIN_ISSUER_URI
             - name: LOKI_URL
               valueFrom:
                 configMapKeyRef:

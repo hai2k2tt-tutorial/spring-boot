@@ -5,5 +5,7 @@ metadata:
   name: api-gateway-config
   namespace: {{ .Values.namespace }}
 data:
-  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: {{ .Values.config.issuerUri | quote }}
+  APP_SECURITY_CUSTOMER_ISSUER_URI: {{ .Values.config.customerIssuerUri | quote }}
+  APP_SECURITY_SHOP_ISSUER_URI: {{ .Values.config.shopIssuerUri | quote }}
+  APP_SECURITY_ADMIN_ISSUER_URI: {{ .Values.config.adminIssuerUri | quote }}
 {{- end }}

@@ -1,0 +1,11 @@
+# Backend image builds use the repository root as context, but the Dockerfile
+# only copies the packaged Spring Boot jar. Keep the context to jars only.
+**
+
+!.dockerignore
+!docker/
+!docker/spring-boot/
+!docker/spring-boot/Dockerfile
+!*/
+!*/target/
+!*/target/*.jar

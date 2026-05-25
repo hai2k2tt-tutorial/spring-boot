@@ -6,9 +6,15 @@ DOCKER_PASSWORD="${DOCKER_PASSWORD:-}"
 IMAGE_TAG="${IMAGE_TAG:-2}"
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
 BUILDER_NAME="${BUILDER_NAME:-multiarch}"
-BACKEND_BUILDER_IMAGE="${BACKEND_BUILDER_IMAGE:-paketobuildpacks/ubuntu-noble-builder:latest}"
+BUILD_RETRIES="${BUILD_RETRIES:-3}"
+BUILD_TIMEOUT_SECONDS="${BUILD_TIMEOUT_SECONDS:-3600}"
+RETRY_DELAY_SECONDS="${RETRY_DELAY_SECONDS:-15}"
+REGISTRY_VERIFY_RETRIES="${REGISTRY_VERIFY_RETRIES:-6}"
+REGISTRY_VERIFY_DELAY_SECONDS="${REGISTRY_VERIFY_DELAY_SECONDS:-10}"
+DOCKER_BUILD_PROGRESS="${DOCKER_BUILD_PROGRESS:-plain}"
+RESUME_PUBLISHED_IMAGES="${RESUME_PUBLISHED_IMAGES:-false}"
 
-BACKEND_MODULES="
+DEFAULT_BACKEND_MODULES="
 api-gateway
 product-service
 inventory-service
@@ -19,12 +25,15 @@ shop-service
 customer-service
 "
 
-FRONTEND_APPS="
+DEFAULT_FRONTEND_APPS="
 admin-fe
 shop-fe
 customer-fe-next
 customer-fe-angular
 "
+
+BACKEND_MODULES="${BACKEND_MODULES:-$DEFAULT_BACKEND_MODULES}"
+FRONTEND_APPS="${FRONTEND_APPS:-$DEFAULT_FRONTEND_APPS}"
 
 if [ -z "$DOCKER_PASSWORD" ]; then
   echo "DOCKER_PASSWORD is required for image publishing."
@@ -53,48 +62,231 @@ docker buildx inspect --bootstrap >/dev/null
 
 platforms_space=$(printf '%s' "$PLATFORMS" | tr ',' ' ')
 
+platform_suffix() {
+  platform="$1"
+  arch=$(printf '%s' "$platform" | cut -d/ -f2)
+  variant=$(printf '%s' "$platform" | cut -s -d/ -f3)
+
+  if [ -n "$variant" ]; then
+    printf '%s-%s' "$arch" "$variant"
+  else
+    printf '%s' "$arch"
+  fi
+}
+
+sleep_seconds() {
+  seconds="$1"
+
+  if [ "$seconds" -gt 0 ]; then
+    sleep "$seconds"
+  fi
+}
+
+terminate_process_tree() {
+  parent_pid="$1"
+  signal="$2"
+
+  if command -v pkill >/dev/null 2>&1; then
+    pkill "-$signal" -P "$parent_pid" 2>/dev/null || true
+  fi
+
+  kill "-$signal" "$parent_pid" 2>/dev/null || true
+}
+
+run_with_timeout() {
+  timeout_seconds="$1"
+  shift
+
+  "$@" &
+  command_pid="$!"
+  elapsed_seconds=0
+
+  while kill -0 "$command_pid" 2>/dev/null; do
+    if [ "$elapsed_seconds" -ge "$timeout_seconds" ]; then
+      echo "Command timed out after ${timeout_seconds}s: $*"
+      terminate_process_tree "$command_pid" TERM
+      sleep 5
+
+      if kill -0 "$command_pid" 2>/dev/null; then
+        terminate_process_tree "$command_pid" KILL
+      fi
+
+      wait "$command_pid" 2>/dev/null || true
+      return 124
+    fi
+
+    sleep 5
+    elapsed_seconds=$((elapsed_seconds + 5))
+  done
+
+  wait "$command_pid"
+}
+
+image_exists() {
+  image_ref="$1"
+
+  docker buildx imagetools inspect "$image_ref" >/dev/null 2>&1
+}
+
+wait_for_image() {
+  image_ref="$1"
+  attempt=1
+
+  while [ "$attempt" -le "$REGISTRY_VERIFY_RETRIES" ]; do
+    if image_exists "$image_ref"; then
+      return 0
+    fi
+
+    echo "Image not visible yet: $image_ref (${attempt}/${REGISTRY_VERIFY_RETRIES})"
+    attempt=$((attempt + 1))
+    sleep_seconds "$REGISTRY_VERIFY_DELAY_SECONDS"
+  done
+
+  return 1
+}
+
+retry_build() {
+  image_ref="$1"
+  shift
+  attempt=1
+
+  if [ "$RESUME_PUBLISHED_IMAGES" = "true" ] && wait_for_image "$image_ref"; then
+    echo "Reusing existing published image $image_ref"
+    return 0
+  fi
+
+  while [ "$attempt" -le "$BUILD_RETRIES" ]; do
+    echo "Building $image_ref (${attempt}/${BUILD_RETRIES})"
+
+    if run_with_timeout "$BUILD_TIMEOUT_SECONDS" "$@"; then
+      if wait_for_image "$image_ref"; then
+        echo "Pushed and verified $image_ref"
+        return 0
+      fi
+
+      echo "Build completed but registry verification failed for $image_ref"
+    else
+      status="$?"
+      echo "Build failed for $image_ref with status $status"
+
+      if wait_for_image "$image_ref"; then
+        echo "Image is present after failed build; continuing with $image_ref"
+        return 0
+      fi
+    fi
+
+    attempt=$((attempt + 1))
+
+    if [ "$attempt" -le "$BUILD_RETRIES" ]; then
+      echo "Retrying $image_ref after ${RETRY_DELAY_SECONDS}s"
+      sleep_seconds "$RETRY_DELAY_SECONDS"
+    fi
+  done
+
+  echo "Failed to build and verify $image_ref"
+  return 1
+}
+
+manifest_has_platform() {
+  image_ref="$1"
+  platform="$2"
+
+  docker buildx imagetools inspect "$image_ref" | grep -q "Platform:    $platform"
+}
+
+create_manifest() {
+  image_base="$1"
+  image_sources="$2"
+  final_ref="$image_base:$IMAGE_TAG"
+  attempt=1
+
+  for image_ref in $image_sources; do
+    if ! wait_for_image "$image_ref"; then
+      echo "Cannot create manifest because image is missing: $image_ref"
+      return 1
+    fi
+  done
+
+  while [ "$attempt" -le "$BUILD_RETRIES" ]; do
+    echo "Creating multi-arch manifest $final_ref (${attempt}/${BUILD_RETRIES})"
+
+    # shellcheck disable=SC2086
+    if docker buildx imagetools create --tag "$final_ref" $image_sources; then
+      missing_platform=""
+
+      for platform in $platforms_space; do
+        if ! manifest_has_platform "$final_ref" "$platform"; then
+          missing_platform="$platform"
+          break
+        fi
+      done
+
+      if [ -z "$missing_platform" ]; then
+        echo "Created and verified $final_ref"
+        return 0
+      fi
+
+      echo "Manifest $final_ref is missing platform $missing_platform"
+    else
+      echo "Manifest creation failed for $final_ref"
+    fi
+
+    attempt=$((attempt + 1))
+
+    if [ "$attempt" -le "$BUILD_RETRIES" ]; then
+      echo "Retrying manifest $final_ref after ${RETRY_DELAY_SECONDS}s"
+      sleep_seconds "$RETRY_DELAY_SECONDS"
+    fi
+  done
+
+  echo "Failed to create and verify $final_ref"
+  return 1
+}
+
 for module in $BACKEND_MODULES; do
+  mvn -Pdocker-build -DskipTests -pl "$module" package
+
   image_base="docker.io/$DOCKER_USERNAME/$module"
   image_sources=""
 
   for platform in $platforms_space; do
-    arch=$(printf '%s' "$platform" | cut -d/ -f2)
-    variant=$(printf '%s' "$platform" | cut -s -d/ -f3)
-    suffix="$arch"
-    if [ -n "$variant" ]; then
-      suffix="$suffix-$variant"
-    fi
+    suffix=$(platform_suffix "$platform")
+    image_ref="$image_base:$IMAGE_TAG-$suffix"
 
-    image_tag="$IMAGE_TAG-$suffix"
-    image_ref="$image_base:$image_tag"
+    retry_build "$image_ref" \
+      docker buildx build \
+      --progress "$DOCKER_BUILD_PROGRESS" \
+      --platform "$platform" \
+      --tag "$image_ref" \
+      --build-arg "JAR_FILE=target/$module-*.jar" \
+      --file docker/spring-boot/Dockerfile \
+      --push \
+      "$module"
 
-    mvn -Pdocker-build \
-      -DskipTests \
-      -Ddocker.username="$DOCKER_USERNAME" \
-      -Ddocker.password="$DOCKER_PASSWORD" \
-      -Ddocker.image.tag="$image_tag" \
-      -Ddocker.builder.image="$BACKEND_BUILDER_IMAGE" \
-      -Dspring-boot.build-image.imagePlatform="$platform" \
-      -pl "$module" \
-      spring-boot:build-image
-
-    if [ -z "$image_sources" ]; then
-      image_sources="$image_ref"
-    else
-      image_sources="$image_sources $image_ref"
-    fi
+    image_sources="$image_sources $image_ref"
   done
 
-  # shellcheck disable=SC2086
-  docker buildx imagetools create \
-    --tag "$image_base:$IMAGE_TAG" \
-    $image_sources
+  create_manifest "$image_base" "$image_sources"
 done
 
 for app in $FRONTEND_APPS; do
-  docker buildx build \
-    --platform "$PLATFORMS" \
-    --tag "docker.io/$DOCKER_USERNAME/$app:$IMAGE_TAG" \
-    --push \
-    "$app"
+  image_base="docker.io/$DOCKER_USERNAME/$app"
+  image_sources=""
+
+  for platform in $platforms_space; do
+    suffix=$(platform_suffix "$platform")
+    image_ref="$image_base:$IMAGE_TAG-$suffix"
+
+    retry_build "$image_ref" \
+      docker buildx build \
+      --progress "$DOCKER_BUILD_PROGRESS" \
+      --platform "$platform" \
+      --tag "$image_ref" \
+      --push \
+      "$app"
+
+    image_sources="$image_sources $image_ref"
+  done
+
+  create_manifest "$image_base" "$image_sources"
 done
