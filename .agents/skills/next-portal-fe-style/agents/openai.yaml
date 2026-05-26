@@ -1,0 +1,4 @@
+interface:
+  display_name: "Next Portal FE Style"
+  short_description: "Use shared Next.js, React Query, Zustand, shadcn, and form conventions."
+  default_prompt: "Use $next-portal-fe-style when changing fe, admin-fe, customer-fe-next, shop-fe, or related Next.js frontends."
