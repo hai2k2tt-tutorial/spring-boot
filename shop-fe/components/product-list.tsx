@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoaderCircle, PackageSearch, ShoppingCart } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { signIn, useSession } from "next-auth/react";
 import { z } from "zod";
 import { fetchProducts, orderProduct } from "@/lib/api";
@@ -13,14 +13,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FormMessage } from "@/components/ui/form-message";
-
-type FeedbackState =
-  | { kind: "idle" }
-  | { kind: "success"; message: string }
-  | { kind: "error"; message: string };
+import { InputField } from "@/components/forms";
 
 const orderSchema = z.object({
   quantity: z.coerce.number().int().min(1, "Quantity must be greater than 0"),
@@ -31,11 +24,11 @@ type OrderFormInput = z.input<typeof orderSchema>;
 
 function ProductOrderCard({
   product,
-  submitting,
+  isSubmitting,
   onSubmit,
 }: {
   product: Product;
-  submitting: boolean;
+  isSubmitting: boolean;
   onSubmit: (product: Product, values: OrderFormValues) => Promise<void>;
 }) {
   const form = useForm<OrderFormInput, undefined, OrderFormValues>({
@@ -61,23 +54,16 @@ function ProductOrderCard({
           <Badge variant="outline">SKU {product.skuCode}</Badge>
         </div>
 
-        <form className="space-y-3" onSubmit={form.handleSubmit((values) => onSubmit(product, values))}>
-          <div className="space-y-2">
-            <Label htmlFor={`quantity-${product.skuCode}`}>Quantity</Label>
-            <Input
-              id={`quantity-${product.skuCode}`}
-              type="number"
-              min="1"
-              {...form.register("quantity")}
-            />
-            <FormMessage>{form.formState.errors.quantity?.message}</FormMessage>
-          </div>
+        <FormProvider {...form}>
+          <form className="space-y-3" onSubmit={form.handleSubmit((values) => onSubmit(product, values))}>
+            <InputField name="quantity" label="Quantity" id={`quantity-${product.skuCode}`} type="number" min="1" />
 
-          <Button type="submit" className="w-full" disabled={submitting || form.formState.isSubmitting}>
-            {submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-            {submitting ? "Ordering" : "Order now"}
-          </Button>
-        </form>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+              {isSubmitting ? "Ordering" : "Order now"}
+            </Button>
+          </form>
+        </FormProvider>
       </CardContent>
     </Card>
   );
@@ -85,35 +71,32 @@ function ProductOrderCard({
 
 export function ProductList() {
   const { data: session, status } = useSession();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [feedback, setFeedback] = useState<FeedbackState>({ kind: "idle" });
-  const [loading, setLoading] = useState(true);
-  const [submittingSku, setSubmittingSku] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await fetchProducts();
-        setProducts(data);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unable to load products";
-        setFeedback({ kind: "error", message });
-      } finally {
-        setLoading(false);
+  const queryClient = useQueryClient();
+  const productsQuery = useQuery({
+    queryKey: ["products"],
+    queryFn: () => fetchProducts(),
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const products = productsQuery.data ?? [];
+  const orderMutation = useMutation({
+    mutationFn: ({ order }: { skuCode: string; order: Order }) => {
+      if (!session?.accessToken) {
+        throw new Error("Login is required before placing orders.");
       }
-    };
 
-    void loadProducts();
-  }, []);
+      return orderProduct(order, session.accessToken);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
 
   const handleOrder = async (product: Product, values: OrderFormValues) => {
     if (!session?.accessToken || !session.user) {
       await signIn("keycloak");
       return;
     }
-
-    setSubmittingSku(product.skuCode);
-    setFeedback({ kind: "idle" });
 
     const order: Order = {
       skuCode: product.skuCode,
@@ -126,15 +109,7 @@ export function ProductList() {
       },
     };
 
-    try {
-      await orderProduct(order, session.accessToken);
-      setFeedback({ kind: "success", message: "Order placed successfully" });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Order failed, please try again later";
-      setFeedback({ kind: "error", message });
-    } finally {
-      setSubmittingSku(null);
-    }
+    await orderMutation.mutateAsync({ skuCode: product.skuCode, order });
   };
 
   return (
@@ -158,18 +133,32 @@ export function ProductList() {
         {status !== "authenticated" ? (
           <Alert>Login is required before placing orders or creating products.</Alert>
         ) : null}
-        {feedback.kind === "success" ? <Alert variant="success">{feedback.message}</Alert> : null}
-        {feedback.kind === "error" ? <Alert variant="destructive">{feedback.message}</Alert> : null}
+        {orderMutation.isSuccess ? <Alert variant="success">Order placed successfully</Alert> : null}
+        {orderMutation.isError ? (
+          <Alert variant="destructive">
+            {orderMutation.error instanceof Error ? orderMutation.error.message : "Order failed, please try again later"}
+          </Alert>
+        ) : null}
+        {productsQuery.isError ? (
+          <Alert variant="destructive">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span>{productsQuery.error instanceof Error ? productsQuery.error.message : "Unable to load products"}</span>
+              <Button type="button" variant="outline" size="sm" onClick={() => void productsQuery.refetch()}>
+                Retry
+              </Button>
+            </div>
+          </Alert>
+        ) : null}
       </div>
 
-      {loading ? (
+      {productsQuery.isLoading ? (
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <LoaderCircle className="h-4 w-4 animate-spin" />
           Loading products...
         </div>
       ) : null}
 
-      {!loading && products.length === 0 ? (
+      {!productsQuery.isLoading && products.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
             <PackageSearch className="h-8 w-8 text-slate-400" />
@@ -186,7 +175,7 @@ export function ProductList() {
           <ProductOrderCard
             key={product.id ?? product.skuCode}
             product={product}
-            submitting={submittingSku === product.skuCode}
+            isSubmitting={orderMutation.isPending && orderMutation.variables?.skuCode === product.skuCode}
             onSubmit={handleOrder}
           />
         ))}
