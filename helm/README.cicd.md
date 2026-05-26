@@ -164,12 +164,14 @@ permissions:
   contents: read
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   VPS_REPO_DIR: /root/spring-boot
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: docker
 
     steps:
       - name: Checkout
