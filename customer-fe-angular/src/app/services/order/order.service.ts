@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import {Product} from "../../model/product";
 import {Observable} from "rxjs";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {Order} from "../../model/order";
+import {OrderCreateRequestDto, OrderResponseVo, UUID} from "../../model/api";
 
 @Injectable({
   providedIn: 'root'
@@ -12,13 +12,21 @@ export class OrderService {
   constructor(private httpClient: HttpClient) {
   }
 
-  orderProduct(order: Order): Observable<string> {
+  placeOrder(order: OrderCreateRequestDto): Observable<OrderResponseVo> {
+    return this.httpClient.post<OrderResponseVo>('/api/order', order);
+  }
+
+  getOrders(customerId?: UUID): Observable<Array<OrderResponseVo>> {
+    const options = customerId ? {params: {customerId}} : {};
+    return this.httpClient.get<Array<OrderResponseVo>>('/api/order', options);
+  }
+
+  orderProduct(order: Order): Observable<OrderResponseVo> {
     const httpOptions = {
       headers: new HttpHeaders({
         'Content-Type': 'application/json'
       }),
-      responseType: 'text' as 'json'
     };
-    return this.httpClient.post<string>('/api/order', order, httpOptions);
+    return this.httpClient.post<OrderResponseVo>('/api/order', order, httpOptions);
   }
 }

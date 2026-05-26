@@ -5,15 +5,28 @@
   }
   <form [formGroup]="addProductForm" (ngSubmit)="onSubmit()">
     <div class="mb-4">
-      <label class="block text-gray-700" for="skuCode">SKU Code</label>
+      <label class="block text-gray-700" for="shopId">Shop UUID</label>
       <input
         type="text"
-        id="skuCode"
-        formControlName="skuCode"
+        id="shopId"
+        formControlName="shopId"
         class="border rounded w-full py-2 px-3 text-gray-700"
       />
-      <div *ngIf="skuCode?.invalid && (skuCode?.dirty || skuCode?.touched)" class="text-red-500">
-        <div *ngIf="skuCode?.errors?.['required']">SKU Code is required.</div>
+      <div *ngIf="shopId?.invalid && (shopId?.dirty || shopId?.touched)" class="text-red-500">
+        <div *ngIf="shopId?.errors?.['required']">Shop UUID is required.</div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700" for="categoryId">Category UUID</label>
+      <input
+        type="text"
+        id="categoryId"
+        formControlName="categoryId"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      />
+      <div *ngIf="categoryId?.invalid && (categoryId?.dirty || categoryId?.touched)" class="text-red-500">
+        <div *ngIf="categoryId?.errors?.['required']">Category UUID is required.</div>
       </div>
     </div>
 
@@ -55,6 +68,32 @@
       <div *ngIf="price?.invalid && (price?.dirty || price?.touched)" class="text-red-500">
         <div *ngIf="price?.errors?.['required']">Price is required.</div>
         <div *ngIf="price?.errors?.['min']">Price must be greater than 0.</div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700" for="imageUrl">Image URL</label>
+      <input
+        type="text"
+        id="imageUrl"
+        formControlName="imageUrl"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700" for="status">Status</label>
+      <select
+        id="status"
+        formControlName="status"
+        class="border rounded w-full py-2 px-3 text-gray-700"
+      >
+        <option value="DRAFT">DRAFT</option>
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="ARCHIVED">ARCHIVED</option>
+      </select>
+      <div *ngIf="status?.invalid && (status?.dirty || status?.touched)" class="text-red-500">
+        <div *ngIf="status?.errors?.['required']">Status is required.</div>
       </div>
     </div>
 

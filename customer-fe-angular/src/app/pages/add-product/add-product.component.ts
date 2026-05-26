@@ -18,20 +18,26 @@ export class AddProductComponent {
 
   constructor(private fb: FormBuilder) {
     this.addProductForm = this.fb.group({
-      skuCode: ['', [Validators.required]],
+      shopId: ['', [Validators.required]],
+      categoryId: ['', [Validators.required]],
       name: ['', [Validators.required]],
       description: ['', [Validators.required]],
-      price: [0, [Validators.required]]
+      price: [0, [Validators.required, Validators.min(0.01)]],
+      imageUrl: [''],
+      status: ['DRAFT', [Validators.required]]
     })
   }
 
   onSubmit(): void {
     if (this.addProductForm.valid) {
       const product: Product = {
-        skuCode: this.addProductForm.get('skuCode')?.value,
+        shopId: this.addProductForm.get('shopId')?.value,
+        categoryId: this.addProductForm.get('categoryId')?.value,
         name: this.addProductForm.get('name')?.value,
         description: this.addProductForm.get('description')?.value,
-        price: this.addProductForm.get('price')?.value
+        price: this.addProductForm.get('price')?.value,
+        imageUrl: this.addProductForm.get('imageUrl')?.value || undefined,
+        status: this.addProductForm.get('status')?.value
       }
       this.productService.createProduct(product).subscribe(product => {
         this.productCreated = true;
@@ -42,8 +48,12 @@ export class AddProductComponent {
     }
   }
 
-  get skuCode() {
-    return this.addProductForm.get('skuCode');
+  get shopId() {
+    return this.addProductForm.get('shopId');
+  }
+
+  get categoryId() {
+    return this.addProductForm.get('categoryId');
   }
 
   get name() {
@@ -56,5 +66,13 @@ export class AddProductComponent {
 
   get price() {
     return this.addProductForm.get('price');
+  }
+
+  get imageUrl() {
+    return this.addProductForm.get('imageUrl');
+  }
+
+  get status() {
+    return this.addProductForm.get('status');
   }
 }
