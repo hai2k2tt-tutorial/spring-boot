@@ -1,9 +1,15 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { WorkspaceData } from "@/components/api-workspace/use-workspace-auth";
 
-export function ApiMetrics({ data }: { data: WorkspaceData }) {
+type ApiMetricData = {
+  products: unknown[];
+  shops: unknown[];
+  customers: unknown[];
+  payments: unknown[];
+};
+
+export function ApiMetrics({ data }: { data: ApiMetricData }) {
   const { products, shops, customers, payments } = data;
   return (
     <section className="grid gap-4 md:grid-cols-4">
