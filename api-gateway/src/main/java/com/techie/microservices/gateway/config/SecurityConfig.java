@@ -42,12 +42,8 @@ public class SecurityConfig {
         return httpSecurity.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(freeResourceUrls)
                         .permitAll()
-                        .requestMatchers("/api/customers", "/api/customers/**")
-                        .access(hasIssuerOrAdmin(customerIssuerUri))
-                        .requestMatchers("/api/shops", "/api/shops/**")
-                        .access(hasIssuerOrAdmin(shopIssuerUri))
-                        .requestMatchers("/api/admin", "/api/admin/**")
-                        .access(hasAdminIssuerAndRole())
+                        .requestMatchers("/api/**")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .oauth2ResourceServer(oauth2 -> oauth2.authenticationManagerResolver(authenticationManagerResolver()))
@@ -120,7 +116,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.applyPermitDefaultValues();
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
