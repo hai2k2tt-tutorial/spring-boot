@@ -35,11 +35,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Compute image tag
         run: echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
 
       - name: Compute build scope
+        id: scope
         env:
           INPUT_BACKEND_MODULES: ${{ github.event.inputs.backend_modules }}
           INPUT_FRONTEND_APPS: ${{ github.event.inputs.frontend_apps }}
@@ -53,10 +56,87 @@ jobs:
             printf '%s' "$1" | tr ',\n' '  ' | xargs
           }
 
+          append_unique() {
+            list="$1"
+            item="$2"
+
+            case " $list " in
+              *" $item "*) printf '%s' "$list" ;;
+              *) printf '%s' "$(printf '%s %s' "$list" "$item" | xargs)" ;;
+            esac
+          }
+
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            backend_modules="$DEFAULT_BACKEND_MODULES"
-            frontend_apps="$DEFAULT_FRONTEND_APPS"
-            deploy_mode="all"
+            before_sha="${{ github.event.before }}"
+
+            if [ -z "$before_sha" ] || [ "$before_sha" = "0000000000000000000000000000000000000000" ]; then
+              backend_modules="$DEFAULT_BACKEND_MODULES"
+              frontend_apps="$DEFAULT_FRONTEND_APPS"
+              deploy_mode="all"
+            else
+              changed_files="$(git diff --name-only "$before_sha" "$GITHUB_SHA")"
+              backend_modules=""
+              frontend_apps=""
+              all_backend=false
+
+              while IFS= read -r path; do
+                case "$path" in
+                  pom.xml|.mvn/*|mvnw|mvnw.cmd|docker/spring-boot/Dockerfile)
+                    all_backend=true
+                    ;;
+                  api-gateway/*)
+                    backend_modules="$(append_unique "$backend_modules" "api-gateway")"
+                    ;;
+                  product-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "product-service")"
+                    ;;
+                  inventory-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "inventory-service")"
+                    ;;
+                  order-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "order-service")"
+                    ;;
+                  notification-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "notification-service")"
+                    ;;
+                  payment-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "payment-service")"
+                    ;;
+                  shop-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "shop-service")"
+                    ;;
+                  customer-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "customer-service")"
+                    ;;
+                  admin-fe/*)
+                    frontend_apps="$(append_unique "$frontend_apps" "admin-fe")"
+                    ;;
+                  shop-fe/*)
+                    frontend_apps="$(append_unique "$frontend_apps" "shop-fe")"
+                    ;;
+                  customer-fe-next/*)
+                    frontend_apps="$(append_unique "$frontend_apps" "customer-fe-next")"
+                    ;;
+                  customer-fe-angular/*)
+                    frontend_apps="$(append_unique "$frontend_apps" "customer-fe-angular")"
+                    ;;
+                esac
+              done < <(printf '%s\n' "$changed_files")
+
+              if [ "$all_backend" = "true" ]; then
+                backend_modules="$DEFAULT_BACKEND_MODULES"
+              fi
+
+              if [ -z "$backend_modules" ] && [ -z "$frontend_apps" ]; then
+                backend_modules="__NONE__"
+                frontend_apps="__NONE__"
+                deploy_mode="none"
+              else
+                [ -n "$backend_modules" ] || backend_modules="__NONE__"
+                [ -n "$frontend_apps" ] || frontend_apps="__NONE__"
+                deploy_mode="selected"
+              fi
+            fi
           else
             backend_modules="$(normalize_list "$INPUT_BACKEND_MODULES")"
             frontend_apps="$(normalize_list "$INPUT_FRONTEND_APPS")"
@@ -75,8 +155,14 @@ jobs:
           printf 'BACKEND_MODULES=%s\n' "$backend_modules" >> "$GITHUB_ENV"
           printf 'FRONTEND_APPS=%s\n' "$frontend_apps" >> "$GITHUB_ENV"
           printf 'DEPLOY_MODE=%s\n' "$deploy_mode" >> "$GITHUB_ENV"
+          printf 'deploy_mode=%s\n' "$deploy_mode" >> "$GITHUB_OUTPUT"
+
+          echo "Backend modules: $backend_modules"
+          echo "Frontend apps: $frontend_apps"
+          echo "Deploy mode: $deploy_mode"
 
       - name: Set up Java
+        if: steps.scope.outputs.deploy_mode != 'none'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -84,9 +170,11 @@ jobs:
           cache: maven
 
       - name: Set up Docker Buildx
+        if: steps.scope.outputs.deploy_mode != 'none'
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push images
+        if: steps.scope.outputs.deploy_mode != 'none'
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -110,6 +198,7 @@ jobs:
           ./scripts/docker-build-v2.sh
 
       - name: Configure SSH
+        if: steps.scope.outputs.deploy_mode != 'none'
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -123,6 +212,7 @@ jobs:
           ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Deploy Helm chart on VPS
+        if: steps.scope.outputs.deploy_mode != 'none'
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
