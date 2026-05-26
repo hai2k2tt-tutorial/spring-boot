@@ -14,6 +14,7 @@ public record ProductResponseVo(
         UUID categoryId,
         String status,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        Instant deletedAt
 ) {
 }

@@ -42,4 +42,27 @@ public class ProductService {
                 .map(productMapper::toVo)
                 .toList();
     }
+
+    @Transactional
+    public ProductResponseVo updateProduct(ProductRequestDto productRequestDto) {
+        if (productRequestDto.id() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product id is required");
+        }
+
+        Product product = productRepository.findById(productRequestDto.id())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+
+        Category category = categoryRepository.findById(productRequestDto.categoryId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
+
+        product.setShopId(productRequestDto.shopId());
+        product.setName(productRequestDto.name());
+        product.setDescription(productRequestDto.description());
+        product.setPrice(productRequestDto.price());
+        product.setImageUrl(productRequestDto.imageUrl());
+        product.setCategory(category);
+        product.setStatus(productMapper.resolveStatus(productRequestDto.status()));
+
+        return productMapper.toVo(productRepository.save(product));
+    }
 }

@@ -88,4 +88,19 @@
             <dropTable tableName="t_category"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="2-soft-delete-products" author="codex">
+        <addColumn tableName="t_product">
+            <column name="deleted_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </addColumn>
+
+        <createIndex tableName="t_product" indexName="idx_product_deleted_at">
+            <column name="deleted_at"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="t_product" indexName="idx_product_deleted_at"/>
+            <dropColumn tableName="t_product" columnName="deleted_at"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

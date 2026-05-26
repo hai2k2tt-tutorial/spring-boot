@@ -27,4 +27,10 @@ public class ProductController {
     public List<ProductResponseVo> getAllProducts() {
         return productService.getAllProducts();
     }
+
+    @PutMapping
+    @ResponseStatus(HttpStatus.OK)
+    public ProductResponseVo updateProduct(@RequestBody ProductRequestDto productRequestDto) {
+        return productService.updateProduct(productRequestDto);
+    }
 }

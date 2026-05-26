@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record ProductRequestDto(
+        UUID id,
         UUID shopId,
         String name,
         String description,

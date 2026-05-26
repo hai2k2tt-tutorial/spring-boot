@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.SQLRestriction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@SQLRestriction("deleted_at IS NULL")
 public class Product {
     @Id
     @GeneratedValue
@@ -62,6 +64,8 @@ public class Product {
     @UpdateTimestamp
     @Column(nullable = false)
     private Instant updatedAt;
+
+    private Instant deletedAt;
 
     @PrePersist
     public void applyDefaults() {

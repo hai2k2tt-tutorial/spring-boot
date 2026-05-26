@@ -35,11 +35,12 @@ public class ProductMapper {
                 product.getCategory().getId(),
                 product.getStatus().name(),
                 product.getCreatedAt(),
-                product.getUpdatedAt()
+                product.getUpdatedAt(),
+                product.getDeletedAt()
         );
     }
 
-    private ProductStatus resolveStatus(String status) {
+    public ProductStatus resolveStatus(String status) {
         if (status == null || status.isBlank()) {
             return ProductStatus.DRAFT;
         }
