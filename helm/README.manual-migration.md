@@ -24,66 +24,54 @@ All application service databases use the shared `postgres` service. Keycloak st
 
 Do not reset infrastructure databases such as Keycloak unless that is the intended operation.
 
-## Open Database Tunnels
+## Run Migrations On The VPS
 
-Run these commands on the VPS:
+SSH into the VPS and use the repository checkout there:
 
 ```bash
-kubectl port-forward -n microservices svc/postgres 15432:5432 >/tmp/pf-postgres.log 2>&1 &
+ssh root@103.6.234.153
+cd /root/spring-boot
+git fetch origin master
+git checkout --detach origin/master
 ```
 
-Run this command on the local machine:
+Run migrations from the VPS. This keeps PostgreSQL accessible only inside the cluster/VPS network:
 
 ```bash
-ssh -N \
-  -L 15432:127.0.0.1:15432 \
-  root@103.6.234.153
+LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
+LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service \
+sh product-service/scripts/db.sh update
+
+LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
+LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/payment_service \
+sh payment-service/scripts/db.sh update
+
+LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
+LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/shop_service \
+sh shop-service/scripts/db.sh update
+
+LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
+LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service \
+sh customer-service/scripts/db.sh update
+
+LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
+LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/order_service \
+sh order-service/scripts/db.sh update
+
+LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
+LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/inventory_service \
+sh inventory-service/scripts/db.sh update
 ```
 
-Keep that SSH tunnel open while running migrations.
+Check pending changes before updating by replacing `update` with `status`.
 
-## Run Migrations
+## Restart Services
 
-From the repository root on the local machine:
+After successful migrations, restart only the affected services:
 
 ```bash
-M2_REPO=/private/tmp/m2repo
-
-mvn -Dmaven.repo.local="$M2_REPO" -f pom.xml -pl product-service -DskipTests \
-  -Dliquibase.url=jdbc:postgresql://localhost:15432/product_service \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  liquibase:update
-
-mvn -Dmaven.repo.local="$M2_REPO" -f pom.xml -pl payment-service -DskipTests \
-  -Dliquibase.url=jdbc:postgresql://localhost:15432/payment_service \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  liquibase:update
-
-mvn -Dmaven.repo.local="$M2_REPO" -f pom.xml -pl shop-service -DskipTests \
-  -Dliquibase.url=jdbc:postgresql://localhost:15432/shop_service \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  liquibase:update
-
-mvn -Dmaven.repo.local="$M2_REPO" -f pom.xml -pl customer-service -DskipTests \
-  -Dliquibase.url=jdbc:postgresql://localhost:15432/customer_service \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  liquibase:update
-
-mvn -Dmaven.repo.local="$M2_REPO" -f pom.xml -pl order-service -DskipTests \
-  -Dliquibase.url=jdbc:postgresql://localhost:15432/order_service \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  liquibase:update
-
-mvn -Dmaven.repo.local="$M2_REPO" -f pom.xml -pl inventory-service -DskipTests \
-  -Dliquibase.url=jdbc:postgresql://localhost:15432/inventory_service \
-  -Dliquibase.username=postgres \
-  -Dliquibase.password=postgres \
-  liquibase:update
+kubectl rollout restart deployment/product-service -n microservices
+kubectl rollout status deployment/product-service -n microservices --timeout=300s
 ```
 
 ## Reset And Remigrate
@@ -111,7 +99,7 @@ for db in product_service payment_service shop_service customer_service order_se
 done
 ```
 
-Run the migrations from the local machine, then start the services:
+Run the migrations from the VPS, then start the services:
 
 ```bash
 kubectl scale deployment -n microservices \
