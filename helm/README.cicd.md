@@ -41,6 +41,27 @@ DOCKER_USERNAME=<docker-user>
 DOCKER_PASSWORD=<docker-password-or-token>
 ```
 
+For a local build/push using the same short commit tag as CI, set `IMAGE_TAG` from Git:
+
+```bash
+IMAGE_TAG=$(git rev-parse --short=12 HEAD) \
+DOCKER_USERNAME=<docker-user> \
+DOCKER_PASSWORD=<docker-password-or-token> \
+./scripts/docker-build-v2.sh
+```
+
+To build only the service or frontend you changed, pass the module lists:
+
+```bash
+IMAGE_TAG=$(git rev-parse --short=12 HEAD) \
+PLATFORMS=linux/amd64 \
+BACKEND_MODULES="product-service" \
+FRONTEND_APPS=" " \
+DOCKER_USERNAME=<docker-user> \
+DOCKER_PASSWORD=<docker-password-or-token> \
+./scripts/docker-build-v2.sh
+```
+
 The chart images are overridden at deploy time with these Helm values:
 
 ```text

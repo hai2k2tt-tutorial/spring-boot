@@ -45,3 +45,6 @@ helm/**/*.tgz
 
 tls.crt
 tls.key
+
+github-actions-vps-deploy
+github-actions-vps-deploy.pub

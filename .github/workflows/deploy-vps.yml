@@ -1,0 +1,196 @@
+name: Build and deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      backend_modules:
+        description: Space-separated backend modules to build. Leave both inputs empty to build all.
+        required: false
+        default: ""
+      frontend_apps:
+        description: Space-separated frontend apps to build. Leave both inputs empty to build all.
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  VPS_REPO_DIR: /root/spring-boot
+  PLATFORMS: linux/amd64
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute image tag
+        run: echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+
+      - name: Compute build scope
+        env:
+          INPUT_BACKEND_MODULES: ${{ github.event.inputs.backend_modules }}
+          INPUT_FRONTEND_APPS: ${{ github.event.inputs.frontend_apps }}
+        run: |
+          set -euo pipefail
+
+          DEFAULT_BACKEND_MODULES="api-gateway product-service inventory-service order-service notification-service payment-service shop-service customer-service"
+          DEFAULT_FRONTEND_APPS="admin-fe shop-fe customer-fe-next customer-fe-angular"
+
+          normalize_list() {
+            printf '%s' "$1" | tr ',\n' '  ' | xargs
+          }
+
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            backend_modules="$DEFAULT_BACKEND_MODULES"
+            frontend_apps="$DEFAULT_FRONTEND_APPS"
+            deploy_mode="all"
+          else
+            backend_modules="$(normalize_list "$INPUT_BACKEND_MODULES")"
+            frontend_apps="$(normalize_list "$INPUT_FRONTEND_APPS")"
+
+            if [ -z "$backend_modules" ] && [ -z "$frontend_apps" ]; then
+              backend_modules="$DEFAULT_BACKEND_MODULES"
+              frontend_apps="$DEFAULT_FRONTEND_APPS"
+              deploy_mode="all"
+            else
+              [ -n "$backend_modules" ] || backend_modules="__NONE__"
+              [ -n "$frontend_apps" ] || frontend_apps="__NONE__"
+              deploy_mode="selected"
+            fi
+          fi
+
+          printf 'BACKEND_MODULES=%s\n' "$backend_modules" >> "$GITHUB_ENV"
+          printf 'FRONTEND_APPS=%s\n' "$frontend_apps" >> "$GITHUB_ENV"
+          printf 'DEPLOY_MODE=%s\n' "$deploy_mode" >> "$GITHUB_ENV"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push images
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/docker-build-v2.sh
+
+          build_backend_modules="$BACKEND_MODULES"
+          build_frontend_apps="$FRONTEND_APPS"
+
+          if [ "$build_backend_modules" = "__NONE__" ]; then
+            build_backend_modules=" "
+          fi
+
+          if [ "$build_frontend_apps" = "__NONE__" ]; then
+            build_frontend_apps=" "
+          fi
+
+          BACKEND_MODULES="$build_backend_modules" \
+          FRONTEND_APPS="$build_frontend_apps" \
+          ./scripts/docker-build-v2.sh
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
+        run: |
+          set -euo pipefail
+          VPS_PORT="${VPS_PORT:-22}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+          ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy Helm chart on VPS
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_SSH_PORT }}
+        run: |
+          set -euo pipefail
+          VPS_PORT="${VPS_PORT:-22}"
+
+          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+            "IMAGE_TAG='$IMAGE_TAG' DOCKER_USERNAME='$DOCKER_USERNAME' DEPLOY_SHA='$GITHUB_SHA' DEPLOY_REF='$GITHUB_REF_NAME' REPO_DIR='$VPS_REPO_DIR' DEPLOY_MODE='$DEPLOY_MODE' BACKEND_MODULES='$BACKEND_MODULES' FRONTEND_APPS='$FRONTEND_APPS' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          cd "$REPO_DIR"
+          git fetch --depth=1 origin "$DEPLOY_REF"
+          git checkout --detach "$DEPLOY_SHA"
+
+          IMAGE_PREFIX="docker.io/${DOCKER_USERNAME}"
+
+          value_key_for_deploy() {
+            case "$1" in
+              api-gateway) printf '%s' "apiGateway" ;;
+              product-service) printf '%s' "productService" ;;
+              order-service) printf '%s' "orderService" ;;
+              inventory-service) printf '%s' "inventoryService" ;;
+              notification-service) printf '%s' "notificationService" ;;
+              payment-service) printf '%s' "paymentService" ;;
+              shop-service) printf '%s' "shopService" ;;
+              customer-service) printf '%s' "customerService" ;;
+              admin-fe) printf '%s' "adminFe" ;;
+              shop-fe) printf '%s' "shopFe" ;;
+              customer-fe-next) printf '%s' "customerFeNext" ;;
+              customer-fe-angular) printf '%s' "customerFeAngular" ;;
+              *) echo "Unknown deploy name: $1" >&2; return 1 ;;
+            esac
+          }
+
+          if [ "$DEPLOY_MODE" = "all" ]; then
+            deployments="api-gateway product-service order-service inventory-service notification-service payment-service shop-service customer-service admin-fe shop-fe customer-fe-next customer-fe-angular"
+          else
+            deployments=""
+            if [ "$BACKEND_MODULES" != "__NONE__" ]; then
+              deployments="$deployments $BACKEND_MODULES"
+            fi
+            if [ "$FRONTEND_APPS" != "__NONE__" ]; then
+              deployments="$deployments $FRONTEND_APPS"
+            fi
+          fi
+
+          helm_args=""
+          if [ "$DEPLOY_MODE" = "selected" ]; then
+            helm_args="$helm_args --reuse-values"
+          fi
+
+          for deploy in $deployments; do
+            value_key="$(value_key_for_deploy "$deploy")"
+            helm_args="$helm_args --set-string applications.${value_key}.image=${IMAGE_PREFIX}/${deploy}:${IMAGE_TAG}"
+            helm_args="$helm_args --set-string applications.${value_key}.imagePullPolicy=Always"
+          done
+
+          helm dependency build helm
+          # shellcheck disable=SC2086
+          helm upgrade --install microservices helm \
+            --namespace microservices \
+            --create-namespace \
+            $helm_args
+
+          for deploy in $deployments; do
+            kubectl rollout status "deployment/${deploy}" \
+              --namespace microservices \
+              --timeout=300s
+          done
+          REMOTE

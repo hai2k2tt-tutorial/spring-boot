@@ -13,6 +13,8 @@ REGISTRY_VERIFY_RETRIES="${REGISTRY_VERIFY_RETRIES:-6}"
 REGISTRY_VERIFY_DELAY_SECONDS="${REGISTRY_VERIFY_DELAY_SECONDS:-10}"
 DOCKER_BUILD_PROGRESS="${DOCKER_BUILD_PROGRESS:-plain}"
 RESUME_PUBLISHED_IMAGES="${RESUME_PUBLISHED_IMAGES:-false}"
+SPLIT_BUILD_PUSH="${SPLIT_BUILD_PUSH:-false}"
+PUSH_TIMEOUT_SECONDS="${PUSH_TIMEOUT_SECONDS:-3600}"
 
 DEFAULT_BACKEND_MODULES="
 api-gateway
@@ -187,11 +189,68 @@ retry_build() {
   return 1
 }
 
+retry_split_build_push() {
+  image_ref="$1"
+  shift
+  attempt=1
+
+  if [ "$RESUME_PUBLISHED_IMAGES" = "true" ] && wait_for_image "$image_ref"; then
+    echo "Reusing existing published image $image_ref"
+    return 0
+  fi
+
+  while [ "$attempt" -le "$BUILD_RETRIES" ]; do
+    echo "Building local image $image_ref (${attempt}/${BUILD_RETRIES})"
+
+    if ! run_with_timeout "$BUILD_TIMEOUT_SECONDS" "$@"; then
+      status="$?"
+      echo "Local build failed for $image_ref with status $status"
+      attempt=$((attempt + 1))
+
+      if [ "$attempt" -le "$BUILD_RETRIES" ]; then
+        echo "Retrying local build $image_ref after ${RETRY_DELAY_SECONDS}s"
+        sleep_seconds "$RETRY_DELAY_SECONDS"
+      fi
+
+      continue
+    fi
+
+    echo "Pushing $image_ref (${attempt}/${BUILD_RETRIES})"
+
+    if run_with_timeout "$PUSH_TIMEOUT_SECONDS" docker push "$image_ref"; then
+      if wait_for_image "$image_ref"; then
+        echo "Pushed and verified $image_ref"
+        return 0
+      fi
+
+      echo "Push completed but registry verification failed for $image_ref"
+    else
+      status="$?"
+      echo "Push failed for $image_ref with status $status"
+
+      if wait_for_image "$image_ref"; then
+        echo "Image is present after failed push; continuing with $image_ref"
+        return 0
+      fi
+    fi
+
+    attempt=$((attempt + 1))
+
+    if [ "$attempt" -le "$BUILD_RETRIES" ]; then
+      echo "Retrying push $image_ref after ${RETRY_DELAY_SECONDS}s"
+      sleep_seconds "$RETRY_DELAY_SECONDS"
+    fi
+  done
+
+  echo "Failed to build, push, and verify $image_ref"
+  return 1
+}
+
 manifest_has_platform() {
   image_ref="$1"
   platform="$2"
 
-  docker buildx imagetools inspect "$image_ref" | grep -q "Platform:    $platform"
+  docker buildx imagetools inspect "$image_ref" | awk -v platform="$platform" '$1 == "Platform:" && $2 == platform { found = 1 } END { exit found ? 0 : 1 }'
 }
 
 create_manifest() {
@@ -253,15 +312,27 @@ for module in $BACKEND_MODULES; do
     suffix=$(platform_suffix "$platform")
     image_ref="$image_base:$IMAGE_TAG-$suffix"
 
-    retry_build "$image_ref" \
-      docker buildx build \
-      --progress "$DOCKER_BUILD_PROGRESS" \
-      --platform "$platform" \
-      --tag "$image_ref" \
-      --build-arg "JAR_FILE=target/$module-*.jar" \
-      --file docker/spring-boot/Dockerfile \
-      --push \
-      "$module"
+    if [ "$SPLIT_BUILD_PUSH" = "true" ]; then
+      retry_split_build_push "$image_ref" \
+        docker buildx build \
+        --progress "$DOCKER_BUILD_PROGRESS" \
+        --platform "$platform" \
+        --tag "$image_ref" \
+        --build-arg "JAR_FILE=target/$module-*.jar" \
+        --file docker/spring-boot/Dockerfile \
+        --load \
+        "$module"
+    else
+      retry_build "$image_ref" \
+        docker buildx build \
+        --progress "$DOCKER_BUILD_PROGRESS" \
+        --platform "$platform" \
+        --tag "$image_ref" \
+        --build-arg "JAR_FILE=target/$module-*.jar" \
+        --file docker/spring-boot/Dockerfile \
+        --push \
+        "$module"
+    fi
 
     image_sources="$image_sources $image_ref"
   done
@@ -277,13 +348,23 @@ for app in $FRONTEND_APPS; do
     suffix=$(platform_suffix "$platform")
     image_ref="$image_base:$IMAGE_TAG-$suffix"
 
-    retry_build "$image_ref" \
-      docker buildx build \
-      --progress "$DOCKER_BUILD_PROGRESS" \
-      --platform "$platform" \
-      --tag "$image_ref" \
-      --push \
-      "$app"
+    if [ "$SPLIT_BUILD_PUSH" = "true" ]; then
+      retry_split_build_push "$image_ref" \
+        docker buildx build \
+        --progress "$DOCKER_BUILD_PROGRESS" \
+        --platform "$platform" \
+        --tag "$image_ref" \
+        --load \
+        "$app"
+    else
+      retry_build "$image_ref" \
+        docker buildx build \
+        --progress "$DOCKER_BUILD_PROGRESS" \
+        --platform "$platform" \
+        --tag "$image_ref" \
+        --push \
+        "$app"
+    fi
 
     image_sources="$image_sources $image_ref"
   done
