@@ -14,5 +14,3 @@ resources:
     memory: 1Gi
 config:
   datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service
-  liquibaseEnabled: "true"
-  liquibaseChangeLog: classpath:/db/changelog/db.changelog-master.xml
