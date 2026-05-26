@@ -1,26 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { signIn, useSession } from "next-auth/react";
 import { z } from "zod";
 import { createProduct } from "@/lib/api";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { FormMessage } from "@/components/ui/form-message";
+import { InputField, SelectField, TextareaField } from "@/components/forms";
 
 const productSchema = z.object({
-  skuCode: z.string().trim().min(1, "SKU code is required"),
+  shopId: z.string().trim().uuid("Use a valid shop UUID"),
+  categoryId: z.string().trim().uuid("Use a valid category UUID"),
   name: z.string().trim().min(1, "Name is required"),
   description: z.string().trim().min(1, "Description is required"),
   price: z.coerce.number().positive("Price must be greater than 0"),
+  imageUrl: z.string().trim().optional(),
+  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]),
 });
 
 type ProductFormValues = z.output<typeof productSchema>;
@@ -28,15 +28,26 @@ type ProductFormInput = z.input<typeof productSchema>;
 
 export function AddProductForm() {
   const { data: session, status } = useSession();
-  const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState(false);
+  const queryClient = useQueryClient();
   const form = useForm<ProductFormInput, undefined, ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      skuCode: "",
+      shopId: "",
+      categoryId: "",
       name: "",
       description: "",
       price: "0",
+      imageUrl: "",
+      status: "DRAFT",
+    },
+  });
+
+  const createProductMutation = useMutation({
+    mutationFn: (values: ProductFormValues) => createProduct(values, session?.accessToken),
+    onSuccess: async () => {
+      form.reset();
+      await queryClient.invalidateQueries({ queryKey: ["api-workspace"] });
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 
@@ -46,16 +57,7 @@ export function AddProductForm() {
       return;
     }
 
-    setError(null);
-    setCreated(false);
-
-    try {
-      await createProduct(values, session.accessToken);
-      setCreated(true);
-      form.reset();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Failed to create product");
-    }
+    await createProductMutation.mutateAsync(values);
   });
 
   return (
@@ -79,43 +81,36 @@ export function AddProductForm() {
           <CardDescription>Validated with react-hook-form and zod.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-5" onSubmit={submit}>
-            {status !== "authenticated" ? (
-              <Alert>Login is required to create products.</Alert>
-            ) : null}
-            {created ? <Alert variant="success">Product created successfully.</Alert> : null}
-            {error ? <Alert variant="destructive">{error}</Alert> : null}
+          <FormProvider {...form}>
+            <form className="space-y-5" onSubmit={submit}>
+              {status !== "authenticated" ? (
+                <Alert>Login is required to create products.</Alert>
+              ) : null}
+              {createProductMutation.isSuccess ? <Alert variant="success">Product created successfully.</Alert> : null}
+              {createProductMutation.isError ? (
+                <Alert variant="destructive">
+                  {createProductMutation.error instanceof Error ? createProductMutation.error.message : "Failed to create product"}
+                </Alert>
+              ) : null}
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="skuCode">SKU code</Label>
-                <Input id="skuCode" {...form.register("skuCode")} />
-                <FormMessage>{form.formState.errors.skuCode?.message}</FormMessage>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <InputField name="shopId" label="Shop UUID" />
+                <InputField name="categoryId" label="Category UUID" />
+                <InputField name="name" label="Name" />
+                <SelectField name="status" label="Status" options={["DRAFT", "ACTIVE", "ARCHIVED"]} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" {...form.register("name")} />
-                <FormMessage>{form.formState.errors.name?.message}</FormMessage>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" rows={5} {...form.register("description")} />
-              <FormMessage>{form.formState.errors.description?.message}</FormMessage>
-            </div>
+              <TextareaField name="description" label="Description" rows={5} />
 
-            <div className="max-w-xs space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input id="price" type="number" min="0.01" step="0.01" {...form.register("price")} />
-              <FormMessage>{form.formState.errors.price?.message}</FormMessage>
-            </div>
+              <InputField name="price" label="Price" type="number" min="0.01" step="0.01" className="max-w-xs space-y-2" />
+              <InputField name="imageUrl" label="Image URL" />
 
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-              {form.formState.isSubmitting ? "Saving" : "Add product"}
-            </Button>
-          </form>
+              <Button type="submit" disabled={createProductMutation.isPending}>
+                {createProductMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+                {createProductMutation.isPending ? "Saving" : "Add product"}
+              </Button>
+            </form>
+          </FormProvider>
         </CardContent>
       </Card>
     </main>
