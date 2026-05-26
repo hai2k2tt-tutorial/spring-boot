@@ -6,4 +6,6 @@ metadata:
   namespace: {{ .Values.namespace }}
 data:
   SPRING_DATASOURCE_URL: {{ .Values.config.datasourceUrl | quote }}
+  SPRING_LIQUIBASE_ENABLED: {{ .Values.config.liquibaseEnabled | quote }}
+  SPRING_LIQUIBASE_CHANGE_LOG: {{ .Values.config.liquibaseChangeLog | quote }}
 {{- end }}
