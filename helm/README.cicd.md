@@ -153,7 +153,7 @@ name: Build and deploy to VPS
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 concurrency:
