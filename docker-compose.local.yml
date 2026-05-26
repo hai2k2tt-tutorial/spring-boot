@@ -1,0 +1,442 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.8.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  broker:
+    image: confluentinc/cp-kafka:7.8.0
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.8.0
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8084:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+
+  keycloak-db:
+    image: mysql:8.4
+    container_name: keycloak-db
+    environment:
+      MYSQL_DATABASE: keycloak
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: keycloak
+    ports:
+      - "3307:3306"
+    volumes:
+      - keycloak-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -hkeycloak-db -uroot -pmysql"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
+    container_name: keycloak
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: mysql
+      KC_DB_URL: jdbc:mysql://keycloak-db:3306/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+    ports:
+      - "8181:8080"
+    volumes:
+      - ./docker/keycloak/realms:/opt/keycloak/data/import:ro
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: tempo
+    ports:
+      - "3200:3200"
+      - "9411:9411"
+    command: ["-config.file=/etc/tempo.yml"]
+    volumes:
+      - ./docker/tempo/tempo.yml:/etc/tempo.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ./docker/grafana/dashboard.json:/var/lib/grafana/dashboards/dashboard.json:ro
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  product-service:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "product-service", "spring-boot:run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  inventory-service:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "inventory-service", "spring-boot:run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  order-service:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "order-service", "spring-boot:run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      inventory-service:
+        condition: service_started
+      broker:
+        condition: service_started
+      schema-registry:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  notification-service:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "notification-service", "spring-boot:run"]
+    depends_on:
+      broker:
+        condition: service_started
+      schema-registry:
+        condition: service_started
+      mailhog:
+        condition: service_started
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_MAIL_HOST: mailhog
+      SPRING_MAIL_PORT: 1025
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
+      SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  payment-service:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "payment-service", "spring-boot:run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  shop-service:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "shop-service", "spring-boot:run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/shop_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  customer-service:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "customer-service", "spring-boot:run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  api-gateway:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /workspace
+    command: ["mvn", "-pl", "api-gateway", "spring-boot:run"]
+    depends_on:
+      keycloak:
+        condition: service_started
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      shop-service:
+        condition: service_started
+      customer-service:
+        condition: service_started
+    ports:
+      - "9000:9000"
+    environment:
+      APP_SECURITY_CUSTOMER_ISSUER_URI: http://keycloak:8080/realms/ecommerce-customer
+      APP_SECURITY_SHOP_ISSUER_URI: http://keycloak:8080/realms/ecommerce-shop
+      APP_SECURITY_ADMIN_ISSUER_URI: http://keycloak:8080/realms/ecommerce-admin
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+      PRODUCT_SERVICE_URL: http://product-service:8080
+      ORDER_SERVICE_URL: http://order-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8085
+      SHOP_SERVICE_URL: http://shop-service:8086
+      CUSTOMER_SERVICE_URL: http://customer-service:8087
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
+  admin-fe:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    depends_on:
+      - api-gateway
+      - keycloak
+    ports:
+      - "3002:3002"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3002
+      NEXTAUTH_URL: http://localhost:3002
+      AUTH_ISSUER: http://localhost:8181/realms/ecommerce-admin
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/ecommerce-admin
+      AUTH_CLIENT_ID: admin-fe-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_SECRET: replace-with-a-long-random-string
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./admin-fe:/app
+      - admin-fe-node-modules:/app/node_modules
+      - admin-fe-next-cache:/app/.next
+
+  shop-fe:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    depends_on:
+      - api-gateway
+      - keycloak
+    ports:
+      - "3003:3003"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3003
+      NEXTAUTH_URL: http://localhost:3003
+      AUTH_ISSUER: http://localhost:8181/realms/ecommerce-shop
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/ecommerce-shop
+      AUTH_CLIENT_ID: shop-fe-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_SECRET: replace-with-a-long-random-string
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./shop-fe:/app
+      - shop-fe-node-modules:/app/node_modules
+      - shop-fe-next-cache:/app/.next
+
+  customer-fe-next:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    depends_on:
+      - api-gateway
+      - keycloak
+    ports:
+      - "3004:3004"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3004
+      NEXTAUTH_URL: http://localhost:3004
+      AUTH_ISSUER: http://localhost:8181/realms/ecommerce-customer
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/ecommerce-customer
+      AUTH_CLIENT_ID: customer-fe-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_SECRET: replace-with-a-long-random-string
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./customer-fe-next:/app
+      - customer-fe-next-node-modules:/app/node_modules
+      - customer-fe-next-cache:/app/.next
+
+  customer-fe-angular:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run start -- --host 0.0.0.0"
+    depends_on:
+      - api-gateway
+    ports:
+      - "3001:4201"
+    volumes:
+      - ./customer-fe-angular:/app
+      - customer-fe-angular-node-modules:/app/node_modules
+
+volumes:
+  postgres-data:
+  keycloak-mysql-data:
+  grafana-data:
+  backend-maven-cache:
+  admin-fe-node-modules:
+  admin-fe-next-cache:
+  shop-fe-node-modules:
+  shop-fe-next-cache:
+  customer-fe-next-node-modules:
+  customer-fe-next-cache:
+  customer-fe-angular-node-modules:
