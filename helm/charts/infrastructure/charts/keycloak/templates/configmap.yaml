@@ -4,10 +4,10 @@ metadata:
   name: keycloak-config
   namespace: {{ .Values.namespace }}
 data:
-  db_vendor: 'MYSQL'
-  db_addr: 'keycloak-mysql'
-  db_database: 'keycloak'
-  db_user: 'keycloak'
+  kc_db: 'mysql'
+  kc_db_url_host: 'keycloak-mysql'
+  kc_db_url_database: 'keycloak'
+  kc_db_username: 'keycloak'
   keycloak_admin: 'admin'
   kc_http_enabled: {{ .Values.kcHttpEnabled | default "true" | quote }}
   kc_hostname: {{ .Values.hostname | quote }}

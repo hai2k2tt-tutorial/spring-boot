@@ -22,27 +22,27 @@ spec:
             - containerPort: 8080
           args: ["start-dev", "--import-realm"]
           env:
-            - name: DB_VENDOR
+            - name: KC_DB
               valueFrom:
                 configMapKeyRef:
                   name: keycloak-config
-                  key: db_vendor
-            - name: DB_ADDR
+                  key: kc_db
+            - name: KC_DB_URL_HOST
               valueFrom:
                 configMapKeyRef:
                   name: keycloak-config
-                  key: db_addr
-            - name: DB_DATABASE
+                  key: kc_db_url_host
+            - name: KC_DB_URL_DATABASE
               valueFrom:
                 configMapKeyRef:
                   name: keycloak-config
-                  key: db_database
-            - name: DB_USER
+                  key: kc_db_url_database
+            - name: KC_DB_USERNAME
               valueFrom:
                 configMapKeyRef:
                   name: keycloak-config
-                  key: db_user
-            - name: DB_PASSWORD
+                  key: kc_db_username
+            - name: KC_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: keycloak-secrets
