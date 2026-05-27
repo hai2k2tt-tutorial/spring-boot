@@ -273,6 +273,8 @@ jobs:
             helm_args="$helm_args --set-string applications.${value_key}.imagePullPolicy=Always"
           done
 
+          helm dependency build helm/charts/applications
+          helm dependency build helm/charts/infrastructure
           helm dependency build helm
           # shellcheck disable=SC2086
           helm upgrade --install microservices helm \
