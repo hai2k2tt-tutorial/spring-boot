@@ -31,8 +31,11 @@ apiGateway:
       memory: 1Gi
   config:
     customerIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-customer
+    customerJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer/protocol/openid-connect/certs
     shopIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-shop
+    shopJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop/protocol/openid-connect/certs
     adminIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-admin
+    adminJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin/protocol/openid-connect/certs
 
 productService:
   enabled: true

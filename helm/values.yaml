@@ -57,6 +57,8 @@ infrastructure:
       hostPath: /data/postgres
     initSql: |
       CREATE DATABASE product_service;
+      CREATE DATABASE order_service;
+      CREATE DATABASE inventory_service;
       CREATE DATABASE payment_service;
       CREATE DATABASE shop_service;
       CREATE DATABASE customer_service;
@@ -381,8 +383,11 @@ applications:
         memory: 1Gi
     config:
       customerIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-customer
+      customerJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer/protocol/openid-connect/certs
       shopIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-shop
+      shopJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop/protocol/openid-connect/certs
       adminIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-admin
+      adminJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin/protocol/openid-connect/certs
   productService:
     enabled: true
     image: docker.io/hai2k2tt/product-service:2-amd64

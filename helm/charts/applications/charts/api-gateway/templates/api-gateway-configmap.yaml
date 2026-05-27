@@ -6,6 +6,9 @@ metadata:
   namespace: {{ .Values.namespace }}
 data:
   APP_SECURITY_CUSTOMER_ISSUER_URI: {{ .Values.config.customerIssuerUri | quote }}
+  APP_SECURITY_CUSTOMER_JWK_SET_URI: {{ .Values.config.customerJwkSetUri | quote }}
   APP_SECURITY_SHOP_ISSUER_URI: {{ .Values.config.shopIssuerUri | quote }}
+  APP_SECURITY_SHOP_JWK_SET_URI: {{ .Values.config.shopJwkSetUri | quote }}
   APP_SECURITY_ADMIN_ISSUER_URI: {{ .Values.config.adminIssuerUri | quote }}
+  APP_SECURITY_ADMIN_JWK_SET_URI: {{ .Values.config.adminJwkSetUri | quote }}
 {{- end }}

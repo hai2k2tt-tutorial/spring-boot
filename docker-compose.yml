@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -283,9 +283,12 @@ services:
     ports:
       - "9000:9000"
     environment:
-      APP_SECURITY_CUSTOMER_ISSUER_URI: http://keycloak:8080/realms/ecommerce-customer
-      APP_SECURITY_SHOP_ISSUER_URI: http://keycloak:8080/realms/ecommerce-shop
-      APP_SECURITY_ADMIN_ISSUER_URI: http://keycloak:8080/realms/ecommerce-admin
+      APP_SECURITY_CUSTOMER_ISSUER_URI: http://localhost:8181/realms/ecommerce-customer
+      APP_SECURITY_CUSTOMER_JWK_SET_URI: http://keycloak:8080/realms/ecommerce-customer/protocol/openid-connect/certs
+      APP_SECURITY_SHOP_ISSUER_URI: http://localhost:8181/realms/ecommerce-shop
+      APP_SECURITY_SHOP_JWK_SET_URI: http://keycloak:8080/realms/ecommerce-shop/protocol/openid-connect/certs
+      APP_SECURITY_ADMIN_ISSUER_URI: http://localhost:8181/realms/ecommerce-admin
+      APP_SECURITY_ADMIN_JWK_SET_URI: http://keycloak:8080/realms/ecommerce-admin/protocol/openid-connect/certs
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
       PRODUCT_SERVICE_URL: http://product-service:8080

@@ -28,16 +28,31 @@ spec:
                 configMapKeyRef:
                   name: api-gateway-config
                   key: APP_SECURITY_CUSTOMER_ISSUER_URI
+            - name: APP_SECURITY_CUSTOMER_JWK_SET_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: APP_SECURITY_CUSTOMER_JWK_SET_URI
             - name: APP_SECURITY_SHOP_ISSUER_URI
               valueFrom:
                 configMapKeyRef:
                   name: api-gateway-config
                   key: APP_SECURITY_SHOP_ISSUER_URI
+            - name: APP_SECURITY_SHOP_JWK_SET_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: APP_SECURITY_SHOP_JWK_SET_URI
             - name: APP_SECURITY_ADMIN_ISSUER_URI
               valueFrom:
                 configMapKeyRef:
                   name: api-gateway-config
                   key: APP_SECURITY_ADMIN_ISSUER_URI
+            - name: APP_SECURITY_ADMIN_JWK_SET_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: api-gateway-config
+                  key: APP_SECURITY_ADMIN_JWK_SET_URI
             - name: LOKI_URL
               valueFrom:
                 configMapKeyRef:

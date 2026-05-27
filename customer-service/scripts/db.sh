@@ -4,7 +4,7 @@ set -eu
 
 COMMAND="${1:-}"
 VALUE="${2:-}"
-LIQUIBASE_URL="${LIQUIBASE_URL:-jdbc:postgresql://localhost:5432/customer_service}"
+LIQUIBASE_URL="${LIQUIBASE_URL:-jdbc:postgresql://localhost:5433/customer_service}"
 LIQUIBASE_USERNAME="${LIQUIBASE_USERNAME:-postgres}"
 LIQUIBASE_PASSWORD="${LIQUIBASE_PASSWORD:-postgres}"
 

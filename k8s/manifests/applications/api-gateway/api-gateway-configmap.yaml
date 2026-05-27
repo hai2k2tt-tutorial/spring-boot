@@ -3,6 +3,9 @@ kind: ConfigMap
 metadata:
   name: api-gateway-config
 data:
-  APP_SECURITY_CUSTOMER_ISSUER_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer"
-  APP_SECURITY_SHOP_ISSUER_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop"
-  APP_SECURITY_ADMIN_ISSUER_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin"
+  APP_SECURITY_CUSTOMER_ISSUER_URI: "http://keycloak.haint.fyi/realms/ecommerce-customer"
+  APP_SECURITY_CUSTOMER_JWK_SET_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer/protocol/openid-connect/certs"
+  APP_SECURITY_SHOP_ISSUER_URI: "http://keycloak.haint.fyi/realms/ecommerce-shop"
+  APP_SECURITY_SHOP_JWK_SET_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop/protocol/openid-connect/certs"
+  APP_SECURITY_ADMIN_ISSUER_URI: "http://keycloak.haint.fyi/realms/ecommerce-admin"
+  APP_SECURITY_ADMIN_JWK_SET_URI: "http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin/protocol/openid-connect/certs"
