@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { ApiDialogs } from "@/components/api-workspace/dialogs";
@@ -36,76 +36,131 @@ type AdminWorkspaceData = {
   skus: Awaited<ReturnType<typeof fetchSkus>>;
 };
 
-const emptyAdminWorkspaceData: AdminWorkspaceData = {
-  products: [],
-  categories: [],
-  shops: [],
-  customers: [],
-  orders: [],
-  payments: [],
-  skus: [],
-};
-
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function LoadingRow({ colSpan, label }: { colSpan: number; label: string }) {
+  return <TableRow><TableCell colSpan={colSpan} className="py-6 text-center text-sm text-slate-500">{label}</TableCell></TableRow>;
+}
+
+function ErrorRow({ colSpan, error, onRetry }: { colSpan: number; error: unknown; onRetry: () => void }) {
+  return (
+    <TableRow>
+      <TableCell colSpan={colSpan} className="py-6 text-center">
+        <div className="flex flex-col items-center gap-3 text-sm text-red-600">
+          <span>{getErrorMessage(error, "Unable to load data")}</span>
+          <Button type="button" size="sm" variant="outline" onClick={onRetry}>Retry</Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
-  const accessToken = session?.accessToken;
+  const authQueryKey = status === "authenticated" ? (session?.user.email ?? "authenticated") : "anonymous";
   const [dialog, setDialog] = useState<DialogName>(null);
-  const queryClient = useQueryClient();
 
-  const workspaceQuery = useQuery({
-    queryKey: ["admin-workspace", accessToken ? "authenticated" : "anonymous"],
-    queryFn: async (): Promise<AdminWorkspaceData> => {
-      const [shops, customers] = await Promise.all([
-        fetchShops(accessToken),
-        fetchCustomers(accessToken),
-      ]);
-
-      const [products, categories, orders, payments] = await Promise.all([
-        fetchProducts(accessToken),
-        fetchCategories(accessToken),
-        fetchOrders(undefined, accessToken),
-        fetchPayments(undefined, accessToken),
-      ]);
-
-      const firstProductId = products.find((product) => product.id)?.id;
-      const skus = firstProductId ? await fetchSkus(firstProductId, accessToken) : [];
-
-      return { products, categories, shops, customers, orders, payments, skus };
-    },
+  const productsQuery = useQuery({
+    queryKey: ["admin-products", authQueryKey],
+    queryFn: () => fetchProducts(),
     enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const categoriesQuery = useQuery({
+    queryKey: ["admin-categories", authQueryKey],
+    queryFn: () => fetchCategories(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const shopsQuery = useQuery({
+    queryKey: ["admin-shops", authQueryKey],
+    queryFn: () => fetchShops(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const customersQuery = useQuery({
+    queryKey: ["admin-customers", authQueryKey],
+    queryFn: () => fetchCustomers(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const ordersQuery = useQuery({
+    queryKey: ["admin-orders", authQueryKey],
+    queryFn: () => fetchOrders(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const paymentsQuery = useQuery({
+    queryKey: ["admin-payments", authQueryKey],
+    queryFn: () => fetchPayments(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const firstProductId = productsQuery.data?.find((product) => product.id)?.id;
+  const skusQuery = useQuery({
+    queryKey: ["admin-skus", firstProductId, authQueryKey],
+    queryFn: () => fetchSkus(firstProductId ?? ""),
+    enabled: status !== "loading" && !!firstProductId,
     staleTime: 30 * 1000,
     retry: 1,
   });
 
   const workspaceMutation = useMutation({
-    mutationFn: async (work: (token?: string) => Promise<unknown>) => work(accessToken),
+    mutationFn: async (work: () => Promise<unknown>) => work(),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["admin-workspace"] });
+      await refetchWorkspace();
       setDialog(null);
     },
   });
 
-  const data = workspaceQuery.data ?? emptyAdminWorkspaceData;
+  const data: AdminWorkspaceData = {
+    products: productsQuery.data ?? [],
+    categories: categoriesQuery.data ?? [],
+    shops: shopsQuery.data ?? [],
+    customers: customersQuery.data ?? [],
+    orders: ordersQuery.data ?? [],
+    payments: paymentsQuery.data ?? [],
+    skus: skusQuery.data ?? [],
+  };
   const { products, shops, customers, payments } = data;
   const feedback = workspaceMutation.error
     ? { kind: "error" as const, message: getErrorMessage(workspaceMutation.error, "API request failed") }
     : workspaceMutation.isSuccess
       ? { kind: "success" as const, message: "API request completed successfully." }
-      : workspaceQuery.error
-        ? { kind: "error" as const, message: getErrorMessage(workspaceQuery.error, "Unable to load admin data") }
-        : null;
+      : null;
 
-  async function submit(work: (token?: string) => Promise<unknown>) {
+  async function submit(work: () => Promise<unknown>) {
     await workspaceMutation.mutateAsync(work);
   }
 
-  async function requireToken() {
-    return accessToken;
+  async function refetchWorkspace() {
+    await Promise.allSettled([
+      productsQuery.refetch(),
+      categoriesQuery.refetch(),
+      shopsQuery.refetch(),
+      customersQuery.refetch(),
+      ordersQuery.refetch(),
+      paymentsQuery.refetch(),
+      skusQuery.refetch(),
+    ]);
   }
+
+  const workspaceIsFetching =
+    productsQuery.isFetching ||
+    categoriesQuery.isFetching ||
+    shopsQuery.isFetching ||
+    customersQuery.isFetching ||
+    ordersQuery.isFetching ||
+    paymentsQuery.isFetching ||
+    skusQuery.isFetching;
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -116,20 +171,21 @@ export default function AdminPage() {
           <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">Admin-token-only workspace for marketplace catalog, shops, customers, and payment controls.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => void workspaceQuery.refetch()} disabled={workspaceQuery.isFetching}>Refresh</Button>
+          <Button type="button" variant="outline" onClick={() => void refetchWorkspace()} disabled={workspaceIsFetching}>Refresh</Button>
           <Button type="button" variant="secondary" onClick={() => setDialog("shop")}>Shop</Button>
           <Button type="button" variant="secondary" onClick={() => setDialog("customer")}>Customer</Button>
         </div>
       </div>
 
       {feedback ? <Alert variant={feedback.kind === "error" ? "destructive" : "success"}>{feedback.message}</Alert> : null}
-      {status === "loading" || workspaceQuery.isLoading ? <p className="text-sm text-slate-500">Loading admin data...</p> : null}
-      {workspaceQuery.isError ? <Button type="button" variant="outline" onClick={() => void workspaceQuery.refetch()}>Retry loading data</Button> : null}
+      {status === "loading" ? <p className="text-sm text-slate-500">Loading admin session...</p> : null}
 
       <ApiMetrics data={data} />
 
       <ApiTable title="Catalog" headers={["Product", "Price", "Status", "Shop", "Category", "Updated"]} action={<Button size="sm" variant="outline" onClick={() => setDialog("category")}>Category</Button>}>
-        {products.length === 0 ? <EmptyRow colSpan={6} label="No products returned." /> : null}
+        {productsQuery.isLoading ? <LoadingRow colSpan={6} label="Loading products..." /> : null}
+        {productsQuery.isError ? <ErrorRow colSpan={6} error={productsQuery.error} onRetry={() => void productsQuery.refetch()} /> : null}
+        {!productsQuery.isLoading && !productsQuery.isError && products.length === 0 ? <EmptyRow colSpan={6} label="No products returned." /> : null}
         {products.map((product) => (
           <TableRow key={product.id ?? product.name}>
             <TableCell><p className="font-medium">{product.name}</p><p className="text-xs text-slate-500">{product.description}</p></TableCell>
@@ -144,43 +200,49 @@ export default function AdminPage() {
 
       <section className="grid gap-6 xl:grid-cols-2">
         <ApiTable title="Shops" headers={["Shop", "Owner", "Status", "Wallet", "Actions"]} action={<Button size="sm" onClick={() => setDialog("shop")}>Create</Button>}>
-          {shops.length === 0 ? <EmptyRow colSpan={5} label="No shops returned." /> : null}
+          {shopsQuery.isLoading ? <LoadingRow colSpan={5} label="Loading shops..." /> : null}
+          {shopsQuery.isError ? <ErrorRow colSpan={5} error={shopsQuery.error} onRetry={() => void shopsQuery.refetch()} /> : null}
+          {!shopsQuery.isLoading && !shopsQuery.isError && shops.length === 0 ? <EmptyRow colSpan={5} label="No shops returned." /> : null}
           {shops.map((shop) => (
             <TableRow key={shop.shopId}>
               <TableCell className="font-medium">{shop.shopName}</TableCell><TableCell>{shop.ownerName}</TableCell>
               <TableCell><Badge variant={shop.status === "ACTIVE" ? "secondary" : "outline"}>{shop.status}</Badge></TableCell>
               <TableCell>{shop.balance} {shop.currency}</TableCell>
-              <TableCell><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => submit((token) => updateShopStatus(shop.shopId, { status: shop.status === "ACTIVE" ? "LOCKED" : "ACTIVE" }, token))}>Toggle</Button><Button size="sm" variant="outline" onClick={() => submit((token) => updateShopWallet(shop.shopId, { balance: shop.balance, currency: shop.currency }, token))}>Wallet</Button></div></TableCell>
+              <TableCell><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => submit(() => updateShopStatus(shop.shopId, { status: shop.status === "ACTIVE" ? "LOCKED" : "ACTIVE" }))}>Toggle</Button><Button size="sm" variant="outline" onClick={() => submit(() => updateShopWallet(shop.shopId, { balance: shop.balance, currency: shop.currency }))}>Wallet</Button></div></TableCell>
             </TableRow>
           ))}
         </ApiTable>
 
         <ApiTable title="Customers" headers={["Customer", "Email", "Status", "Wallet", "Actions"]} action={<Button size="sm" onClick={() => setDialog("customer")}>Create</Button>}>
-          {customers.length === 0 ? <EmptyRow colSpan={5} label="No customers returned." /> : null}
+          {customersQuery.isLoading ? <LoadingRow colSpan={5} label="Loading customers..." /> : null}
+          {customersQuery.isError ? <ErrorRow colSpan={5} error={customersQuery.error} onRetry={() => void customersQuery.refetch()} /> : null}
+          {!customersQuery.isLoading && !customersQuery.isError && customers.length === 0 ? <EmptyRow colSpan={5} label="No customers returned." /> : null}
           {customers.map((customer) => (
             <TableRow key={customer.customerId}>
               <TableCell className="font-medium">{customer.firstName} {customer.lastName}</TableCell><TableCell>{customer.email}</TableCell>
               <TableCell><Badge variant={customer.status === "ACTIVE" ? "secondary" : "outline"}>{customer.status}</Badge></TableCell>
               <TableCell>{customer.balance} {customer.currency}</TableCell>
-              <TableCell><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => submit((token) => updateCustomerStatus(customer.customerId, { status: customer.status === "ACTIVE" ? "LOCKED" : "ACTIVE" }, token))}>Toggle</Button><Button size="sm" variant="outline" onClick={() => submit((token) => updateCustomerWallet(customer.customerId, { balance: customer.balance, currency: customer.currency }, token))}>Wallet</Button></div></TableCell>
+              <TableCell><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => submit(() => updateCustomerStatus(customer.customerId, { status: customer.status === "ACTIVE" ? "LOCKED" : "ACTIVE" }))}>Toggle</Button><Button size="sm" variant="outline" onClick={() => submit(() => updateCustomerWallet(customer.customerId, { balance: customer.balance, currency: customer.currency }))}>Wallet</Button></div></TableCell>
             </TableRow>
           ))}
         </ApiTable>
       </section>
 
       <ApiTable title="Payments" headers={["Payment", "Customer", "Order", "Method", "Status", "Amount", "Actions"]} action={<Button size="sm" onClick={() => setDialog("payment")}>Create</Button>}>
-        {payments.length === 0 ? <EmptyRow colSpan={7} label="No payments returned." /> : null}
+        {paymentsQuery.isLoading ? <LoadingRow colSpan={7} label="Loading payments..." /> : null}
+        {paymentsQuery.isError ? <ErrorRow colSpan={7} error={paymentsQuery.error} onRetry={() => void paymentsQuery.refetch()} /> : null}
+        {!paymentsQuery.isLoading && !paymentsQuery.isError && payments.length === 0 ? <EmptyRow colSpan={7} label="No payments returned." /> : null}
         {payments.map((payment) => (
           <TableRow key={payment.id}>
             <TableCell className="font-medium">{payment.id}</TableCell><TableCell>{payment.customerId}</TableCell><TableCell>{payment.orderId}</TableCell><TableCell>{payment.method}</TableCell>
             <TableCell><Badge variant={payment.status === "SUCCESS" ? "secondary" : payment.status === "FAILED" ? "destructive" : "outline"}>{payment.status}</Badge></TableCell>
             <TableCell>${payment.amount}</TableCell>
-            <TableCell><Button size="sm" variant="outline" onClick={() => submit((token) => updatePaymentStatus(payment.id, { status: payment.status === "SUCCESS" ? "FAILED" : "SUCCESS" }, token))}>Toggle</Button></TableCell>
+            <TableCell><Button size="sm" variant="outline" onClick={() => submit(() => updatePaymentStatus(payment.id, { status: payment.status === "SUCCESS" ? "FAILED" : "SUCCESS" }))}>Toggle</Button></TableCell>
           </TableRow>
         ))}
       </ApiTable>
 
-      <ApiDialogs dialog={dialog} setDialog={setDialog} saving={workspaceMutation.isPending} submit={submit} requireToken={requireToken} />
+      <ApiDialogs dialog={dialog} setDialog={setDialog} saving={workspaceMutation.isPending} submit={submit} />
     </main>
   );
 }

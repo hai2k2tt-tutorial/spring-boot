@@ -27,7 +27,7 @@ type ProductFormValues = z.output<typeof productSchema>;
 type ProductFormInput = z.input<typeof productSchema>;
 
 export function AddProductForm() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const queryClient = useQueryClient();
   const form = useForm<ProductFormInput, undefined, ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -43,16 +43,16 @@ export function AddProductForm() {
   });
 
   const createProductMutation = useMutation({
-    mutationFn: (values: ProductFormValues) => createProduct(values, session?.accessToken),
+    mutationFn: (values: ProductFormValues) => createProduct(values),
     onSuccess: async () => {
       form.reset();
-      await queryClient.invalidateQueries({ queryKey: ["api-workspace"] });
+      await queryClient.invalidateQueries({ queryKey: ["api-workspace-products"] });
       await queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 
   const submit = form.handleSubmit(async (values) => {
-    if (!session?.accessToken) {
+    if (status !== "authenticated") {
       await signIn("keycloak");
       return;
     }

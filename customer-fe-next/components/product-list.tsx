@@ -80,11 +80,11 @@ export function ProductList() {
   const products = productsQuery.data ?? [];
   const orderMutation = useMutation({
     mutationFn: ({ order }: { skuCode: string; order: Order }) => {
-      if (!session?.accessToken) {
+      if (status !== "authenticated") {
         throw new Error("Login is required before placing orders.");
       }
 
-      return orderProduct(order, session.accessToken);
+      return orderProduct(order);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -92,7 +92,7 @@ export function ProductList() {
   });
 
   const handleOrder = async (product: Product, values: OrderFormValues) => {
-    if (!session?.accessToken || !session.user) {
+    if (status !== "authenticated" || !session?.user) {
       await signIn("keycloak");
       return;
     }

@@ -26,7 +26,7 @@ export default function ShopPage() {
 
       <ApiTable title="Catalog" headers={["Product", "Price", "Status", "Category", "Updated", "Actions"]} action={<div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => auth.setDialog("attribute")}>Attribute</Button><Button size="sm" onClick={() => auth.setDialog("product")}>Create</Button></div>}>
         {products.length === 0 ? <EmptyRow colSpan={6} label="No products returned." /> : null}
-        {products.map((product) => <TableRow key={product.id ?? product.name}><TableCell className="font-medium">{product.name}</TableCell><TableCell>${product.price}</TableCell><TableCell><Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge></TableCell><TableCell>{product.categoryId ?? "-"}</TableCell><TableCell className="text-slate-500">{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-"}</TableCell><TableCell><Button size="sm" variant="outline" disabled={!product.id} onClick={() => auth.submit((token) => updateProduct(product.id!, { ...product, status: product.status === "ACTIVE" ? "DRAFT" : "ACTIVE" }, token))}>Toggle</Button></TableCell></TableRow>)}
+        {products.map((product) => <TableRow key={product.id ?? product.name}><TableCell className="font-medium">{product.name}</TableCell><TableCell>${product.price}</TableCell><TableCell><Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge></TableCell><TableCell>{product.categoryId ?? "-"}</TableCell><TableCell className="text-slate-500">{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-"}</TableCell><TableCell><Button size="sm" variant="outline" disabled={!product.id} onClick={() => auth.submit(() => updateProduct(product.id!, { ...product, status: product.status === "ACTIVE" ? "DRAFT" : "ACTIVE" }))}>Toggle</Button></TableCell></TableRow>)}
       </ApiTable>
 
       <ApiTable title="Inventory" headers={["SKU", "Product", "Price override", "Quantity", "Created", "Actions"]} action={<div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => auth.setDialog("stock")}>Stock check</Button><Button size="sm" onClick={() => auth.setDialog("sku")}>SKU</Button></div>}>
@@ -44,7 +44,7 @@ export default function ShopPage() {
         {payments.map((payment) => <TableRow key={payment.id}><TableCell className="font-medium">{payment.id}</TableCell><TableCell>{payment.orderId}</TableCell><TableCell>{payment.method}</TableCell><TableCell><Badge variant={payment.status === "SUCCESS" ? "secondary" : payment.status === "FAILED" ? "destructive" : "outline"}>{payment.status}</Badge></TableCell><TableCell>${payment.amount}</TableCell></TableRow>)}
       </ApiTable>
 
-      <ApiDialogs dialog={auth.dialog} setDialog={auth.setDialog} saving={auth.saving} submit={auth.submit} requireToken={auth.requireToken} />
+      <ApiDialogs dialog={auth.dialog} setDialog={auth.setDialog} saving={auth.saving} submit={auth.submit} />
     </main>
   );
 }

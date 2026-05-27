@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { DialogName } from "@/components/api-workspace/dialogs";
@@ -37,35 +37,6 @@ export type WorkspaceData = {
 
 export type WorkspaceFeedback = { kind: "success" | "error"; message: string } | null;
 
-const emptyWorkspaceData: WorkspaceData = {
-  products: [],
-  categories: [],
-  shops: [],
-  customers: [],
-  orders: [],
-  payments: [],
-  skus: [],
-};
-
-async function fetchWorkspaceData(mode: WorkspaceMode, accessToken?: string): Promise<WorkspaceData> {
-  const [shops, customers] = await Promise.all([
-    mode === "admin" || mode === "shop" ? fetchShops(accessToken) : Promise.resolve([]),
-    mode === "admin" || mode === "customer" ? fetchCustomers(accessToken) : Promise.resolve([]),
-  ]);
-
-  const [products, categories, orders, payments] = await Promise.all([
-    fetchProducts(accessToken),
-    fetchCategories(accessToken),
-    fetchOrders(undefined, accessToken),
-    fetchPayments(undefined, accessToken),
-  ]);
-
-  const firstProductId = products.find((product) => product.id)?.id;
-  const skus = firstProductId ? await fetchSkus(firstProductId, accessToken) : [];
-
-  return { products, categories, shops, customers, orders, payments, skus };
-}
-
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
@@ -73,38 +44,106 @@ function getErrorMessage(error: unknown, fallback: string) {
 export function useWorkspaceAuth(mode: WorkspaceMode) {
   const { data: session, status } = useSession();
   const [dialog, setDialog] = useState<DialogName>(null);
-  const queryClient = useQueryClient();
-  const accessToken = session?.accessToken;
+  const authQueryKey = status === "authenticated" ? (session?.user.email ?? "authenticated") : "anonymous";
+  const loadShops = mode === "admin" || mode === "shop";
+  const loadCustomers = mode === "admin" || mode === "customer";
 
-  const workspaceQuery = useQuery({
-    queryKey: ["api-workspace", mode, accessToken ? "authenticated" : "anonymous"],
-    queryFn: () => fetchWorkspaceData(mode, accessToken),
+  const productsQuery = useQuery({
+    queryKey: ["api-workspace-products", mode, authQueryKey],
+    queryFn: () => fetchProducts(),
     enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const categoriesQuery = useQuery({
+    queryKey: ["api-workspace-categories", mode, authQueryKey],
+    queryFn: () => fetchCategories(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const shopsQuery = useQuery({
+    queryKey: ["api-workspace-shops", mode, authQueryKey],
+    queryFn: () => fetchShops(),
+    enabled: status !== "loading" && loadShops,
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const customersQuery = useQuery({
+    queryKey: ["api-workspace-customers", mode, authQueryKey],
+    queryFn: () => fetchCustomers(),
+    enabled: status !== "loading" && loadCustomers,
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const ordersQuery = useQuery({
+    queryKey: ["api-workspace-orders", mode, authQueryKey],
+    queryFn: () => fetchOrders(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const paymentsQuery = useQuery({
+    queryKey: ["api-workspace-payments", mode, authQueryKey],
+    queryFn: () => fetchPayments(),
+    enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const firstProductId = productsQuery.data?.find((product) => product.id)?.id;
+  const skusQuery = useQuery({
+    queryKey: ["api-workspace-skus", mode, firstProductId, authQueryKey],
+    queryFn: () => fetchSkus(firstProductId ?? ""),
+    enabled: status !== "loading" && !!firstProductId,
     staleTime: 30 * 1000,
     retry: 1,
   });
 
   const workspaceMutation = useMutation({
-    mutationFn: async (work: (token?: string) => Promise<unknown>) => work(accessToken),
+    mutationFn: async (work: () => Promise<unknown>) => work(),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-workspace", mode] });
+      await refetchWorkspace();
       setDialog(null);
     },
   });
 
-  async function submit(work: (token?: string) => Promise<unknown>) {
+  async function submit(work: () => Promise<unknown>) {
     await workspaceMutation.mutateAsync(work);
   }
 
   function loadData() {
-    void workspaceQuery.refetch();
+    void refetchWorkspace();
   }
 
-  async function requireToken() {
-    return accessToken;
+  async function refetchWorkspace() {
+    await Promise.allSettled([
+      productsQuery.refetch(),
+      categoriesQuery.refetch(),
+      shopsQuery.refetch(),
+      customersQuery.refetch(),
+      ordersQuery.refetch(),
+      paymentsQuery.refetch(),
+      skusQuery.refetch(),
+    ]);
   }
 
-  const queryError = workspaceQuery.error;
+  const data: WorkspaceData = {
+    products: productsQuery.data ?? [],
+    categories: categoriesQuery.data ?? [],
+    shops: shopsQuery.data ?? [],
+    customers: customersQuery.data ?? [],
+    orders: ordersQuery.data ?? [],
+    payments: paymentsQuery.data ?? [],
+    skus: skusQuery.data ?? [],
+  };
+  const queryError =
+    productsQuery.error ||
+    categoriesQuery.error ||
+    shopsQuery.error ||
+    customersQuery.error ||
+    ordersQuery.error ||
+    paymentsQuery.error ||
+    skusQuery.error;
   const mutationError = workspaceMutation.error;
   const feedback: WorkspaceFeedback = mutationError
     ? { kind: "error", message: getErrorMessage(mutationError, "API request failed") }
@@ -114,19 +153,43 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
         ? { kind: "error", message: getErrorMessage(queryError, "Unable to load API data") }
         : null;
 
+  const loading =
+    status === "loading" ||
+    productsQuery.isLoading ||
+    categoriesQuery.isLoading ||
+    shopsQuery.isLoading ||
+    customersQuery.isLoading ||
+    ordersQuery.isLoading ||
+    paymentsQuery.isLoading ||
+    skusQuery.isLoading;
+  const fetching =
+    productsQuery.isFetching ||
+    categoriesQuery.isFetching ||
+    shopsQuery.isFetching ||
+    customersQuery.isFetching ||
+    ordersQuery.isFetching ||
+    paymentsQuery.isFetching ||
+    skusQuery.isFetching;
+  const isError =
+    productsQuery.isError ||
+    categoriesQuery.isError ||
+    shopsQuery.isError ||
+    customersQuery.isError ||
+    ordersQuery.isError ||
+    paymentsQuery.isError ||
+    skusQuery.isError;
+
   return {
-    accessToken,
-    data: workspaceQuery.data ?? emptyWorkspaceData,
+    data,
     dialog,
     setDialog,
-    loading: status === "loading" || workspaceQuery.isLoading,
-    fetching: workspaceQuery.isFetching,
+    loading,
+    fetching,
     saving: workspaceMutation.isPending,
     feedback,
-    isError: workspaceQuery.isError,
-    refetch: workspaceQuery.refetch,
+    isError,
+    refetch: refetchWorkspace,
     loadData,
-    requireToken,
     submit,
   };
 }

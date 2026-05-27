@@ -126,6 +126,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string | undefined;
+      session.accessTokenExpires = token.accessTokenExpires as number | undefined;
       session.error = token.error as string | undefined;
       session.user.preferred_username = token.preferredUsername as string | undefined;
       session.user.given_name = token.givenName as string | undefined;

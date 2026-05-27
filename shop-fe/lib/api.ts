@@ -1,4 +1,6 @@
-import axios from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { getSession } from "next-auth/react";
+import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-token";
 import {
   AttributeRequestDto,
   AttributeResponseVo,
@@ -37,6 +39,57 @@ const api = axios.create({
   },
 });
 
+type AuthRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) {
+  config.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+}
+
+async function resolveAccessToken(): Promise<string | undefined> {
+  const storedToken = getAccessToken();
+  if (storedToken) return storedToken;
+
+  const session = await getSession();
+  if (session?.accessToken) {
+    setAccessToken(session.accessToken, session.accessTokenExpires);
+    return session.accessToken;
+  }
+
+  return undefined;
+}
+
+api.interceptors.request.use(async (config) => {
+  const token = await resolveAccessToken();
+  if (token) {
+    applyAuthorizationHeader(config, token);
+  }
+
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as AuthRequestConfig | undefined;
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      clearAccessToken();
+
+      const session = await getSession();
+      if (session?.accessToken) {
+        setAccessToken(session.accessToken, session.accessTokenExpires);
+        applyAuthorizationHeader(originalRequest, session.accessToken);
+        return api(originalRequest);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 function parseError(error: unknown): Error {
   if (axios.isAxiosError(error)) {
     const responseMessage =
@@ -49,70 +102,54 @@ function parseError(error: unknown): Error {
   return error instanceof Error ? error : new Error("Request failed");
 }
 
-export async function fetchProducts(accessToken?: string): Promise<Product[]> {
+export async function fetchProducts(): Promise<Product[]> {
   try {
-    const response = await api.get<Product[]>("/product", {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<Product[]>("/product");
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-function authHeaders(accessToken?: string) {
-  return accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
-}
-
-export async function createProduct(product: ProductRequestDto | Product, accessToken?: string): Promise<ProductResponseVo> {
+export async function createProduct(product: ProductRequestDto | Product): Promise<ProductResponseVo> {
   try {
-    const response = await api.post<ProductResponseVo>("/product", product, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<ProductResponseVo>("/product", product);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function updateProduct(productId: UUID, product: ProductRequestDto | Product, accessToken?: string): Promise<ProductResponseVo> {
+export async function updateProduct(productId: UUID, product: ProductRequestDto | Product): Promise<ProductResponseVo> {
   try {
-    const response = await api.put<ProductResponseVo>("/product", { ...product, id: productId }, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.put<ProductResponseVo>("/product", { ...product, id: productId });
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchCategories(accessToken?: string): Promise<CategoryResponseVo[]> {
+export async function fetchCategories(): Promise<CategoryResponseVo[]> {
   try {
-    const response = await api.get<CategoryResponseVo[]>("/categories", {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<CategoryResponseVo[]>("/categories");
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function createCategory(category: CategoryRequestDto, accessToken?: string): Promise<CategoryResponseVo> {
+export async function createCategory(category: CategoryRequestDto): Promise<CategoryResponseVo> {
   try {
-    const response = await api.post<CategoryResponseVo>("/categories", category, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<CategoryResponseVo>("/categories", category);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function createAttribute(attribute: AttributeRequestDto, accessToken?: string): Promise<AttributeResponseVo> {
+export async function createAttribute(attribute: AttributeRequestDto): Promise<AttributeResponseVo> {
   try {
-    const response = await api.post<AttributeResponseVo>("/inventory/attributes", attribute, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<AttributeResponseVo>("/inventory/attributes", attribute);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -121,24 +158,20 @@ export async function createAttribute(attribute: AttributeRequestDto, accessToke
 
 export async function createAttributeValue(
   attributeId: UUID,
-  value: AttributeValueRequestDto,
-  accessToken?: string
+  value: AttributeValueRequestDto
 ): Promise<AttributeValueResponseVo> {
   try {
-    const response = await api.post<AttributeValueResponseVo>(`/inventory/attributes/${attributeId}/values`, value, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<AttributeValueResponseVo>(`/inventory/attributes/${attributeId}/values`, value);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchAttributes(productId: UUID, accessToken?: string): Promise<AttributeResponseVo[]> {
+export async function fetchAttributes(productId: UUID): Promise<AttributeResponseVo[]> {
   try {
     const response = await api.get<AttributeResponseVo[]>("/inventory/attributes", {
       params: { productId },
-      headers: authHeaders(accessToken),
     });
     return response.data;
   } catch (error) {
@@ -146,33 +179,28 @@ export async function fetchAttributes(productId: UUID, accessToken?: string): Pr
   }
 }
 
-export async function fetchAttributeValues(attributeId: UUID, accessToken?: string): Promise<AttributeValueResponseVo[]> {
+export async function fetchAttributeValues(attributeId: UUID): Promise<AttributeValueResponseVo[]> {
   try {
-    const response = await api.get<AttributeValueResponseVo[]>(`/inventory/attributes/${attributeId}/values`, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<AttributeValueResponseVo[]>(`/inventory/attributes/${attributeId}/values`);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function createSku(sku: SkuRequestDto, accessToken?: string): Promise<SkuResponseVo> {
+export async function createSku(sku: SkuRequestDto): Promise<SkuResponseVo> {
   try {
-    const response = await api.post<SkuResponseVo>("/inventory/skus", sku, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<SkuResponseVo>("/inventory/skus", sku);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchSkus(productId: UUID, accessToken?: string): Promise<SkuResponseVo[]> {
+export async function fetchSkus(productId: UUID): Promise<SkuResponseVo[]> {
   try {
     const response = await api.get<SkuResponseVo[]>("/inventory/skus", {
       params: { productId },
-      headers: authHeaders(accessToken),
     });
     return response.data;
   } catch (error) {
@@ -180,11 +208,10 @@ export async function fetchSkus(productId: UUID, accessToken?: string): Promise<
   }
 }
 
-export async function checkStock(skuCode: string, quantity: number, accessToken?: string): Promise<InventoryCheckResponseVo> {
+export async function checkStock(skuCode: string, quantity: number): Promise<InventoryCheckResponseVo> {
   try {
     const response = await api.get<InventoryCheckResponseVo>("/inventory/stock-check", {
       params: { skuCode, quantity },
-      headers: authHeaders(accessToken),
     });
     return response.data;
   } catch (error) {
@@ -192,22 +219,19 @@ export async function checkStock(skuCode: string, quantity: number, accessToken?
   }
 }
 
-export async function placeOrder(order: OrderCreateRequestDto, accessToken?: string): Promise<OrderResponseVo> {
+export async function placeOrder(order: OrderCreateRequestDto): Promise<OrderResponseVo> {
   try {
-    const response = await api.post<OrderResponseVo>("/order", order, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<OrderResponseVo>("/order", order);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchOrders(customerId?: UUID, accessToken?: string): Promise<OrderResponseVo[]> {
+export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]> {
   try {
     const response = await api.get<OrderResponseVo[]>("/order", {
       params: customerId ? { customerId } : undefined,
-      headers: authHeaders(accessToken),
     });
     return response.data;
   } catch (error) {
@@ -215,22 +239,18 @@ export async function fetchOrders(customerId?: UUID, accessToken?: string): Prom
   }
 }
 
-export async function orderProduct(order: Order, accessToken?: string): Promise<OrderResponseVo> {
+export async function orderProduct(order: Order): Promise<OrderResponseVo> {
   try {
-    const response = await api.post<OrderResponseVo>("/order", order, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<OrderResponseVo>("/order", order);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function createPayment(payment: PaymentCreateRequestDto, accessToken?: string): Promise<PaymentResponseVo> {
+export async function createPayment(payment: PaymentCreateRequestDto): Promise<PaymentResponseVo> {
   try {
-    const response = await api.post<PaymentResponseVo>("/payments", payment, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<PaymentResponseVo>("/payments", payment);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -239,24 +259,20 @@ export async function createPayment(payment: PaymentCreateRequestDto, accessToke
 
 export async function updatePaymentStatus(
   paymentId: UUID,
-  status: PaymentStatusUpdateRequestDto,
-  accessToken?: string
+  status: PaymentStatusUpdateRequestDto
 ): Promise<PaymentResponseVo> {
   try {
-    const response = await api.patch<PaymentResponseVo>(`/payments/${paymentId}/status`, status, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.patch<PaymentResponseVo>(`/payments/${paymentId}/status`, status);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchPayments(filters?: { customerId?: UUID; orderId?: UUID }, accessToken?: string): Promise<PaymentResponseVo[]> {
+export async function fetchPayments(filters?: { customerId?: UUID; orderId?: UUID }): Promise<PaymentResponseVo[]> {
   try {
     const response = await api.get<PaymentResponseVo[]>("/payments", {
       params: filters,
-      headers: authHeaders(accessToken),
     });
     return response.data;
   } catch (error) {
@@ -264,22 +280,18 @@ export async function fetchPayments(filters?: { customerId?: UUID; orderId?: UUI
   }
 }
 
-export async function fetchPaymentHistory(paymentId: UUID, accessToken?: string): Promise<PaymentHistoryResponseVo[]> {
+export async function fetchPaymentHistory(paymentId: UUID): Promise<PaymentHistoryResponseVo[]> {
   try {
-    const response = await api.get<PaymentHistoryResponseVo[]>(`/payments/${paymentId}/history`, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<PaymentHistoryResponseVo[]>(`/payments/${paymentId}/history`);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function createCustomer(customer: CustomerCreateRequestDto, accessToken?: string): Promise<CustomerResponseVo> {
+export async function createCustomer(customer: CustomerCreateRequestDto): Promise<CustomerResponseVo> {
   try {
-    const response = await api.post<CustomerResponseVo>("/customers", customer, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<CustomerResponseVo>("/customers", customer);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -288,13 +300,10 @@ export async function createCustomer(customer: CustomerCreateRequestDto, accessT
 
 export async function updateCustomerStatus(
   customerId: UUID,
-  status: CustomerStatusUpdateRequestDto,
-  accessToken?: string
+  status: CustomerStatusUpdateRequestDto
 ): Promise<CustomerResponseVo> {
   try {
-    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/status`, status, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/status`, status);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -303,46 +312,37 @@ export async function updateCustomerStatus(
 
 export async function updateCustomerWallet(
   customerId: UUID,
-  wallet: CustomerWalletUpdateRequestDto,
-  accessToken?: string
+  wallet: CustomerWalletUpdateRequestDto
 ): Promise<CustomerResponseVo> {
   try {
-    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/wallet`, wallet, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/wallet`, wallet);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchCustomers(accessToken?: string): Promise<CustomerResponseVo[]> {
+export async function fetchCustomers(): Promise<CustomerResponseVo[]> {
   try {
-    const response = await api.get<CustomerResponseVo[]>("/customers", {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<CustomerResponseVo[]>("/customers");
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchCustomer(customerId: UUID, accessToken?: string): Promise<CustomerResponseVo> {
+export async function fetchCustomer(customerId: UUID): Promise<CustomerResponseVo> {
   try {
-    const response = await api.get<CustomerResponseVo>(`/customers/${customerId}`, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<CustomerResponseVo>(`/customers/${customerId}`);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function createShop(shop: ShopCreateRequestDto, accessToken?: string): Promise<ShopResponseVo> {
+export async function createShop(shop: ShopCreateRequestDto): Promise<ShopResponseVo> {
   try {
-    const response = await api.post<ShopResponseVo>("/shops", shop, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.post<ShopResponseVo>("/shops", shop);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -351,13 +351,10 @@ export async function createShop(shop: ShopCreateRequestDto, accessToken?: strin
 
 export async function updateShopStatus(
   shopId: UUID,
-  status: ShopStatusUpdateRequestDto,
-  accessToken?: string
+  status: ShopStatusUpdateRequestDto
 ): Promise<ShopResponseVo> {
   try {
-    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/status`, status, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/status`, status);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -366,35 +363,28 @@ export async function updateShopStatus(
 
 export async function updateShopWallet(
   shopId: UUID,
-  wallet: ShopWalletUpdateRequestDto,
-  accessToken?: string
+  wallet: ShopWalletUpdateRequestDto
 ): Promise<ShopResponseVo> {
   try {
-    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/wallet`, wallet, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/wallet`, wallet);
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchShops(accessToken?: string): Promise<ShopResponseVo[]> {
+export async function fetchShops(): Promise<ShopResponseVo[]> {
   try {
-    const response = await api.get<ShopResponseVo[]>("/shops", {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<ShopResponseVo[]>("/shops");
     return response.data;
   } catch (error) {
     throw parseError(error);
   }
 }
 
-export async function fetchShop(shopId: UUID, accessToken?: string): Promise<ShopResponseVo> {
+export async function fetchShop(shopId: UUID): Promise<ShopResponseVo> {
   try {
-    const response = await api.get<ShopResponseVo>(`/shops/${shopId}`, {
-      headers: authHeaders(accessToken),
-    });
+    const response = await api.get<ShopResponseVo>(`/shops/${shopId}`);
     return response.data;
   } catch (error) {
     throw parseError(error);
