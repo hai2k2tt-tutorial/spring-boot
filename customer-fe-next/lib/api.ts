@@ -41,21 +41,38 @@ type AuthRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
+let sessionAccessTokenPromise: Promise<string | undefined> | null = null;
+
 function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) {
   config.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
 }
 
-async function resolveAccessToken(): Promise<string | undefined> {
-  const storedToken = getAccessToken();
-  if (storedToken) return storedToken;
-
+async function loadAccessTokenFromSession(): Promise<string | undefined> {
   const session = await getSession();
   if (session?.accessToken) {
     setAccessToken(session.accessToken, session.accessTokenExpires);
     return session.accessToken;
   }
 
+  clearAccessToken();
   return undefined;
+}
+
+async function resolveAccessToken(options: { forceSession?: boolean } = {}): Promise<string | undefined> {
+  if (!options.forceSession) {
+    const storedToken = getAccessToken();
+    if (storedToken) return storedToken;
+  }
+
+  sessionAccessTokenPromise ??= loadAccessTokenFromSession().finally(() => {
+    sessionAccessTokenPromise = null;
+  });
+
+  return sessionAccessTokenPromise;
+}
+
+function normalizeBearerToken(token: string) {
+  return token.startsWith("Bearer ") ? token : `Bearer ${token}`;
 }
 
 api.interceptors.request.use(async (config) => {
@@ -74,14 +91,16 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
+      const previousAuthorization = originalRequest.headers.Authorization;
       clearAccessToken();
 
-      const session = await getSession();
-      if (session?.accessToken) {
-        setAccessToken(session.accessToken, session.accessTokenExpires);
-        applyAuthorizationHeader(originalRequest, session.accessToken);
+      const token = await resolveAccessToken({ forceSession: true });
+      if (token && previousAuthorization !== normalizeBearerToken(token)) {
+        applyAuthorizationHeader(originalRequest, token);
         return api(originalRequest);
       }
+
+      clearAccessToken();
     }
 
     return Promise.reject(error);
