@@ -140,9 +140,8 @@ sh payment-service/scripts/db.sh rollback-last
 
 - **Tables:** `t_shop_auth`, `t_shop_profile`, `t_shop_wallet`
 - **t_shop_auth columns:**
-  - `id` (UUID, PK)
+  - `id` (UUID, PK; Keycloak `sub`)
   - `email` (varchar, unique)
-  - `password_hash` (varchar)
   - `status` (`ACTIVE` / `LOCKED`)
   - `created_at` (timestamp with time zone)
   - `updated_at` (timestamp with time zone)
@@ -185,9 +184,8 @@ sh shop-service/scripts/db.sh rollback-last
 
 - **Tables:** `t_customer_auth`, `t_customer_profile`, `t_customer_wallet`
 - **t_customer_auth columns:**
-  - `id` (UUID, PK)
+  - `id` (UUID, PK; Keycloak `sub`)
   - `email` (varchar, unique)
-  - `password_hash` (varchar)
   - `status` (`ACTIVE` / `LOCKED`)
   - `created_at` (timestamp with time zone)
   - `updated_at` (timestamp with time zone)

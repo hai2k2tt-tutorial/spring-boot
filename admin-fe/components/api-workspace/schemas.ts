@@ -56,19 +56,6 @@ export const paymentSchema = z.object({
   status: z.enum(["PENDING", "SUCCESS", "FAILED"]),
 });
 
-export const accountSchema = z.object({
-  email: z.string().trim().email("Valid email is required"),
-  passwordHash: z.string().trim().min(1, "Password hash is required"),
-  status: z.enum(["ACTIVE", "LOCKED"]),
-  firstName: z.string().trim().optional(),
-  lastName: z.string().trim().optional(),
-  shopName: z.string().trim().optional(),
-  ownerName: z.string().trim().optional(),
-  phone: optionalText,
-  initialBalance: z.coerce.number().min(0, "Balance cannot be negative"),
-  currency: z.string().trim().min(1, "Currency is required"),
-});
-
 export const stockSchema = z.object({
   skuCode: z.string().trim().min(1, "SKU code is required"),
   quantity: z.coerce.number().int().min(1, "Quantity must be greater than 0"),

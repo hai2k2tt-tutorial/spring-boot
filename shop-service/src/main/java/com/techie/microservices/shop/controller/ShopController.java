@@ -1,11 +1,11 @@
 package com.techie.microservices.shop.controller;
 
-import com.techie.microservices.shop.dto.ShopCreateRequestDto;
 import com.techie.microservices.shop.dto.ShopStatusUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopWalletUpdateRequestDto;
 import com.techie.microservices.shop.service.ShopService;
 import com.techie.microservices.shop.vo.ShopResponseVo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,10 +27,10 @@ public class ShopController {
 
     private final ShopService shopService;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ShopResponseVo createShop(@RequestBody ShopCreateRequestDto shopCreateRequestDto) {
-        return shopService.createShop(shopCreateRequestDto);
+    @PostMapping("/me/sync")
+    @ResponseStatus(HttpStatus.OK)
+    public ShopResponseVo syncCurrentShop(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return shopService.syncCurrentShop(authorization);
     }
 
     @PatchMapping("/{shopId}/status")

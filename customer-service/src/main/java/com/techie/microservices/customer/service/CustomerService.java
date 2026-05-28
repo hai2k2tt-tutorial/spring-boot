@@ -1,6 +1,7 @@
 package com.techie.microservices.customer.service;
 
-import com.techie.microservices.customer.dto.CustomerCreateRequestDto;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techie.microservices.customer.dto.CustomerStatusUpdateRequestDto;
 import com.techie.microservices.customer.dto.CustomerWalletUpdateRequestDto;
 import com.techie.microservices.customer.mapper.CustomerMapper;
@@ -18,8 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,23 +34,33 @@ public class CustomerService {
     private final CustomerProfileRepository customerProfileRepository;
     private final CustomerWalletRepository customerWalletRepository;
     private final CustomerMapper customerMapper;
+    private final ObjectMapper objectMapper;
 
     @Transactional
-    public CustomerResponseVo createCustomer(CustomerCreateRequestDto customerCreateRequestDto) {
-        if (customerAuthRepository.findByEmail(customerCreateRequestDto.email()).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer email already exists");
-        }
+    public CustomerResponseVo syncCurrentCustomer(String authorization) {
+        TokenClaims claims = parseTokenClaims(authorization);
+        UUID authId = parseAuthId(claims.subject());
 
-        CustomerAuth customerAuth = customerMapper.toAuthEntity(customerCreateRequestDto);
+        return customerProfileRepository.findByAuthId(authId)
+                .map(this::mapCustomer)
+                .orElseGet(() -> createCustomerFromClaims(authId, claims));
+    }
+
+    private CustomerResponseVo createCustomerFromClaims(UUID authId, TokenClaims claims) {
+        customerAuthRepository.findByEmail(claims.email()).ifPresent(existing -> {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer email already exists for another auth id");
+        });
+
+        CustomerAuth customerAuth = customerMapper.toAuthEntity(authId, claims.email());
         customerAuthRepository.save(customerAuth);
 
-        CustomerProfile customerProfile = customerMapper.toProfileEntity(customerCreateRequestDto, customerAuth);
+        CustomerProfile customerProfile = customerMapper.toProfileEntity(customerAuth, claims.firstName(), claims.lastName());
         customerProfileRepository.save(customerProfile);
 
-        CustomerWallet customerWallet = customerMapper.toWalletEntity(customerCreateRequestDto, customerProfile);
+        CustomerWallet customerWallet = customerMapper.toWalletEntity(customerProfile);
         customerWalletRepository.save(customerWallet);
 
-        log.info("Customer created successfully");
+        log.info("Customer synced successfully");
         return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
     }
 
@@ -95,5 +109,73 @@ public class CustomerService {
         CustomerWallet customerWallet = customerWalletRepository.findById(customerProfile.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
         return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+    }
+
+    private TokenClaims parseTokenClaims(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing bearer token");
+        }
+
+        String token = authorization.substring(7);
+        String[] tokenParts = token.split("\\.");
+        if (tokenParts.length < 2) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid bearer token");
+        }
+
+        try {
+            byte[] payload = Base64.getUrlDecoder().decode(tokenParts[1]);
+            Map<String, Object> claims = objectMapper.readValue(
+                    new String(payload, StandardCharsets.UTF_8),
+                    new TypeReference<>() {
+                    }
+            );
+            String subject = requiredClaim(claims, "sub");
+            String email = requiredClaim(claims, "email");
+            String preferredName = stringClaim(claims, "preferred_username");
+            String firstName = stringClaim(claims, "given_name");
+            String lastName = stringClaim(claims, "family_name");
+
+            if (firstName == null || firstName.isBlank()) {
+                firstName = preferredName != null && !preferredName.isBlank() ? preferredName : emailName(email);
+            }
+            if (lastName == null || lastName.isBlank()) {
+                lastName = "-";
+            }
+
+            return new TokenClaims(subject, email, firstName, lastName);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid bearer token");
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unable to read token claims");
+        }
+    }
+
+    private UUID parseAuthId(String subject) {
+        try {
+            return UUID.fromString(subject);
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token subject must be a UUID");
+        }
+    }
+
+    private String requiredClaim(Map<String, Object> claims, String name) {
+        String value = stringClaim(claims, name);
+        if (value == null || value.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing token claim: " + name);
+        }
+        return value;
+    }
+
+    private String stringClaim(Map<String, Object> claims, String name) {
+        Object value = claims.get(name);
+        return value instanceof String stringValue ? stringValue.trim() : null;
+    }
+
+    private String emailName(String email) {
+        int atIndex = email.indexOf('@');
+        return atIndex > 0 ? email.substring(0, atIndex) : email;
+    }
+
+    private record TokenClaims(String subject, String email, String firstName, String lastName) {
     }
 }

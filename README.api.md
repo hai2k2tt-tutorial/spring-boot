@@ -208,26 +208,11 @@ Payment history `type` values are `TOPUP`, `PURCHASE`, and `REFUND`.
 
 | Method | Path | Status | Params | Request body | Response |
 | --- | --- | --- | --- | --- | --- |
-| `POST` | `/api/customers` | `201 Created` | None | `CustomerCreateRequestDto` | `CustomerResponseVo` | - adjust to flow check after user login keycloak success, then sync to customer table database, for now it just creates a customer directly through this endpoint
+| `POST` | `/api/customers/me/sync` | `200 OK` | None | None | `CustomerResponseVo` | - customer login sync; uses bearer token claims, creates auth/profile/wallet if missing, no-op if already synced
 | `PATCH` | `/api/customers/{customerId}/status` | `200 OK` | `customerId` path `UUID` | `CustomerStatusUpdateRequestDto` | `CustomerResponseVo` | - admin
 | `PATCH` | `/api/customers/{customerId}/wallet` | `200 OK` | `customerId` path `UUID` | `CustomerWalletUpdateRequestDto` | `CustomerResponseVo` | - user (only own wallet) + admin (all wallets)
 | `GET` | `/api/customers` | `200 OK` | None | None | `CustomerResponseVo[]` | - admin only
 | `GET` | `/api/customers/{customerId}` | `200 OK` | `customerId` path `UUID` | None | `CustomerResponseVo` | - user (only own profile) + admin (all profiles)
-
-`CustomerCreateRequestDto`
-
-```json
-{
-  "email": "string",
-  "passwordHash": "string",
-  "status": "ACTIVE | LOCKED",
-  "firstName": "string",
-  "lastName": "string",
-  "phone": "string",
-  "initialBalance": 0,
-  "currency": "string"
-}
-```
 
 `CustomerStatusUpdateRequestDto`
 
@@ -252,26 +237,11 @@ Payment history `type` values are `TOPUP`, `PURCHASE`, and `REFUND`.
 
 | Method | Path | Status | Params | Request body | Response |
 | --- | --- | --- | --- | --- | --- |
-| `POST` | `/api/shops` | `201 Created` | None | `ShopCreateRequestDto` | `ShopResponseVo` | - adjust to flow check after user login keycloak success, then sync to shop table database, for now it just creates a shop directly through this endpoint
+| `POST` | `/api/shops/me/sync` | `200 OK` | None | None | `ShopResponseVo` | - shop login sync; uses bearer token claims, creates auth/profile/wallet if missing, no-op if already synced
 | `PATCH` | `/api/shops/{shopId}/status` | `200 OK` | `shopId` path `UUID` | `ShopStatusUpdateRequestDto` | `ShopResponseVo` | - admin
 | `PATCH` | `/api/shops/{shopId}/wallet` | `200 OK` | `shopId` path `UUID` | `ShopWalletUpdateRequestDto` | `ShopResponseVo` | - shop (only own wallet) + admin (all wallets)
 | `GET` | `/api/shops` | `200 OK` | None | None | `ShopResponseVo[]` | - admin only
 | `GET` | `/api/shops/{shopId}` | `200 OK` | `shopId` path `UUID` | None | `ShopResponseVo` | - shop (only own profile) + admin (all profiles)
-
-`ShopCreateRequestDto`
-
-```json
-{
-  "email": "string",
-  "passwordHash": "string",
-  "status": "ACTIVE | LOCKED",
-  "shopName": "string",
-  "ownerName": "string",
-  "phone": "string",
-  "initialBalance": 0,
-  "currency": "string"
-}
-```
 
 `ShopStatusUpdateRequestDto`
 

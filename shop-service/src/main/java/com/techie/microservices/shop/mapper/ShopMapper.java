@@ -1,6 +1,5 @@
 package com.techie.microservices.shop.mapper;
 
-import com.techie.microservices.shop.dto.ShopCreateRequestDto;
 import com.techie.microservices.shop.dto.ShopWalletUpdateRequestDto;
 import com.techie.microservices.shop.model.ShopAuth;
 import com.techie.microservices.shop.model.ShopProfile;
@@ -12,32 +11,32 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Component
 public class ShopMapper {
 
-    public ShopAuth toAuthEntity(ShopCreateRequestDto shopCreateRequestDto) {
+    public ShopAuth toAuthEntity(UUID authId, String email) {
         return ShopAuth.builder()
-                .email(shopCreateRequestDto.email())
-                .passwordHash(shopCreateRequestDto.passwordHash())
-                .status(resolveStatus(shopCreateRequestDto.status()))
+                .id(authId)
+                .email(email)
+                .status(ShopStatus.ACTIVE)
                 .build();
     }
 
-    public ShopProfile toProfileEntity(ShopCreateRequestDto shopCreateRequestDto, ShopAuth shopAuth) {
+    public ShopProfile toProfileEntity(ShopAuth shopAuth, String shopName, String ownerName) {
         return ShopProfile.builder()
                 .auth(shopAuth)
-                .shopName(shopCreateRequestDto.shopName())
-                .ownerName(shopCreateRequestDto.ownerName())
-                .phone(shopCreateRequestDto.phone())
+                .shopName(shopName)
+                .ownerName(ownerName)
                 .build();
     }
 
-    public ShopWallet toWalletEntity(ShopCreateRequestDto shopCreateRequestDto, ShopProfile shopProfile) {
+    public ShopWallet toWalletEntity(ShopProfile shopProfile) {
         return ShopWallet.builder()
                 .shop(shopProfile)
-                .balance(shopCreateRequestDto.initialBalance() != null ? shopCreateRequestDto.initialBalance() : BigDecimal.ZERO)
-                .currency(shopCreateRequestDto.currency())
+                .balance(BigDecimal.ZERO)
+                .currency("USD")
                 .build();
     }
 

@@ -172,8 +172,6 @@ export default function AdminPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => void refetchWorkspace()} disabled={workspaceIsFetching}>Refresh</Button>
-          <Button type="button" variant="secondary" onClick={() => setDialog("shop")}>Shop</Button>
-          <Button type="button" variant="secondary" onClick={() => setDialog("customer")}>Customer</Button>
         </div>
       </div>
 
@@ -199,7 +197,7 @@ export default function AdminPage() {
       </ApiTable>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <ApiTable title="Shops" headers={["Shop", "Owner", "Status", "Wallet", "Actions"]} action={<Button size="sm" onClick={() => setDialog("shop")}>Create</Button>}>
+        <ApiTable title="Shops" headers={["Shop", "Owner", "Status", "Wallet", "Actions"]}>
           {shopsQuery.isLoading ? <LoadingRow colSpan={5} label="Loading shops..." /> : null}
           {shopsQuery.isError ? <ErrorRow colSpan={5} error={shopsQuery.error} onRetry={() => void shopsQuery.refetch()} /> : null}
           {!shopsQuery.isLoading && !shopsQuery.isError && shops.length === 0 ? <EmptyRow colSpan={5} label="No shops returned." /> : null}
@@ -213,7 +211,7 @@ export default function AdminPage() {
           ))}
         </ApiTable>
 
-        <ApiTable title="Customers" headers={["Customer", "Email", "Status", "Wallet", "Actions"]} action={<Button size="sm" onClick={() => setDialog("customer")}>Create</Button>}>
+        <ApiTable title="Customers" headers={["Customer", "Email", "Status", "Wallet", "Actions"]}>
           {customersQuery.isLoading ? <LoadingRow colSpan={5} label="Loading customers..." /> : null}
           {customersQuery.isError ? <ErrorRow colSpan={5} error={customersQuery.error} onRetry={() => void customersQuery.refetch()} /> : null}
           {!customersQuery.isLoading && !customersQuery.isError && customers.length === 0 ? <EmptyRow colSpan={5} label="No customers returned." /> : null}

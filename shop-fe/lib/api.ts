@@ -8,7 +8,6 @@ import {
   AttributeValueResponseVo,
   CategoryRequestDto,
   CategoryResponseVo,
-  CustomerCreateRequestDto,
   CustomerResponseVo,
   CustomerStatusUpdateRequestDto,
   CustomerWalletUpdateRequestDto,
@@ -23,7 +22,6 @@ import {
   Product,
   ProductRequestDto,
   ProductResponseVo,
-  ShopCreateRequestDto,
   ShopResponseVo,
   ShopStatusUpdateRequestDto,
   ShopWalletUpdateRequestDto,
@@ -289,15 +287,6 @@ export async function fetchPaymentHistory(paymentId: UUID): Promise<PaymentHisto
   }
 }
 
-export async function createCustomer(customer: CustomerCreateRequestDto): Promise<CustomerResponseVo> {
-  try {
-    const response = await api.post<CustomerResponseVo>("/customers", customer);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
 export async function updateCustomerStatus(
   customerId: UUID,
   status: CustomerStatusUpdateRequestDto
@@ -340,9 +329,9 @@ export async function fetchCustomer(customerId: UUID): Promise<CustomerResponseV
   }
 }
 
-export async function createShop(shop: ShopCreateRequestDto): Promise<ShopResponseVo> {
+export async function syncCurrentShop(): Promise<ShopResponseVo> {
   try {
-    const response = await api.post<ShopResponseVo>("/shops", shop);
+    const response = await api.post<ShopResponseVo>("/shops/me/sync");
     return response.data;
   } catch (error) {
     throw parseError(error);

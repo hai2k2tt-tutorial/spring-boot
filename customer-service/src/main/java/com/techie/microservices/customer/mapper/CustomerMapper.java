@@ -1,6 +1,5 @@
 package com.techie.microservices.customer.mapper;
 
-import com.techie.microservices.customer.dto.CustomerCreateRequestDto;
 import com.techie.microservices.customer.dto.CustomerWalletUpdateRequestDto;
 import com.techie.microservices.customer.model.CustomerAuth;
 import com.techie.microservices.customer.model.CustomerProfile;
@@ -12,32 +11,32 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Component
 public class CustomerMapper {
 
-    public CustomerAuth toAuthEntity(CustomerCreateRequestDto customerCreateRequestDto) {
+    public CustomerAuth toAuthEntity(UUID authId, String email) {
         return CustomerAuth.builder()
-                .email(customerCreateRequestDto.email())
-                .passwordHash(customerCreateRequestDto.passwordHash())
-                .status(resolveStatus(customerCreateRequestDto.status()))
+                .id(authId)
+                .email(email)
+                .status(CustomerStatus.ACTIVE)
                 .build();
     }
 
-    public CustomerProfile toProfileEntity(CustomerCreateRequestDto customerCreateRequestDto, CustomerAuth customerAuth) {
+    public CustomerProfile toProfileEntity(CustomerAuth customerAuth, String firstName, String lastName) {
         return CustomerProfile.builder()
                 .auth(customerAuth)
-                .firstName(customerCreateRequestDto.firstName())
-                .lastName(customerCreateRequestDto.lastName())
-                .phone(customerCreateRequestDto.phone())
+                .firstName(firstName)
+                .lastName(lastName)
                 .build();
     }
 
-    public CustomerWallet toWalletEntity(CustomerCreateRequestDto customerCreateRequestDto, CustomerProfile customerProfile) {
+    public CustomerWallet toWalletEntity(CustomerProfile customerProfile) {
         return CustomerWallet.builder()
                 .customer(customerProfile)
-                .balance(customerCreateRequestDto.initialBalance() != null ? customerCreateRequestDto.initialBalance() : BigDecimal.ZERO)
-                .currency(customerCreateRequestDto.currency())
+                .balance(BigDecimal.ZERO)
+                .currency("USD")
                 .build();
     }
 

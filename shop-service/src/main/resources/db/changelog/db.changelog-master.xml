@@ -87,4 +87,18 @@
             <dropTable tableName="t_shop_auth"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="2-drop-shop-auth-password-hash" author="codex">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="t_shop_auth" columnName="password_hash"/>
+        </preConditions>
+        <dropColumn tableName="t_shop_auth" columnName="password_hash"/>
+        <rollback>
+            <addColumn tableName="t_shop_auth">
+                <column name="password_hash" type="VARCHAR(255)" defaultValue="external-auth">
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

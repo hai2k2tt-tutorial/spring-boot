@@ -87,4 +87,18 @@
             <dropTable tableName="t_customer_auth"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="2-drop-customer-auth-password-hash" author="codex">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="t_customer_auth" columnName="password_hash"/>
+        </preConditions>
+        <dropColumn tableName="t_customer_auth" columnName="password_hash"/>
+        <rollback>
+            <addColumn tableName="t_customer_auth">
+                <column name="password_hash" type="VARCHAR(255)" defaultValue="external-auth">
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

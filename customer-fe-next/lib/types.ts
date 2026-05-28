@@ -188,17 +188,6 @@ export interface PaymentHistoryResponseVo {
   createdAt: Instant;
 }
 
-export interface CustomerCreateRequestDto {
-  email: string;
-  passwordHash: string;
-  status?: AccountStatus | string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  initialBalance?: number;
-  currency?: string;
-}
-
 export interface CustomerStatusUpdateRequestDto {
   status: AccountStatus | string;
 }
@@ -223,17 +212,6 @@ export interface CustomerResponseVo {
   profileCreatedAt: Instant;
   profileUpdatedAt: Instant;
   walletUpdatedAt: Instant;
-}
-
-export interface ShopCreateRequestDto {
-  email: string;
-  passwordHash: string;
-  status?: AccountStatus | string;
-  shopName: string;
-  ownerName: string;
-  phone?: string;
-  initialBalance?: number;
-  currency?: string;
 }
 
 export interface ShopStatusUpdateRequestDto {
