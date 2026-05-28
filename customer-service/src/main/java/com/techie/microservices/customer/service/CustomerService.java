@@ -51,14 +51,13 @@ public class CustomerService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer email already exists for another auth id");
         });
 
-        CustomerAuth customerAuth = customerMapper.toAuthEntity(authId, claims.email());
-        customerAuthRepository.save(customerAuth);
+        CustomerAuth customerAuth = customerAuthRepository.save(customerMapper.toAuthEntity(authId, claims.email()));
 
         CustomerProfile customerProfile = customerMapper.toProfileEntity(customerAuth, claims.firstName(), claims.lastName());
-        customerProfileRepository.save(customerProfile);
+        customerProfile = customerProfileRepository.save(customerProfile);
 
         CustomerWallet customerWallet = customerMapper.toWalletEntity(customerProfile);
-        customerWalletRepository.save(customerWallet);
+        customerWallet = customerWalletRepository.save(customerWallet);
 
         log.info("Customer synced successfully");
         return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
@@ -129,7 +128,7 @@ public class CustomerService {
                     new TypeReference<>() {
                     }
             );
-            String subject = requiredClaim(claims, "sub");
+            String subject = requiredClaim(claims, "sub", "user_id");
             String email = requiredClaim(claims, "email");
             String preferredName = stringClaim(claims, "preferred_username");
             String firstName = stringClaim(claims, "given_name");
@@ -158,12 +157,15 @@ public class CustomerService {
         }
     }
 
-    private String requiredClaim(Map<String, Object> claims, String name) {
-        String value = stringClaim(claims, name);
-        if (value == null || value.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing token claim: " + name);
+    private String requiredClaim(Map<String, Object> claims, String... names) {
+        for (String name : names) {
+            String value = stringClaim(claims, name);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
         }
-        return value;
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing token claim: " + String.join(" or ", names));
     }
 
     private String stringClaim(Map<String, Object> claims, String name) {

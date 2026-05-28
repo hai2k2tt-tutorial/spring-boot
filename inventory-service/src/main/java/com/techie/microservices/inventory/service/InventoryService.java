@@ -88,8 +88,7 @@ public class InventoryService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be zero or greater");
         }
 
-        Sku sku = skuMapper.toEntity(skuRequestDto);
-        skuRepository.save(sku);
+        Sku sku = skuRepository.save(skuMapper.toEntity(skuRequestDto));
 
         List<String> attributeValueIds = skuRequestDto.attributeValueIds().stream()
                 .map(UUID::toString)
@@ -109,8 +108,7 @@ public class InventoryService {
                     .build());
         }
 
-        Inventory inventory = skuMapper.toInventoryEntity(sku, skuRequestDto.quantity());
-        inventoryRepository.save(inventory);
+        Inventory inventory = inventoryRepository.save(skuMapper.toInventoryEntity(sku, skuRequestDto.quantity()));
 
         log.info("SKU created successfully");
         return skuMapper.toVo(sku, inventory, skuRequestDto.attributeValueIds());
