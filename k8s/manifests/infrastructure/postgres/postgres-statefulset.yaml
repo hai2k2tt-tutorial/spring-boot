@@ -1,14 +1,17 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   labels:
     app: postgres
   name: postgres
 spec:
+  serviceName: postgres-headless
   replicas: 1
   selector:
     matchLabels:
       app: postgres
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:

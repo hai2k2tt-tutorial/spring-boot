@@ -1,56 +1,54 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
+  name: keycloak-mysql
+  namespace: {{ .Values.namespace }}
   labels:
     app: keycloak-mysql
-  name: keycloak-mysql-deployment
 spec:
+  serviceName: keycloak-mysql-headless
   replicas: 1
   selector:
     matchLabels:
       app: keycloak-mysql
-  strategy: { }
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: keycloak-mysql
     spec:
       containers:
-        - image: mysql:8
-          name: keycloak-mysql
+        - name: keycloak-mysql
+          image: mysql:8
           ports:
             - containerPort: 3306
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: mysql_root_password
                   name: keycloak-mysql-secrets
+                  key: mysql_root_password
             - name: MYSQL_DATABASE
               valueFrom:
                 configMapKeyRef:
-                  key: mysql_database
                   name: keycloak-mysql-config
+                  key: mysql_database
             - name: MYSQL_USER
               valueFrom:
                 configMapKeyRef:
-                  key: mysql_user
                   name: keycloak-mysql-config
+                  key: mysql_user
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: mysql_password
                   name: keycloak-mysql-secrets
+                  key: mysql_password
           volumeMounts:
-            - mountPath: /var/lib/mysql
-              name: keycloak-mysql-data
+            - name: keycloak-mysql-data
+              mountPath: /var/lib/mysql
           resources:
-            requests:
-              cpu: 250m
-              memory: 512Mi
-            limits:
-              cpu: "1"
-              memory: 1Gi
+{{ toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: keycloak-mysql-data
           persistentVolumeClaim:

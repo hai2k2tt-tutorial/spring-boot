@@ -1,15 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: postgres
   namespace: {{ .Values.namespace }}
   labels:
     app: postgres
 spec:
+  serviceName: postgres-headless
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: postgres
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:

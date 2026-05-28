@@ -1,51 +1,58 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: keycloak-mysql-deployment
-  namespace: {{ .Values.namespace }}
   labels:
     app: keycloak-mysql
+  name: keycloak-mysql
 spec:
+  serviceName: keycloak-mysql-headless
   replicas: 1
   selector:
     matchLabels:
       app: keycloak-mysql
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: keycloak-mysql
     spec:
       containers:
-        - name: keycloak-mysql
-          image: mysql:8
+        - image: mysql:8
+          name: keycloak-mysql
           ports:
             - containerPort: 3306
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: keycloak-mysql-secrets
                   key: mysql_root_password
+                  name: keycloak-mysql-secrets
             - name: MYSQL_DATABASE
               valueFrom:
                 configMapKeyRef:
-                  name: keycloak-mysql-config
                   key: mysql_database
+                  name: keycloak-mysql-config
             - name: MYSQL_USER
               valueFrom:
                 configMapKeyRef:
-                  name: keycloak-mysql-config
                   key: mysql_user
+                  name: keycloak-mysql-config
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: keycloak-mysql-secrets
                   key: mysql_password
+                  name: keycloak-mysql-secrets
           volumeMounts:
-            - name: keycloak-mysql-data
-              mountPath: /var/lib/mysql
+            - mountPath: /var/lib/mysql
+              name: keycloak-mysql-data
           resources:
-{{ toYaml .Values.resources | nindent 12 }}
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
       volumes:
         - name: keycloak-mysql-data
           persistentVolumeClaim:
