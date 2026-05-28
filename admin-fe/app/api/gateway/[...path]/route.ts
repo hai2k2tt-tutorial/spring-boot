@@ -12,6 +12,20 @@ function buildTargetUrl(path: string[], request: NextRequest): URL {
   return targetUrl;
 }
 
+function buildProxyHeaders(request: NextRequest): Headers {
+  const headers = new Headers();
+  const forwardedHeaders = ["accept", "authorization", "content-type"];
+
+  for (const headerName of forwardedHeaders) {
+    const value = request.headers.get(headerName);
+    if (value) {
+      headers.set(headerName, value);
+    }
+  }
+
+  return headers;
+}
+
 async function proxyRequest(
   request: NextRequest,
   context: { params: Promise<{ path: string[] }> }
@@ -19,8 +33,7 @@ async function proxyRequest(
   const { path } = await context.params;
   const targetUrl = buildTargetUrl(path, request);
 
-  const headers = new Headers(request.headers);
-  headers.delete("host");
+  const headers = buildProxyHeaders(request);
 
   const response = await fetch(targetUrl, {
     method: request.method,
