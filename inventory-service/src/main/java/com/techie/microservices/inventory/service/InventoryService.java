@@ -122,6 +122,13 @@ public class InventoryService {
     }
 
     @Transactional(readOnly = true)
+    public SkuResponseVo getSku(String skuCode) {
+        Sku sku = skuRepository.findBySkuCode(skuCode)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "SKU not found"));
+        return mapSku(sku);
+    }
+
+    @Transactional(readOnly = true)
     public InventoryCheckResponseVo isInStock(String skuCode, Integer quantity) {
         Inventory inventory = inventoryRepository.findBySkuSkuCode(skuCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "SKU not found"));

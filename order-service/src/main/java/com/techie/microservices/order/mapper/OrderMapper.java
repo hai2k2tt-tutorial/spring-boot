@@ -1,6 +1,7 @@
 package com.techie.microservices.order.mapper;
 
 import com.techie.microservices.order.dto.OrderCreateRequestDto;
+import com.techie.microservices.order.dto.ResolvedOrderItemDto;
 import com.techie.microservices.order.model.Order;
 import com.techie.microservices.order.model.OrderItem;
 import com.techie.microservices.order.model.OrderStatus;
@@ -17,16 +18,17 @@ import java.util.UUID;
 @Component
 public class OrderMapper {
 
-    public Order toEntity(OrderCreateRequestDto orderCreateRequestDto, String orderNumber) {
+    public Order toEntity(OrderCreateRequestDto orderCreateRequestDto, String orderNumber, UUID customerId,
+                          List<ResolvedOrderItemDto> resolvedItems) {
         return Order.builder()
                 .orderNumber(orderNumber)
-                .customerId(orderCreateRequestDto.customerId().toString())
+                .customerId(customerId.toString())
                 .status(resolveStatus(orderCreateRequestDto.status()))
-                .totalAmount(calculateTotal(orderCreateRequestDto.items()))
+                .totalAmount(calculateTotal(resolvedItems))
                 .build();
     }
 
-    public OrderItem toEntity(Order order, OrderCreateRequestDto.OrderItemRequestDto itemRequestDto) {
+    public OrderItem toEntity(Order order, ResolvedOrderItemDto itemRequestDto) {
         return OrderItem.builder()
                 .order(order)
                 .skuId(itemRequestDto.skuId().toString())
@@ -72,7 +74,7 @@ public class OrderMapper {
         }
     }
 
-    private BigDecimal calculateTotal(List<OrderCreateRequestDto.OrderItemRequestDto> items) {
+    private BigDecimal calculateTotal(List<ResolvedOrderItemDto> items) {
         return items.stream()
                 .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

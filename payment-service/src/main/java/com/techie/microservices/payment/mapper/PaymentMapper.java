@@ -9,16 +9,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.util.UUID;
+
 @Component
 public class PaymentMapper {
 
-    public Payment toEntity(PaymentCreateRequestDto paymentCreateRequestDto) {
+    public Payment toEntity(PaymentCreateRequestDto paymentCreateRequestDto, UUID customerId, BigDecimal amount) {
         return Payment.builder()
-                .customerId(paymentCreateRequestDto.customerId())
+                .customerId(customerId)
                 .orderId(paymentCreateRequestDto.orderId())
-                .amount(paymentCreateRequestDto.amount())
+                .amount(amount)
                 .method(resolveMethod(paymentCreateRequestDto.method()))
-                .status(resolveStatus(paymentCreateRequestDto.status()))
+                .status(PaymentStatus.PENDING)
                 .build();
     }
 

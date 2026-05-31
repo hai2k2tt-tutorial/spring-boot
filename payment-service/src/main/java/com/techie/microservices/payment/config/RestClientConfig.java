@@ -1,7 +1,6 @@
-package com.techie.microservices.order.config;
+package com.techie.microservices.payment.config;
 
-import com.techie.microservices.order.client.InventoryClient;
-import com.techie.microservices.order.client.ProductClient;
+import com.techie.microservices.payment.client.OrderClient;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,34 +18,20 @@ import java.time.Duration;
 @Configuration
 @RequiredArgsConstructor
 public class RestClientConfig {
-
-    @Value("${inventory.service.url}")
-    private String inventoryServiceUrl;
-
-    @Value("${product.service.url}")
-    private String productServiceUrl;
-
+    @Value("${order.service.url}")
+    private String orderServiceUrl;
     private final ObservationRegistry observationRegistry;
 
     @Bean
-    public InventoryClient inventoryClient() {
-        return createClient(InventoryClient.class, inventoryServiceUrl);
-    }
-
-    @Bean
-    public ProductClient productClient() {
-        return createClient(ProductClient.class, productServiceUrl);
-    }
-
-    private <T> T createClient(Class<T> clientType, String baseUrl) {
+    public OrderClient orderClient() {
         RestClient restClient = RestClient.builder()
-                .baseUrl(baseUrl)
+                .baseUrl(orderServiceUrl)
                 .requestFactory(getClientRequestFactory())
                 .observationRegistry(observationRegistry)
                 .build();
         RestClientAdapter restClientAdapter = RestClientAdapter.create(restClient);
         HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(restClientAdapter).build();
-        return httpServiceProxyFactory.createClient(clientType);
+        return httpServiceProxyFactory.createClient(OrderClient.class);
     }
 
     private ClientHttpRequestFactory getClientRequestFactory() {

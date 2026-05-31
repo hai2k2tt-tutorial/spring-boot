@@ -23,12 +23,14 @@ Gateway security permits Swagger/OpenAPI and Prometheus endpoints without authen
 | `POST` | `/api/product` | `201 Created` | `ProductRequestDto` | `ProductResponseVo` | - shop
 | `put`  | `/api/product` | `200 updated` | `ProductRequestDto` | `ProductResponseVo` | - shop (own products only)
 | `GET`  | `/api/product` | `200 OK`      | None | `ProductResponseVo[]` | - admin + customer + shop (only own products) |
+| `GET`  | `/api/product/{productId}` | `200 OK` | `productId` path `UUID` | `ProductResponseVo` | - admin + customer + shop |
 
 `ProductRequestDto`
 
+`shopId` is resolved from the bearer token.
 ```json
 {
-  "shopId": "UUID",
+  "id": "UUID (required for update only)",
   "name": "string",
   "description": "string",
   "price": 0,
@@ -93,6 +95,7 @@ Gateway security permits Swagger/OpenAPI and Prometheus endpoints without authen
 | `GET` | `/api/inventory/attributes/{attributeId}/values` | `200 OK` | `attributeId` path `UUID` | None | `AttributeValueResponseVo[]` | - shop + customer + admin (only values for the specified attribute)
 | `POST` | `/api/inventory/skus` | `201 Created` | None | `SkuRequestDto` | `SkuResponseVo` | - shop (own products only) (I want to adjust this to allow creating multiple SKUs at once, but for now it only creates one SKU at a time)
 | `GET` | `/api/inventory/skus` | `200 OK` | `productId` query `UUID` | None | `SkuResponseVo[]` | - shop + customer + admin (only SKUs for the specified product)
+| `GET` | `/api/inventory/skus/{skuCode}` | `200 OK` | `skuCode` path `string` | None | `SkuResponseVo` | - shop + customer + admin
 | `GET` | `/api/inventory/stock-check` | `200 OK` | `skuCode` query `string`, `quantity` query `integer` | None | `InventoryCheckResponseVo` | - shop + customer + admin
 
 `AttributeRequestDto`
@@ -140,25 +143,17 @@ Response models:
 | --- | --- | --- | --- | --- | --- |
 | `POST` | `/api/order` | `201 Created` | None | `OrderCreateRequestDto` | `OrderResponseVo` | - customer only
 | `GET` | `/api/order` | `200 OK` | Optional `customerId` query `UUID` | None | `OrderResponseVo[]` | - customer (only own orders) + shop (only orders containing their products) + admin (all orders)
+| `GET` | `/api/order/{orderId}` | `200 OK` | `orderId` path `UUID` | None | `OrderResponseVo` | - customer (only own order)
 
 `OrderCreateRequestDto`
 
+`customerId` and notification customer details are resolved from the bearer token. Item `skuId`, `productId`, `shopId`, and `price` are resolved server-side from `skuCode`.
 ```json
 {
-  "customerId": "UUID",
   "status": "PENDING | PAID | CANCELED",
-  "customerDetails": {
-    "email": "string",
-    "firstName": "string",
-    "lastName": "string"
-  },
   "items": [
     {
-      "skuId": "UUID",
       "skuCode": "string",
-      "productId": "UUID",
-      "shopId": "UUID",
-      "price": 0,
       "quantity": 0
     }
   ]
@@ -180,13 +175,11 @@ Response models:
 
 `PaymentCreateRequestDto`
 
+`customerId` is resolved from the bearer token. `amount` and initial `status` are resolved from the order.
 ```json
 {
-  "customerId": "UUID",
   "orderId": "UUID",
-  "amount": 0,
-  "method": "BALANCE | CARD | MANUAL",
-  "status": "PENDING | SUCCESS | FAILED"
+  "method": "BALANCE | CARD | MANUAL"
 }
 ```
 

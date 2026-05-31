@@ -6,12 +6,14 @@ import com.techie.microservices.payment.service.PaymentService;
 import com.techie.microservices.payment.vo.PaymentHistoryResponseVo;
 import com.techie.microservices.payment.vo.PaymentResponseVo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -29,8 +31,9 @@ public class PaymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PaymentResponseVo createPayment(@RequestBody PaymentCreateRequestDto paymentCreateRequestDto) {
-        return paymentService.createPayment(paymentCreateRequestDto);
+    public PaymentResponseVo createPayment(@RequestBody PaymentCreateRequestDto paymentCreateRequestDto,
+                                           @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return paymentService.createPayment(paymentCreateRequestDto, authorization);
     }
 
     @PatchMapping("/{paymentId}/status")

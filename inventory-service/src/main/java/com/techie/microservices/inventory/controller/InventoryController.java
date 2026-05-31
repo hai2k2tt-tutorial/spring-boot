@@ -65,6 +65,12 @@ public class InventoryController {
         return inventoryService.getSkus(productId);
     }
 
+    @GetMapping("/skus/{skuCode}")
+    @ResponseStatus(HttpStatus.OK)
+    public SkuResponseVo getSku(@PathVariable String skuCode) {
+        return inventoryService.getSku(skuCode);
+    }
+
     @GetMapping("/stock-check")
     @ResponseStatus(HttpStatus.OK)
     public InventoryCheckResponseVo isInStock(@RequestParam String skuCode, @RequestParam Integer quantity) {

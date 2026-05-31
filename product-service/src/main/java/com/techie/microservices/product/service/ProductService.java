@@ -6,6 +6,7 @@ import com.techie.microservices.product.model.Category;
 import com.techie.microservices.product.model.Product;
 import com.techie.microservices.product.repository.CategoryRepository;
 import com.techie.microservices.product.repository.ProductRepository;
+import com.techie.microservices.product.util.TokenIdentity;
 import com.techie.microservices.product.vo.ProductResponseVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,13 +25,15 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
+    private final TokenIdentity tokenIdentity;
 
     @Transactional
-    public ProductResponseVo createProduct(ProductRequestDto productRequestDto) {
+    public ProductResponseVo createProduct(ProductRequestDto productRequestDto, String authorization) {
+        UUID shopId = tokenIdentity.currentUserId(authorization);
         Category category = categoryRepository.findById(productRequestDto.categoryId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
 
-        Product product = productMapper.toEntity(productRequestDto, category);
+        Product product = productMapper.toEntity(productRequestDto, category, shopId);
         productRepository.save(product);
         log.info("Product created successfully");
         return productMapper.toVo(product);
@@ -43,19 +47,29 @@ public class ProductService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public ProductResponseVo getProduct(UUID productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+        return productMapper.toVo(product);
+    }
+
     @Transactional
-    public ProductResponseVo updateProduct(ProductRequestDto productRequestDto) {
+    public ProductResponseVo updateProduct(ProductRequestDto productRequestDto, String authorization) {
         if (productRequestDto.id() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product id is required");
         }
 
+        UUID shopId = tokenIdentity.currentUserId(authorization);
         Product product = productRepository.findById(productRequestDto.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+        if (!product.getShopId().equals(shopId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Product does not belong to current shop");
+        }
 
         Category category = categoryRepository.findById(productRequestDto.categoryId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
 
-        product.setShopId(productRequestDto.shopId());
         product.setName(productRequestDto.name());
         product.setDescription(productRequestDto.description());
         product.setPrice(productRequestDto.price());

@@ -6,6 +6,7 @@ import com.techie.microservices.order.vo.OrderResponseVo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,13 +23,21 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderResponseVo placeOrder(@RequestBody OrderCreateRequestDto orderCreateRequestDto) {
-        return orderService.placeOrder(orderCreateRequestDto);
+    public OrderResponseVo placeOrder(@RequestBody OrderCreateRequestDto orderCreateRequestDto,
+                                      @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return orderService.placeOrder(orderCreateRequestDto, authorization);
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<OrderResponseVo> getOrders(@RequestParam(required = false) UUID customerId) {
         return orderService.getOrders(customerId);
+    }
+
+    @GetMapping("/{orderId}")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderResponseVo getOrder(@PathVariable UUID orderId,
+                                    @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return orderService.getOrder(orderId, authorization);
     }
 }

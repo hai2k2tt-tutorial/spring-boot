@@ -4,10 +4,12 @@ import com.techie.microservices.product.dto.ProductRequestDto;
 import com.techie.microservices.product.service.ProductService;
 import com.techie.microservices.product.vo.ProductResponseVo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/product")
@@ -18,8 +20,9 @@ public class ProductController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductResponseVo createProduct(@RequestBody ProductRequestDto productRequestDto) {
-        return productService.createProduct(productRequestDto);
+    public ProductResponseVo createProduct(@RequestBody ProductRequestDto productRequestDto,
+                                           @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return productService.createProduct(productRequestDto, authorization);
     }
 
     @GetMapping
@@ -28,9 +31,16 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @GetMapping("/{productId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ProductResponseVo getProduct(@PathVariable UUID productId) {
+        return productService.getProduct(productId);
+    }
+
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
-    public ProductResponseVo updateProduct(@RequestBody ProductRequestDto productRequestDto) {
-        return productService.updateProduct(productRequestDto);
+    public ProductResponseVo updateProduct(@RequestBody ProductRequestDto productRequestDto,
+                                           @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return productService.updateProduct(productRequestDto, authorization);
     }
 }

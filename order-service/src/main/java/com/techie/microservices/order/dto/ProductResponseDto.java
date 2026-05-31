@@ -1,10 +1,11 @@
-package com.techie.microservices.product.dto;
+package com.techie.microservices.order.dto;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record ProductRequestDto(
+public record ProductResponseDto(
         UUID id,
+        UUID shopId,
         String name,
         String description,
         BigDecimal price,

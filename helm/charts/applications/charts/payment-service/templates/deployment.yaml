@@ -38,6 +38,11 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+            - name: ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: ORDER_SERVICE_URL
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}

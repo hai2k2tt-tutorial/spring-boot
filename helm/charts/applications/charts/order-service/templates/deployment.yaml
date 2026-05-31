@@ -43,11 +43,16 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-            - name: API_GATEWAY_URL
+            - name: PRODUCT_SERVICE_URL
               valueFrom:
                 configMapKeyRef:
                   name: common-config
-                  key: API_GATEWAY_URL
+                  key: PRODUCT_SERVICE_URL
+            - name: INVENTORY_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: INVENTORY_SERVICE_URL
             - name: SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL
               valueFrom:
                 configMapKeyRef:

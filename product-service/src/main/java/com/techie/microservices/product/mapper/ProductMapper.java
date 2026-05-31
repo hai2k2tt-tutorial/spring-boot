@@ -9,12 +9,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.UUID;
+
 @Component
 public class ProductMapper {
 
-    public Product toEntity(ProductRequestDto productRequestDto, Category category) {
+    public Product toEntity(ProductRequestDto productRequestDto, Category category, UUID shopId) {
         return Product.builder()
-                .shopId(productRequestDto.shopId())
+                .shopId(shopId)
                 .name(productRequestDto.name())
                 .description(productRequestDto.description())
                 .price(productRequestDto.price())

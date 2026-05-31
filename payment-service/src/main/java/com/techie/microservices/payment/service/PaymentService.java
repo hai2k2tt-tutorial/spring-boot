@@ -1,5 +1,7 @@
 package com.techie.microservices.payment.service;
 
+import com.techie.microservices.payment.client.OrderClient;
+import com.techie.microservices.payment.dto.OrderResponseDto;
 import com.techie.microservices.payment.dto.PaymentCreateRequestDto;
 import com.techie.microservices.payment.dto.PaymentStatusUpdateRequestDto;
 import com.techie.microservices.payment.mapper.PaymentHistoryMapper;
@@ -9,6 +11,7 @@ import com.techie.microservices.payment.model.PaymentHistory;
 import com.techie.microservices.payment.model.PaymentHistoryType;
 import com.techie.microservices.payment.repository.PaymentHistoryRepository;
 import com.techie.microservices.payment.repository.PaymentRepository;
+import com.techie.microservices.payment.util.TokenIdentity;
 import com.techie.microservices.payment.vo.PaymentHistoryResponseVo;
 import com.techie.microservices.payment.vo.PaymentResponseVo;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +30,24 @@ import java.util.UUID;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
+    private final OrderClient orderClient;
     private final PaymentMapper paymentMapper;
     private final PaymentHistoryMapper paymentHistoryMapper;
+    private final TokenIdentity tokenIdentity;
 
     @Transactional
-    public PaymentResponseVo createPayment(PaymentCreateRequestDto paymentCreateRequestDto) {
-        Payment payment = paymentMapper.toEntity(paymentCreateRequestDto);
+    public PaymentResponseVo createPayment(PaymentCreateRequestDto paymentCreateRequestDto, String authorization) {
+        if (paymentCreateRequestDto.orderId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required");
+        }
+
+        UUID customerId = tokenIdentity.currentUserId(authorization);
+        OrderResponseDto order = orderClient.getOrder(paymentCreateRequestDto.orderId().toString(), authorization);
+        if (!customerId.equals(order.customerId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to current customer");
+        }
+
+        Payment payment = paymentMapper.toEntity(paymentCreateRequestDto, customerId, order.totalAmount());
         paymentRepository.save(payment);
         paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
         log.info("Payment created successfully");
