@@ -15,6 +15,7 @@ DOCKER_BUILD_PROGRESS="${DOCKER_BUILD_PROGRESS:-plain}"
 RESUME_PUBLISHED_IMAGES="${RESUME_PUBLISHED_IMAGES:-false}"
 SPLIT_BUILD_PUSH="${SPLIT_BUILD_PUSH:-false}"
 PUSH_TIMEOUT_SECONDS="${PUSH_TIMEOUT_SECONDS:-3600}"
+CREATE_MANIFEST="${CREATE_MANIFEST:-true}"
 
 DEFAULT_BACKEND_MODULES="
 api-gateway
@@ -338,7 +339,9 @@ for module in $BACKEND_MODULES; do
     image_sources="$image_sources $image_ref"
   done
 
-  create_manifest "$image_base" "$image_sources"
+  if [ "$CREATE_MANIFEST" = "true" ]; then
+    create_manifest "$image_base" "$image_sources"
+  fi
 done
 
 for app in $FRONTEND_APPS; do
@@ -370,5 +373,7 @@ for app in $FRONTEND_APPS; do
     image_sources="$image_sources $image_ref"
   done
 
-  create_manifest "$image_base" "$image_sources"
+  if [ "$CREATE_MANIFEST" = "true" ]; then
+    create_manifest "$image_base" "$image_sources"
+  fi
 done

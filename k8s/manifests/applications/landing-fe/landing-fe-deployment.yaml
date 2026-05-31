@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: landing-fe
-          image: docker.io/hai2k2tt/landing-fe:2
+          image: docker.io/hai2k2tt/landing-fe:2-arm64
           ports:
             - containerPort: 3005
           env:

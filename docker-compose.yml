@@ -152,7 +152,7 @@ services:
       - "8025:8025"
 
   product-service:
-    image: docker.io/hai2k2tt/product-service:2-amd64
+    image: docker.io/hai2k2tt/product-service:2-arm64
     depends_on:
       postgres:
         condition: service_healthy
@@ -166,7 +166,7 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   inventory-service:
-    image: docker.io/hai2k2tt/inventory-service:2-amd64
+    image: docker.io/hai2k2tt/inventory-service:2-arm64
     depends_on:
       postgres:
         condition: service_healthy
@@ -180,7 +180,7 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   order-service:
-    image: docker.io/hai2k2tt/order-service:2-amd64
+    image: docker.io/hai2k2tt/order-service:2-arm64
     depends_on:
       postgres:
         condition: service_healthy
@@ -203,7 +203,7 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   notification-service:
-    image: docker.io/hai2k2tt/notification-service:2-amd64
+    image: docker.io/hai2k2tt/notification-service:2-arm64
     depends_on:
       broker:
         condition: service_started
@@ -222,7 +222,7 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   payment-service:
-    image: docker.io/hai2k2tt/payment-service:2-amd64
+    image: docker.io/hai2k2tt/payment-service:2-arm64
     depends_on:
       postgres:
         condition: service_healthy
@@ -236,7 +236,7 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   shop-service:
-    image: docker.io/hai2k2tt/shop-service:2-amd64
+    image: docker.io/hai2k2tt/shop-service:2-arm64
     depends_on:
       postgres:
         condition: service_healthy
@@ -250,7 +250,7 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   customer-service:
-    image: docker.io/hai2k2tt/customer-service:2-amd64
+    image: docker.io/hai2k2tt/customer-service:2-arm64
     depends_on:
       postgres:
         condition: service_healthy
@@ -264,7 +264,7 @@ services:
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
   api-gateway:
-    image: docker.io/hai2k2tt/api-gateway:2
+    image: docker.io/hai2k2tt/api-gateway:2-arm64
     depends_on:
       keycloak:
         condition: service_started
@@ -302,7 +302,7 @@ services:
     build:
       context: ./landing-fe
       dockerfile: Dockerfile
-    image: docker.io/hai2k2tt/landing-fe:2
+    image: docker.io/hai2k2tt/landing-fe:2-arm64
     ports:
       - "3005:3005"
     environment:
@@ -314,7 +314,7 @@ services:
     build:
       context: ./admin-fe
       dockerfile: Dockerfile
-    image: docker.io/hai2k2tt/admin-fe:2
+    image: docker.io/hai2k2tt/admin-fe:2-arm64
     depends_on:
       - api-gateway
       - keycloak
@@ -336,7 +336,7 @@ services:
     build:
       context: ./shop-fe
       dockerfile: Dockerfile
-    image: docker.io/hai2k2tt/shop-fe:2
+    image: docker.io/hai2k2tt/shop-fe:2-arm64
     depends_on:
       - api-gateway
       - keycloak
@@ -358,7 +358,7 @@ services:
     build:
       context: ./customer-fe-next
       dockerfile: Dockerfile
-    image: docker.io/hai2k2tt/customer-fe-next:2
+    image: docker.io/hai2k2tt/customer-fe-next:2-arm64
     depends_on:
       - api-gateway
       - keycloak
@@ -380,7 +380,7 @@ services:
     build:
       context: ./customer-fe-angular
       dockerfile: Dockerfile
-    image: docker.io/hai2k2tt/customer-fe-angular:2
+    image: docker.io/hai2k2tt/customer-fe-angular:2-arm64
     depends_on:
       - api-gateway
     ports:

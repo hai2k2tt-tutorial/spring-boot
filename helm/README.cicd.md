@@ -5,11 +5,11 @@ This guide explains how to deploy the `/helm` umbrella chart automatically when 
 The recommended setup for this repo is:
 
 1. GitHub Actions builds and pushes Docker images for all services.
-2. Every image is tagged with the Git commit SHA.
+2. Every image is tagged with the fixed version tag plus architecture suffix.
 3. GitHub Actions connects to the VPS by SSH.
 4. The VPS checks out the same commit and runs `helm upgrade --install` with image overrides.
 
-This keeps the VPS deployment reproducible: each release points to an exact commit tag instead of a mutable `latest` image.
+This keeps the VPS deployment on an exact architecture tag instead of a mutable `latest` image or a random build tag.
 
 ## Option Summary
 
@@ -23,29 +23,35 @@ For this repo, start with **GitHub Actions + SSH to VPS**. Move to GitOps later 
 
 ## Image Tag Strategy
 
-Avoid relying on `latest` for Kubernetes deployments.
+Avoid relying on `latest` for Kubernetes deployments. This repo uses fixed version `2` and exact architecture tags:
 
-Use a unique tag for every commit:
+- GitHub Actions builds `linux/amd64` and publishes `:2-amd64`.
+- Local multi-platform builds publish `:2`, `:2-amd64`, and `:2-arm64`.
+- VPS Helm values use `:2-amd64`.
+- Local Docker Compose and raw K8s manifests use `:2-arm64`.
 
 ```text
-docker.io/<docker-user>/api-gateway:<git-sha>
-docker.io/<docker-user>/product-service:<git-sha>
-docker.io/<docker-user>/landing-fe:<git-sha>
-docker.io/<docker-user>/admin-fe:<git-sha>
+docker.io/<docker-user>/api-gateway:2-amd64
+docker.io/<docker-user>/product-service:2-amd64
+docker.io/<docker-user>/landing-fe:2-amd64
+docker.io/<docker-user>/admin-fe:2-amd64
 ```
 
 The existing `scripts/docker-build-v2.sh` script already builds and pushes every backend and frontend image. The CI pipeline only needs to set:
 
 ```bash
-IMAGE_TAG=<git-sha>
+IMAGE_TAG=2
+PLATFORMS=linux/amd64
+CREATE_MANIFEST=false
 DOCKER_USERNAME=<docker-user>
 DOCKER_PASSWORD=<docker-password-or-token>
 ```
 
-For a local build/push using the same short commit tag as CI, set `IMAGE_TAG` from Git:
+For a local build/push that creates `:2`, `:2-amd64`, and `:2-arm64`, use the default tag and both platforms:
 
 ```bash
-IMAGE_TAG=$(git rev-parse --short=12 HEAD) \
+IMAGE_TAG=2 \
+PLATFORMS=linux/amd64,linux/arm64 \
 DOCKER_USERNAME=<docker-user> \
 DOCKER_PASSWORD=<docker-password-or-token> \
 ./scripts/docker-build-v2.sh
@@ -54,7 +60,7 @@ DOCKER_PASSWORD=<docker-password-or-token> \
 To build only the service or frontend you changed, pass the module lists:
 
 ```bash
-IMAGE_TAG=$(git rev-parse --short=12 HEAD) \
+IMAGE_TAG=2 \
 PLATFORMS=linux/amd64 \
 BACKEND_MODULES="product-service" \
 FRONTEND_APPS=" " \
@@ -168,7 +174,10 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   VPS_REPO_DIR: /root/spring-boot
-  PLATFORMS: linux/amd64,linux/arm64
+  IMAGE_TAG: "2"
+  DEPLOY_IMAGE_TAG: "2-amd64"
+  PLATFORMS: linux/amd64
+  CREATE_MANIFEST: "false"
 
 jobs:
   build-and-deploy:
@@ -178,9 +187,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Compute image tag
-        run: echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -227,7 +233,7 @@ jobs:
           VPS_PORT="${VPS_PORT:-22}"
 
           ssh -i ~/.ssh/vps_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
-            "IMAGE_TAG='$IMAGE_TAG' DOCKER_USERNAME='$DOCKER_USERNAME' DEPLOY_SHA='$GITHUB_SHA' DEPLOY_REF='$GITHUB_REF_NAME' REPO_DIR='$VPS_REPO_DIR' bash -s" <<'REMOTE'
+            "DEPLOY_IMAGE_TAG='$DEPLOY_IMAGE_TAG' DOCKER_USERNAME='$DOCKER_USERNAME' DEPLOY_SHA='$GITHUB_SHA' DEPLOY_REF='$GITHUB_REF_NAME' REPO_DIR='$VPS_REPO_DIR' bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd "$REPO_DIR"
@@ -240,19 +246,19 @@ jobs:
           helm upgrade --install microservices helm \
             --namespace microservices \
             --create-namespace \
-            --set-string applications.apiGateway.image="${IMAGE_PREFIX}/api-gateway:${IMAGE_TAG}" \
-            --set-string applications.productService.image="${IMAGE_PREFIX}/product-service:${IMAGE_TAG}" \
-            --set-string applications.orderService.image="${IMAGE_PREFIX}/order-service:${IMAGE_TAG}" \
-            --set-string applications.inventoryService.image="${IMAGE_PREFIX}/inventory-service:${IMAGE_TAG}" \
-            --set-string applications.notificationService.image="${IMAGE_PREFIX}/notification-service:${IMAGE_TAG}" \
-            --set-string applications.paymentService.image="${IMAGE_PREFIX}/payment-service:${IMAGE_TAG}" \
-            --set-string applications.shopService.image="${IMAGE_PREFIX}/shop-service:${IMAGE_TAG}" \
-            --set-string applications.customerService.image="${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}" \
-            --set-string applications.landingFe.image="${IMAGE_PREFIX}/landing-fe:${IMAGE_TAG}" \
-            --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${IMAGE_TAG}" \
-            --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${IMAGE_TAG}" \
-            --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${IMAGE_TAG}" \
-            --set-string applications.customerFeAngular.image="${IMAGE_PREFIX}/customer-fe-angular:${IMAGE_TAG}" \
+            --set-string applications.apiGateway.image="${IMAGE_PREFIX}/api-gateway:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.productService.image="${IMAGE_PREFIX}/product-service:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.orderService.image="${IMAGE_PREFIX}/order-service:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.inventoryService.image="${IMAGE_PREFIX}/inventory-service:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.notificationService.image="${IMAGE_PREFIX}/notification-service:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.paymentService.image="${IMAGE_PREFIX}/payment-service:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.shopService.image="${IMAGE_PREFIX}/shop-service:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.customerService.image="${IMAGE_PREFIX}/customer-service:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.landingFe.image="${IMAGE_PREFIX}/landing-fe:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${DEPLOY_IMAGE_TAG}" \
+            --set-string applications.customerFeAngular.image="${IMAGE_PREFIX}/customer-fe-angular:${DEPLOY_IMAGE_TAG}" \
             --set-string applications.apiGateway.imagePullPolicy=Always \
             --set-string applications.productService.imagePullPolicy=Always \
             --set-string applications.orderService.imagePullPolicy=Always \
@@ -282,6 +288,25 @@ jobs:
             customer-fe-next \
             customer-fe-angular
           do
+            kubectl rollout restart "deployment/${deploy}" \
+              --namespace microservices
+          done
+
+          for deploy in \
+            api-gateway \
+            product-service \
+            order-service \
+            inventory-service \
+            notification-service \
+            payment-service \
+            shop-service \
+            customer-service \
+            landing-fe \
+            admin-fe \
+            shop-fe \
+            customer-fe-next \
+            customer-fe-angular
+          do
             kubectl rollout status "deployment/${deploy}" \
               --namespace microservices \
               --timeout=300s
@@ -291,14 +316,15 @@ jobs:
 
 ## Faster VPS-Only Variant
 
-If you only need `linux/amd64` images for the VPS, change the workflow value:
+The checked-in workflow already builds only `linux/amd64` for the VPS:
 
 ```yaml
 env:
   PLATFORMS: linux/amd64
+  CREATE_MANIFEST: "false"
 ```
 
-Keep `linux/amd64,linux/arm64` if you also pull the same tags on Apple Silicon or other ARM machines.
+Use the local build command above when you need both `:2-amd64` and `:2-arm64` for Docker Compose or a local Kubernetes cluster.
 
 ## Alternative: Deploy Directly with kubeconfig
 
@@ -335,6 +361,7 @@ Then replace the SSH deploy step with:
 - name: Deploy Helm chart
   env:
     DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+    DEPLOY_IMAGE_TAG: "2-amd64"
   run: |
     set -euo pipefail
     IMAGE_PREFIX="docker.io/${DOCKER_USERNAME}"
@@ -342,19 +369,25 @@ Then replace the SSH deploy step with:
     helm upgrade --install microservices helm \
       --namespace microservices \
       --create-namespace \
-      --set-string applications.apiGateway.image="${IMAGE_PREFIX}/api-gateway:${IMAGE_TAG}" \
-      --set-string applications.productService.image="${IMAGE_PREFIX}/product-service:${IMAGE_TAG}" \
-      --set-string applications.orderService.image="${IMAGE_PREFIX}/order-service:${IMAGE_TAG}" \
-      --set-string applications.inventoryService.image="${IMAGE_PREFIX}/inventory-service:${IMAGE_TAG}" \
-      --set-string applications.notificationService.image="${IMAGE_PREFIX}/notification-service:${IMAGE_TAG}" \
-      --set-string applications.paymentService.image="${IMAGE_PREFIX}/payment-service:${IMAGE_TAG}" \
-      --set-string applications.shopService.image="${IMAGE_PREFIX}/shop-service:${IMAGE_TAG}" \
-      --set-string applications.customerService.image="${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}" \
-      --set-string applications.landingFe.image="${IMAGE_PREFIX}/landing-fe:${IMAGE_TAG}" \
-      --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${IMAGE_TAG}" \
-      --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${IMAGE_TAG}" \
-      --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${IMAGE_TAG}" \
-      --set-string applications.customerFeAngular.image="${IMAGE_PREFIX}/customer-fe-angular:${IMAGE_TAG}"
+      --set-string applications.apiGateway.image="${IMAGE_PREFIX}/api-gateway:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.productService.image="${IMAGE_PREFIX}/product-service:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.orderService.image="${IMAGE_PREFIX}/order-service:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.inventoryService.image="${IMAGE_PREFIX}/inventory-service:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.notificationService.image="${IMAGE_PREFIX}/notification-service:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.paymentService.image="${IMAGE_PREFIX}/payment-service:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.shopService.image="${IMAGE_PREFIX}/shop-service:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.customerService.image="${IMAGE_PREFIX}/customer-service:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.landingFe.image="${IMAGE_PREFIX}/landing-fe:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${DEPLOY_IMAGE_TAG}" \
+      --set-string applications.customerFeAngular.image="${IMAGE_PREFIX}/customer-fe-angular:${DEPLOY_IMAGE_TAG}"
+
+    kubectl rollout restart deployment/api-gateway deployment/product-service deployment/order-service \
+      deployment/inventory-service deployment/notification-service deployment/payment-service \
+      deployment/shop-service deployment/customer-service deployment/landing-fe deployment/admin-fe \
+      deployment/shop-fe deployment/customer-fe-next deployment/customer-fe-angular \
+      --namespace microservices
 ```
 
 ## Alternative: GitOps with Argo CD or Flux

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: customer-fe-angular
-          image: docker.io/hai2k2tt/customer-fe-angular:2
+          image: docker.io/hai2k2tt/customer-fe-angular:2-arm64
           ports:
             - containerPort: 80
           volumeMounts:

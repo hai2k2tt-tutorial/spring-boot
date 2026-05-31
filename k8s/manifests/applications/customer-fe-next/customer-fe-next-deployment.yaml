@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: customer-fe-next
-          image: docker.io/hai2k2tt/customer-fe-next:2
+          image: docker.io/hai2k2tt/customer-fe-next:2-arm64
           ports:
             - containerPort: 3004
           env:

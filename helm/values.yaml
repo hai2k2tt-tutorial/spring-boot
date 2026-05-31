@@ -369,7 +369,7 @@ applications:
     springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
   apiGateway:
     enabled: true
-    image: docker.io/hai2k2tt/api-gateway:2
+    image: docker.io/hai2k2tt/api-gateway:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -505,7 +505,7 @@ applications:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
   landingFe:
     enabled: true
-    image: docker.io/hai2k2tt/landing-fe:2
+    image: docker.io/hai2k2tt/landing-fe:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -523,7 +523,7 @@ applications:
       customerFeUrl: http://customer-fe-next.haint.fyi/customer
   adminFe:
     enabled: true
-    image: docker.io/hai2k2tt/admin-fe:2
+    image: docker.io/hai2k2tt/admin-fe:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -547,7 +547,7 @@ applications:
       authSecret: replace-with-a-long-random-string
   shopFe:
     enabled: true
-    image: docker.io/hai2k2tt/shop-fe:2
+    image: docker.io/hai2k2tt/shop-fe:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -571,7 +571,7 @@ applications:
       authSecret: replace-with-a-long-random-string
   customerFeNext:
     enabled: true
-    image: docker.io/hai2k2tt/customer-fe-next:2
+    image: docker.io/hai2k2tt/customer-fe-next:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:
@@ -595,7 +595,7 @@ applications:
       authSecret: replace-with-a-long-random-string
   customerFeAngular:
     enabled: true
-    image: docker.io/hai2k2tt/customer-fe-angular:2
+    image: docker.io/hai2k2tt/customer-fe-angular:2-amd64
     imagePullPolicy: Always
     replicaCount: 1
     service:

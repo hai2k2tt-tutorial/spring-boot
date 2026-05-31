@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: docker.io/hai2k2tt/api-gateway:2-amd64
+          image: docker.io/hai2k2tt/api-gateway:2-arm64
           ports:
             - containerPort: 9000
           env:

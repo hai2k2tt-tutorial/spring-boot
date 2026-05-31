@@ -197,7 +197,7 @@ cd /root/spring-boot
 
 ## Build and publish multi-arch images
 
-Local Docker on Apple Silicon uses `linux/arm64` by default, while the VPS Kubernetes nodes are `linux/amd64`. Publishing a multi-arch tag lets both environments use the same image reference. If you publish only arm64 and deploy it to the VPS, pods fail with errors like:
+Local Docker on Apple Silicon uses `linux/arm64` by default, while the VPS Kubernetes nodes are `linux/amd64`. This repo publishes fixed architecture tags so each environment can pull an exact image. If you publish only arm64 and deploy it to the VPS, pods fail with errors like:
 
 ```text
 no match for platform in manifest
@@ -274,19 +274,20 @@ If you need an amd64-only publish for debugging, set:
 
 ```bash
 export PLATFORMS=linux/amd64
+export CREATE_MANIFEST=false
 ./scripts/docker-build-v2.sh
 ```
 
-The Helm values should reference the manifest tag, not an architecture-specific suffix. For example:
-
-```yaml
-image: docker.io/hai2k2tt/api-gateway:2
-```
-
-and not:
+The Helm values for the VPS should reference the amd64 tag explicitly. For example:
 
 ```yaml
 image: docker.io/hai2k2tt/api-gateway:2-amd64
+```
+
+Local Docker Compose and raw local K8s manifests should use the arm64 tag on Apple Silicon:
+
+```yaml
+image: docker.io/hai2k2tt/api-gateway:2-arm64
 ```
 
 All custom application images use `imagePullPolicy: Always` so Kubernetes pulls rebuilt tags instead of reusing stale cached images.

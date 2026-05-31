@@ -25,7 +25,10 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   VPS_REPO_DIR: /root/spring-boot
+  IMAGE_TAG: "2"
+  DEPLOY_IMAGE_TAG: "2-amd64"
   PLATFORMS: linux/amd64
+  CREATE_MANIFEST: "false"
 
 jobs:
   build-and-deploy:
@@ -37,9 +40,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Compute image tag
-        run: echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_ENV"
 
       - name: Compute build scope
         id: scope
@@ -237,7 +237,7 @@ jobs:
           VPS_PORT="${VPS_PORT:-22}"
 
           ssh -i ~/.ssh/vps_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
-            "IMAGE_TAG='$IMAGE_TAG' DOCKER_USERNAME='$DOCKER_USERNAME' DEPLOY_SHA='$GITHUB_SHA' DEPLOY_REF='$GITHUB_REF_NAME' REPO_DIR='$VPS_REPO_DIR' DEPLOY_MODE='$DEPLOY_MODE' BACKEND_MODULES='$BACKEND_MODULES' FRONTEND_APPS='$FRONTEND_APPS' bash -s" <<'REMOTE'
+            "DEPLOY_IMAGE_TAG='$DEPLOY_IMAGE_TAG' DOCKER_USERNAME='$DOCKER_USERNAME' DEPLOY_SHA='$GITHUB_SHA' DEPLOY_REF='$GITHUB_REF_NAME' REPO_DIR='$VPS_REPO_DIR' DEPLOY_MODE='$DEPLOY_MODE' BACKEND_MODULES='$BACKEND_MODULES' FRONTEND_APPS='$FRONTEND_APPS' bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd "$REPO_DIR"
@@ -284,7 +284,7 @@ jobs:
 
           for deploy in $deployments; do
             value_key="$(value_key_for_deploy "$deploy")"
-            helm_args="$helm_args --set-string applications.${value_key}.image=${IMAGE_PREFIX}/${deploy}:${IMAGE_TAG}"
+            helm_args="$helm_args --set-string applications.${value_key}.image=${IMAGE_PREFIX}/${deploy}:${DEPLOY_IMAGE_TAG}"
             helm_args="$helm_args --set-string applications.${value_key}.imagePullPolicy=Always"
           done
 
@@ -296,6 +296,11 @@ jobs:
             --namespace microservices \
             --create-namespace \
             $helm_args
+
+          for deploy in $deployments; do
+            kubectl rollout restart "deployment/${deploy}" \
+              --namespace microservices
+          done
 
           for deploy in $deployments; do
             kubectl rollout status "deployment/${deploy}" \
