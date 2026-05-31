@@ -30,6 +30,7 @@ Use a unique tag for every commit:
 ```text
 docker.io/<docker-user>/api-gateway:<git-sha>
 docker.io/<docker-user>/product-service:<git-sha>
+docker.io/<docker-user>/landing-fe:<git-sha>
 docker.io/<docker-user>/admin-fe:<git-sha>
 ```
 
@@ -73,6 +74,7 @@ applications.notificationService.image
 applications.paymentService.image
 applications.shopService.image
 applications.customerService.image
+applications.landingFe.image
 applications.adminFe.image
 applications.shopFe.image
 applications.customerFeNext.image
@@ -246,6 +248,7 @@ jobs:
             --set-string applications.paymentService.image="${IMAGE_PREFIX}/payment-service:${IMAGE_TAG}" \
             --set-string applications.shopService.image="${IMAGE_PREFIX}/shop-service:${IMAGE_TAG}" \
             --set-string applications.customerService.image="${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}" \
+            --set-string applications.landingFe.image="${IMAGE_PREFIX}/landing-fe:${IMAGE_TAG}" \
             --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${IMAGE_TAG}" \
             --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${IMAGE_TAG}" \
             --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${IMAGE_TAG}" \
@@ -258,6 +261,7 @@ jobs:
             --set-string applications.paymentService.imagePullPolicy=Always \
             --set-string applications.shopService.imagePullPolicy=Always \
             --set-string applications.customerService.imagePullPolicy=Always \
+            --set-string applications.landingFe.imagePullPolicy=Always \
             --set-string applications.adminFe.imagePullPolicy=Always \
             --set-string applications.shopFe.imagePullPolicy=Always \
             --set-string applications.customerFeNext.imagePullPolicy=Always \
@@ -272,6 +276,7 @@ jobs:
             payment-service \
             shop-service \
             customer-service \
+            landing-fe \
             admin-fe \
             shop-fe \
             customer-fe-next \
@@ -345,6 +350,7 @@ Then replace the SSH deploy step with:
       --set-string applications.paymentService.image="${IMAGE_PREFIX}/payment-service:${IMAGE_TAG}" \
       --set-string applications.shopService.image="${IMAGE_PREFIX}/shop-service:${IMAGE_TAG}" \
       --set-string applications.customerService.image="${IMAGE_PREFIX}/customer-service:${IMAGE_TAG}" \
+      --set-string applications.landingFe.image="${IMAGE_PREFIX}/landing-fe:${IMAGE_TAG}" \
       --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${IMAGE_TAG}" \
       --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${IMAGE_TAG}" \
       --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${IMAGE_TAG}" \
@@ -387,6 +393,7 @@ kubectl describe deploy \
   payment-service \
   shop-service \
   customer-service \
+  landing-fe \
   admin-fe \
   shop-fe \
   customer-fe-next \

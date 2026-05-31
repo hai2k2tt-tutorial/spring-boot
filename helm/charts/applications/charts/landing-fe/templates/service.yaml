@@ -1,0 +1,17 @@
+{{- if .Values.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: landing-fe
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: landing-fe
+spec:
+  type: ClusterIP
+  selector:
+    app: landing-fe
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+{{- end }}

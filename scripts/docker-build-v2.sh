@@ -28,6 +28,7 @@ customer-service
 "
 
 DEFAULT_FRONTEND_APPS="
+landing-fe
 admin-fe
 shop-fe
 customer-fe-next

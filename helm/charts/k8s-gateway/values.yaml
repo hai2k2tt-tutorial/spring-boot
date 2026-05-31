@@ -44,6 +44,10 @@ routes:
     hostname: loki.haint.fyi
     backendRefName: loki
     backendRefPort: 3100
+  - name: landing-fe-route
+    hostname: landing-fe.haint.fyi
+    backendRefName: landing-fe
+    backendRefPort: 3005
   - name: admin-fe-route
     hostname: admin-fe.haint.fyi
     backendRefName: admin-fe
@@ -64,6 +68,9 @@ routes:
 proxySettingsPolicies:
   - name: frontend-proxy-settings
     targetRefs:
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: landing-fe-route
       - group: gateway.networking.k8s.io
         kind: HTTPRoute
         name: admin-fe-route

@@ -338,6 +338,23 @@ services:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
 
+  landing-fe:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    ports:
+      - "3005:3005"
+    environment:
+      NEXT_PUBLIC_ADMIN_FE_URL: http://localhost:3002/admin
+      NEXT_PUBLIC_SHOP_FE_URL: http://localhost:3003/shop
+      NEXT_PUBLIC_CUSTOMER_FE_URL: http://localhost:3004/customer
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./landing-fe:/app
+      - landing-fe-node-modules:/app/node_modules
+      - landing-fe-next-cache:/app/.next
+
   admin-fe:
     image: node:22-alpine
     working_dir: /app
@@ -436,6 +453,8 @@ volumes:
   keycloak-mysql-data:
   grafana-data:
   backend-maven-cache:
+  landing-fe-node-modules:
+  landing-fe-next-cache:
   admin-fe-node-modules:
   admin-fe-next-cache:
   shop-fe-node-modules:

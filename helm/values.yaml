@@ -503,6 +503,24 @@ applications:
         memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
+  landingFe:
+    enabled: true
+    image: docker.io/hai2k2tt/landing-fe:2
+    imagePullPolicy: Always
+    replicaCount: 1
+    service:
+      port: 3005
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 256Mi
+    config:
+      adminFeUrl: http://admin-fe.haint.fyi/admin
+      shopFeUrl: http://shop-fe.haint.fyi/shop
+      customerFeUrl: http://customer-fe-next.haint.fyi/customer
   adminFe:
     enabled: true
     image: docker.io/hai2k2tt/admin-fe:2
@@ -639,6 +657,10 @@ k8sGateway:
       hostname: loki.haint.fyi
       backendRefName: loki
       backendRefPort: 3100
+    - name: landing-fe-route
+      hostname: landing-fe.haint.fyi
+      backendRefName: landing-fe
+      backendRefPort: 3005
     - name: admin-fe-route
       hostname: admin-fe.haint.fyi
       backendRefName: admin-fe
@@ -658,6 +680,9 @@ k8sGateway:
   proxySettingsPolicies:
     - name: frontend-proxy-settings
       targetRefs:
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          name: landing-fe-route
         - group: gateway.networking.k8s.io
           kind: HTTPRoute
           name: admin-fe-route

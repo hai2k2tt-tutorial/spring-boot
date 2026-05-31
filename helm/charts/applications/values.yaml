@@ -159,6 +159,25 @@ customerService:
   config:
     datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
 
+landingFe:
+  enabled: true
+  image: docker.io/hai2k2tt/landing-fe:2
+  imagePullPolicy: Always
+  replicaCount: 1
+  service:
+    port: 3005
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  config:
+    adminFeUrl: http://admin-fe.haint.fyi/admin
+    shopFeUrl: http://shop-fe.haint.fyi/shop
+    customerFeUrl: http://customer-fe-next.haint.fyi/customer
+
 adminFe:
   enabled: true
   image: docker.io/hai2k2tt/admin-fe:2

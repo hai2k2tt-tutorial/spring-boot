@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landing-fe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: landing-fe
+  template:
+    metadata:
+      labels:
+        app: landing-fe
+    spec:
+      containers:
+        - name: landing-fe
+          image: docker.io/hai2k2tt/landing-fe:2
+          ports:
+            - containerPort: 3005
+          env:
+            - name: NEXT_PUBLIC_ADMIN_FE_URL
+              value: "http://admin-fe.haint.fyi/admin"
+            - name: NEXT_PUBLIC_SHOP_FE_URL
+              value: "http://shop-fe.haint.fyi/shop"
+            - name: NEXT_PUBLIC_CUSTOMER_FE_URL
+              value: "http://customer-fe-next.haint.fyi/customer"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi

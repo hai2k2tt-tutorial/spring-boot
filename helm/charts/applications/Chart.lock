@@ -23,6 +23,9 @@ dependencies:
 - name: customer-service
   repository: file://charts/customer-service
   version: 0.1.0
+- name: landing-fe
+  repository: file://charts/landing-fe
+  version: 0.1.0
 - name: admin-fe
   repository: file://charts/admin-fe
   version: 0.1.0
@@ -35,5 +38,5 @@ dependencies:
 - name: customer-fe-angular
   repository: file://charts/customer-fe-angular
   version: 0.1.0
-digest: sha256:2fb83a193e6d9226d4d48b230e5ae45e4e6318b9a2ba532e5c28f3fd2f2ecba8
-generated: "2026-05-18T01:19:13.066018+07:00"
+digest: sha256:255ea1d9194d80e099cae3c2ad9b295f98ff81b9b8fe1b8622ee281e0c0d48e3
+generated: "2026-05-31T16:10:38.799865+07:00"

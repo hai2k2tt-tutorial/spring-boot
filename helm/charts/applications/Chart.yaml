@@ -45,6 +45,11 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/customer-service"
     condition: customerService.enabled
+  - name: landing-fe
+    alias: landingFe
+    version: 0.1.0
+    repository: "file://charts/landing-fe"
+    condition: landingFe.enabled
   - name: admin-fe
     alias: adminFe
     version: 0.1.0

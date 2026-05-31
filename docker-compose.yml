@@ -298,6 +298,18 @@ services:
       SHOP_SERVICE_URL: http://shop-service:8086
       CUSTOMER_SERVICE_URL: http://customer-service:8087
 
+  landing-fe:
+    build:
+      context: ./landing-fe
+      dockerfile: Dockerfile
+    image: docker.io/hai2k2tt/landing-fe:2
+    ports:
+      - "3005:3005"
+    environment:
+      NEXT_PUBLIC_ADMIN_FE_URL: http://localhost:3002/admin
+      NEXT_PUBLIC_SHOP_FE_URL: http://localhost:3003/shop
+      NEXT_PUBLIC_CUSTOMER_FE_URL: http://localhost:3004/customer
+
   admin-fe:
     build:
       context: ./admin-fe

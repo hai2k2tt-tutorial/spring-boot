@@ -50,7 +50,7 @@ jobs:
           set -euo pipefail
 
           DEFAULT_BACKEND_MODULES="api-gateway product-service inventory-service order-service notification-service payment-service shop-service customer-service"
-          DEFAULT_FRONTEND_APPS="admin-fe shop-fe customer-fe-next customer-fe-angular"
+          DEFAULT_FRONTEND_APPS="landing-fe admin-fe shop-fe customer-fe-next customer-fe-angular"
 
           normalize_list() {
             printf '%s' "$1" | tr ',\n' '  ' | xargs
@@ -78,11 +78,16 @@ jobs:
               backend_modules=""
               frontend_apps=""
               all_backend=false
+              all_frontend=false
 
               while IFS= read -r path; do
                 case "$path" in
                   pom.xml|.mvn/*|mvnw|mvnw.cmd|docker/spring-boot/Dockerfile)
                     all_backend=true
+                    ;;
+                  .github/workflows/deploy-vps.yml|scripts/docker-build-v2.sh|helm/*|helm/**)
+                    all_backend=true
+                    all_frontend=true
                     ;;
                   api-gateway/*)
                     backend_modules="$(append_unique "$backend_modules" "api-gateway")"
@@ -108,6 +113,9 @@ jobs:
                   customer-service/*)
                     backend_modules="$(append_unique "$backend_modules" "customer-service")"
                     ;;
+                  landing-fe/*)
+                    frontend_apps="$(append_unique "$frontend_apps" "landing-fe")"
+                    ;;
                   admin-fe/*)
                     frontend_apps="$(append_unique "$frontend_apps" "admin-fe")"
                     ;;
@@ -127,10 +135,16 @@ jobs:
                 backend_modules="$DEFAULT_BACKEND_MODULES"
               fi
 
+              if [ "$all_frontend" = "true" ]; then
+                frontend_apps="$DEFAULT_FRONTEND_APPS"
+              fi
+
               if [ -z "$backend_modules" ] && [ -z "$frontend_apps" ]; then
                 backend_modules="__NONE__"
                 frontend_apps="__NONE__"
                 deploy_mode="none"
+              elif [ "$all_backend" = "true" ] && [ "$all_frontend" = "true" ]; then
+                deploy_mode="all"
               else
                 [ -n "$backend_modules" ] || backend_modules="__NONE__"
                 [ -n "$frontend_apps" ] || frontend_apps="__NONE__"
@@ -242,6 +256,7 @@ jobs:
               payment-service) printf '%s' "paymentService" ;;
               shop-service) printf '%s' "shopService" ;;
               customer-service) printf '%s' "customerService" ;;
+              landing-fe) printf '%s' "landingFe" ;;
               admin-fe) printf '%s' "adminFe" ;;
               shop-fe) printf '%s' "shopFe" ;;
               customer-fe-next) printf '%s' "customerFeNext" ;;
@@ -251,7 +266,7 @@ jobs:
           }
 
           if [ "$DEPLOY_MODE" = "all" ]; then
-            deployments="api-gateway product-service order-service inventory-service notification-service payment-service shop-service customer-service admin-fe shop-fe customer-fe-next customer-fe-angular"
+            deployments="api-gateway product-service order-service inventory-service notification-service payment-service shop-service customer-service landing-fe admin-fe shop-fe customer-fe-next customer-fe-angular"
           else
             deployments=""
             if [ "$BACKEND_MODULES" != "__NONE__" ]; then
