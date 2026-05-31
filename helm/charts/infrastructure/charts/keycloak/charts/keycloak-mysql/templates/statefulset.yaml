@@ -18,6 +18,18 @@ spec:
       labels:
         app: keycloak-mysql
     spec:
+{{- with .Values.global.workloadScheduling.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+{{- end }}
       containers:
         - name: keycloak-mysql
           image: mysql:8

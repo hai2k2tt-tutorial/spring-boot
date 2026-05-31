@@ -16,6 +16,18 @@ spec:
       labels:
         app: shop-service
     spec:
+{{- with .Values.global.workloadScheduling.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+{{- end }}
       containers:
         - name: shop-service
           image: {{ .Values.image }}

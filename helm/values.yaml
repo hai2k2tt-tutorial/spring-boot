@@ -1,5 +1,10 @@
 global:
   namespace: microservices
+  workloadScheduling:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-worker
+    tolerations: []
+    affinity: {}
 
 metricsServer:
   enabled: true
