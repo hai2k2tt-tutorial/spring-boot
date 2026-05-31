@@ -19,11 +19,7 @@ import {
   fetchProducts,
   fetchShops,
   fetchSkus,
-  updateCustomerStatus,
-  updateCustomerWallet,
   updatePaymentStatus,
-  updateShopStatus,
-  updateShopWallet,
 } from "@/lib/api";
 
 type AdminWorkspaceData = {
@@ -197,36 +193,34 @@ export default function AdminPage() {
       </ApiTable>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <ApiTable title="Shops" headers={["Shop", "Owner", "Status", "Wallet", "Actions"]}>
-          {shopsQuery.isLoading ? <LoadingRow colSpan={5} label="Loading shops..." /> : null}
-          {shopsQuery.isError ? <ErrorRow colSpan={5} error={shopsQuery.error} onRetry={() => void shopsQuery.refetch()} /> : null}
-          {!shopsQuery.isLoading && !shopsQuery.isError && shops.length === 0 ? <EmptyRow colSpan={5} label="No shops returned." /> : null}
+        <ApiTable title="Shops" headers={["Shop", "Owner", "Status", "Wallet"]}>
+          {shopsQuery.isLoading ? <LoadingRow colSpan={4} label="Loading shops..." /> : null}
+          {shopsQuery.isError ? <ErrorRow colSpan={4} error={shopsQuery.error} onRetry={() => void shopsQuery.refetch()} /> : null}
+          {!shopsQuery.isLoading && !shopsQuery.isError && shops.length === 0 ? <EmptyRow colSpan={4} label="No shops returned." /> : null}
           {shops.map((shop) => (
             <TableRow key={shop.shopId}>
               <TableCell className="font-medium">{shop.shopName}</TableCell><TableCell>{shop.ownerName}</TableCell>
               <TableCell><Badge variant={shop.status === "ACTIVE" ? "secondary" : "outline"}>{shop.status}</Badge></TableCell>
               <TableCell>{shop.balance} {shop.currency}</TableCell>
-              <TableCell><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => submit(() => updateShopStatus(shop.shopId, { status: shop.status === "ACTIVE" ? "LOCKED" : "ACTIVE" }))}>Toggle</Button><Button size="sm" variant="outline" onClick={() => submit(() => updateShopWallet(shop.shopId, { balance: shop.balance, currency: shop.currency }))}>Wallet</Button></div></TableCell>
             </TableRow>
           ))}
         </ApiTable>
 
-        <ApiTable title="Customers" headers={["Customer", "Email", "Status", "Wallet", "Actions"]}>
-          {customersQuery.isLoading ? <LoadingRow colSpan={5} label="Loading customers..." /> : null}
-          {customersQuery.isError ? <ErrorRow colSpan={5} error={customersQuery.error} onRetry={() => void customersQuery.refetch()} /> : null}
-          {!customersQuery.isLoading && !customersQuery.isError && customers.length === 0 ? <EmptyRow colSpan={5} label="No customers returned." /> : null}
+        <ApiTable title="Customers" headers={["Customer", "Email", "Status", "Wallet"]}>
+          {customersQuery.isLoading ? <LoadingRow colSpan={4} label="Loading customers..." /> : null}
+          {customersQuery.isError ? <ErrorRow colSpan={4} error={customersQuery.error} onRetry={() => void customersQuery.refetch()} /> : null}
+          {!customersQuery.isLoading && !customersQuery.isError && customers.length === 0 ? <EmptyRow colSpan={4} label="No customers returned." /> : null}
           {customers.map((customer) => (
             <TableRow key={customer.customerId}>
               <TableCell className="font-medium">{customer.firstName} {customer.lastName}</TableCell><TableCell>{customer.email}</TableCell>
               <TableCell><Badge variant={customer.status === "ACTIVE" ? "secondary" : "outline"}>{customer.status}</Badge></TableCell>
               <TableCell>{customer.balance} {customer.currency}</TableCell>
-              <TableCell><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => submit(() => updateCustomerStatus(customer.customerId, { status: customer.status === "ACTIVE" ? "LOCKED" : "ACTIVE" }))}>Toggle</Button><Button size="sm" variant="outline" onClick={() => submit(() => updateCustomerWallet(customer.customerId, { balance: customer.balance, currency: customer.currency }))}>Wallet</Button></div></TableCell>
             </TableRow>
           ))}
         </ApiTable>
       </section>
 
-      <ApiTable title="Payments" headers={["Payment", "Customer", "Order", "Method", "Status", "Amount", "Actions"]} action={<Button size="sm" onClick={() => setDialog("payment")}>Create</Button>}>
+      <ApiTable title="Payments" headers={["Payment", "Customer", "Order", "Method", "Status", "Amount", "Actions"]}>
         {paymentsQuery.isLoading ? <LoadingRow colSpan={7} label="Loading payments..." /> : null}
         {paymentsQuery.isError ? <ErrorRow colSpan={7} error={paymentsQuery.error} onRetry={() => void paymentsQuery.refetch()} /> : null}
         {!paymentsQuery.isLoading && !paymentsQuery.isError && payments.length === 0 ? <EmptyRow colSpan={7} label="No payments returned." /> : null}
