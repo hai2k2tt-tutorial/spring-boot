@@ -14,7 +14,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { InputField, SelectField, TextareaField } from "@/components/forms";
 
 const productSchema = z.object({
-  shopId: z.string().trim().uuid("Use a valid shop UUID"),
   categoryId: z.string().trim().uuid("Use a valid category UUID"),
   name: z.string().trim().min(1, "Name is required"),
   description: z.string().trim().min(1, "Description is required"),
@@ -32,7 +31,6 @@ export function AddProductForm() {
   const form = useForm<ProductFormInput, undefined, ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      shopId: "",
       categoryId: "",
       name: "",
       description: "",
@@ -94,7 +92,6 @@ export function AddProductForm() {
               ) : null}
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <InputField name="shopId" label="Shop UUID" />
                 <InputField name="categoryId" label="Category UUID" />
                 <InputField name="name" label="Name" />
                 <SelectField name="status" label="Status" options={["DRAFT", "ACTIVE", "ARCHIVED"]} />

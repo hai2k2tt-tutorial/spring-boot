@@ -11,7 +11,6 @@ export type AccountStatus = "ACTIVE" | "LOCKED";
 
 export interface ProductRequestDto {
   id?: UUID;
-  shopId?: UUID;
   name: string;
   description: string;
   price: number;
@@ -105,34 +104,19 @@ export interface InventoryCheckResponseVo {
   inStock: boolean;
 }
 
-export interface UserDetails {
-  email: string;
-  firstName: string;
-  lastName: string;
-}
-
 export interface Order {
   id?: number;
   orderNumber?: string;
   skuCode: string;
-  price: number;
   quantity: number;
-  userDetails: UserDetails;
 }
 
 export interface OrderCreateRequestDto {
-  customerId: UUID;
-  status?: OrderStatus | string;
-  customerDetails?: UserDetails;
   items: OrderItemRequestDto[];
 }
 
 export interface OrderItemRequestDto {
-  skuId: UUID;
   skuCode: string;
-  productId: UUID;
-  shopId: UUID;
-  price: number;
   quantity: number;
 }
 
@@ -157,11 +141,8 @@ export interface OrderItemResponseVo {
 }
 
 export interface PaymentCreateRequestDto {
-  customerId: UUID;
   orderId: UUID;
-  amount: number;
   method: PaymentMethod | string;
-  status?: PaymentStatus | string;
 }
 
 export interface PaymentStatusUpdateRequestDto {

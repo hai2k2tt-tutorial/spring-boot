@@ -238,7 +238,9 @@ export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]>
 
 export async function orderProduct(order: Order): Promise<OrderResponseVo> {
   try {
-    const response = await api.post<OrderResponseVo>("/order", order);
+    const response = await api.post<OrderResponseVo>("/order", {
+      items: [{ skuCode: order.skuCode, quantity: order.quantity }],
+    });
     return response.data;
   } catch (error) {
     throw parseError(error);

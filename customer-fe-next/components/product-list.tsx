@@ -69,7 +69,7 @@ function ProductOrderCard({
 }
 
 export function ProductList() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const queryClient = useQueryClient();
   const productsQuery = useQuery({
     queryKey: ["products"],
@@ -92,20 +92,14 @@ export function ProductList() {
   });
 
   const handleOrder = async (product: Product, values: OrderFormValues) => {
-    if (status !== "authenticated" || !session?.user) {
+    if (status !== "authenticated") {
       await signIn("keycloak");
       return;
     }
 
     const order: Order = {
       skuCode: product.skuCode,
-      price: product.price,
       quantity: values.quantity,
-      userDetails: {
-        email: String(session.user.email ?? ""),
-        firstName: String(session.user.given_name ?? ""),
-        lastName: String(session.user.family_name ?? ""),
-      },
     };
 
     await orderMutation.mutateAsync({ skuCode: product.skuCode, order });

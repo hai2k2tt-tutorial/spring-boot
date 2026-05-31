@@ -9,22 +9,13 @@ import {
   CategoryRequestDto,
   CategoryResponseVo,
   CustomerResponseVo,
-  CustomerStatusUpdateRequestDto,
-  CustomerWalletUpdateRequestDto,
   InventoryCheckResponseVo,
-  Order,
-  OrderCreateRequestDto,
   OrderResponseVo,
-  PaymentCreateRequestDto,
   PaymentHistoryResponseVo,
   PaymentResponseVo,
   PaymentStatusUpdateRequestDto,
   Product,
-  ProductRequestDto,
-  ProductResponseVo,
   ShopResponseVo,
-  ShopStatusUpdateRequestDto,
-  ShopWalletUpdateRequestDto,
   SkuRequestDto,
   SkuResponseVo,
   UUID,
@@ -103,24 +94,6 @@ function parseError(error: unknown): Error {
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const response = await api.get<Product[]>("/product");
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function createProduct(product: ProductRequestDto | Product): Promise<ProductResponseVo> {
-  try {
-    const response = await api.post<ProductResponseVo>("/product", product);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function updateProduct(productId: UUID, product: ProductRequestDto | Product): Promise<ProductResponseVo> {
-  try {
-    const response = await api.put<ProductResponseVo>("/product", { ...product, id: productId });
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -217,38 +190,11 @@ export async function checkStock(skuCode: string, quantity: number): Promise<Inv
   }
 }
 
-export async function placeOrder(order: OrderCreateRequestDto): Promise<OrderResponseVo> {
-  try {
-    const response = await api.post<OrderResponseVo>("/order", order);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
 export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]> {
   try {
     const response = await api.get<OrderResponseVo[]>("/order", {
       params: customerId ? { customerId } : undefined,
     });
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function orderProduct(order: Order): Promise<OrderResponseVo> {
-  try {
-    const response = await api.post<OrderResponseVo>("/order", order);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function createPayment(payment: PaymentCreateRequestDto): Promise<PaymentResponseVo> {
-  try {
-    const response = await api.post<PaymentResponseVo>("/payments", payment);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -287,30 +233,6 @@ export async function fetchPaymentHistory(paymentId: UUID): Promise<PaymentHisto
   }
 }
 
-export async function updateCustomerStatus(
-  customerId: UUID,
-  status: CustomerStatusUpdateRequestDto
-): Promise<CustomerResponseVo> {
-  try {
-    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/status`, status);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function updateCustomerWallet(
-  customerId: UUID,
-  wallet: CustomerWalletUpdateRequestDto
-): Promise<CustomerResponseVo> {
-  try {
-    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/wallet`, wallet);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
 export async function fetchCustomers(): Promise<CustomerResponseVo[]> {
   try {
     const response = await api.get<CustomerResponseVo[]>("/customers");
@@ -323,30 +245,6 @@ export async function fetchCustomers(): Promise<CustomerResponseVo[]> {
 export async function fetchCustomer(customerId: UUID): Promise<CustomerResponseVo> {
   try {
     const response = await api.get<CustomerResponseVo>(`/customers/${customerId}`);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function updateShopStatus(
-  shopId: UUID,
-  status: ShopStatusUpdateRequestDto
-): Promise<ShopResponseVo> {
-  try {
-    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/status`, status);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function updateShopWallet(
-  shopId: UUID,
-  wallet: ShopWalletUpdateRequestDto
-): Promise<ShopResponseVo> {
-  try {
-    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/wallet`, wallet);
     return response.data;
   } catch (error) {
     throw parseError(error);

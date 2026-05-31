@@ -100,6 +100,17 @@ function parseError(error: unknown): Error {
   return error instanceof Error ? error : new Error("Request failed");
 }
 
+function toProductRequest(product: ProductRequestDto | Product): ProductRequestDto {
+  return {
+    name: product.name,
+    description: product.description,
+    price: product.price,
+    imageUrl: product.imageUrl,
+    categoryId: product.categoryId,
+    status: product.status,
+  };
+}
+
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const response = await api.get<Product[]>("/product");
@@ -111,7 +122,7 @@ export async function fetchProducts(): Promise<Product[]> {
 
 export async function createProduct(product: ProductRequestDto | Product): Promise<ProductResponseVo> {
   try {
-    const response = await api.post<ProductResponseVo>("/product", product);
+    const response = await api.post<ProductResponseVo>("/product", toProductRequest(product));
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -120,7 +131,7 @@ export async function createProduct(product: ProductRequestDto | Product): Promi
 
 export async function updateProduct(productId: UUID, product: ProductRequestDto | Product): Promise<ProductResponseVo> {
   try {
-    const response = await api.put<ProductResponseVo>("/product", { ...product, id: productId });
+    const response = await api.put<ProductResponseVo>("/product", { ...toProductRequest(product), id: productId });
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -239,7 +250,9 @@ export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]>
 
 export async function orderProduct(order: Order): Promise<OrderResponseVo> {
   try {
-    const response = await api.post<OrderResponseVo>("/order", order);
+    const response = await api.post<OrderResponseVo>("/order", {
+      items: [{ skuCode: order.skuCode, quantity: order.quantity }],
+    });
     return response.data;
   } catch (error) {
     throw parseError(error);
