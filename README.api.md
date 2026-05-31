@@ -89,10 +89,8 @@ Gateway security permits Swagger/OpenAPI and Prometheus endpoints without authen
 
 | Method | Path | Status | Params | Request body | Response |
 | --- | --- | --- | --- | --- | --- |
-| `POST` | `/api/inventory/attributes` | `201 Created` | None | `AttributeRequestDto` | `AttributeResponseVo` | - shop (own products only) (I want to adjust this to allow creating multiple attributes at once, but for now it only creates one attribute at a time)
-| `POST` | `/api/inventory/attributes/{attributeId}/values` | `201 Created` | `attributeId` path `UUID` | `AttributeValueRequestDto` | `AttributeValueResponseVo` | - shop (own products only) (I want to adjust this to update many values at once, but for now it only creates one value at a time)
+| `POST` | `/api/inventory/attributes` | `201 Created` | None | `AttributeRequestDto` | `AttributeResponseVo` | - shop (own products only) (creates one attribute with its values)
 | `GET` | `/api/inventory/attributes` | `200 OK` | `productId` query `UUID` | None | `AttributeResponseVo[]` | - shop + customer + admin (only attributes for the specified product)
-| `GET` | `/api/inventory/attributes/{attributeId}/values` | `200 OK` | `attributeId` path `UUID` | None | `AttributeValueResponseVo[]` | - shop + customer + admin (only values for the specified attribute)
 | `POST` | `/api/inventory/skus` | `201 Created` | None | `SkuRequestDto` | `SkuResponseVo` | - shop (own products only) (I want to adjust this to allow creating multiple SKUs at once, but for now it only creates one SKU at a time)
 | `GET` | `/api/inventory/skus` | `200 OK` | `productId` query `UUID` | None | `SkuResponseVo[]` | - shop + customer + admin (only SKUs for the specified product)
 | `GET` | `/api/inventory/skus/{skuCode}` | `200 OK` | `skuCode` path `string` | None | `SkuResponseVo` | - shop + customer + admin
@@ -105,16 +103,12 @@ Gateway security permits Swagger/OpenAPI and Prometheus endpoints without authen
   "productId": "UUID",
   "code": "string",
   "name": "string",
-  "inputType": "SELECT | TEXT"
-}
-```
-
-`AttributeValueRequestDto`
-
-```json
-{
-  "value": "string",
-  "sortOrder": 0
+  "values": [
+    {
+      "value": "string",
+      "sortOrder": 0
+    }
+  ]
 }
 ```
 
@@ -132,7 +126,7 @@ Gateway security permits Swagger/OpenAPI and Prometheus endpoints without authen
 
 Response models:
 
-- `AttributeResponseVo`: `id`, `productId`, `code`, `name`, `inputType`, `createdAt`, `updatedAt`
+- `AttributeResponseVo`: `id`, `productId`, `code`, `name`, `values`, `createdAt`, `updatedAt`
 - `AttributeValueResponseVo`: `id`, `attributeId`, `value`, `sortOrder`
 - `SkuResponseVo`: `id`, `productId`, `skuCode`, `priceOverride`, `quantity`, `attributeValueIds`, `createdAt`, `updatedAt`
 - `InventoryCheckResponseVo`: `skuCode`, `requestedQuantity`, `inStock`

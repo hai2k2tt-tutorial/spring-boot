@@ -11,7 +11,6 @@ import {
   fetchPayments,
   fetchProducts,
   fetchShops,
-  fetchSkus,
 } from "@/lib/api";
 import {
   CategoryResponseVo,
@@ -20,7 +19,6 @@ import {
   PaymentResponseVo,
   ProductResponseVo,
   ShopResponseVo,
-  SkuResponseVo,
 } from "@/lib/types";
 
 export type WorkspaceMode = "admin" | "shop" | "customer";
@@ -32,7 +30,6 @@ export type WorkspaceData = {
   customers: CustomerResponseVo[];
   orders: OrderResponseVo[];
   payments: PaymentResponseVo[];
-  skus: SkuResponseVo[];
 };
 
 export type WorkspaceFeedback = { kind: "success" | "error"; message: string } | null;
@@ -90,15 +87,6 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
     staleTime: 30 * 1000,
     retry: 1,
   });
-  const firstProductId = productsQuery.data?.find((product) => product.id)?.id;
-  const skusQuery = useQuery({
-    queryKey: ["api-workspace-skus", mode, firstProductId, authQueryKey],
-    queryFn: () => fetchSkus(firstProductId ?? ""),
-    enabled: status !== "loading" && !!firstProductId,
-    staleTime: 30 * 1000,
-    retry: 1,
-  });
-
   const workspaceMutation = useMutation({
     mutationFn: async (work: () => Promise<unknown>) => work(),
     onSuccess: async () => {
@@ -123,7 +111,6 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
       customersQuery.refetch(),
       ordersQuery.refetch(),
       paymentsQuery.refetch(),
-      skusQuery.refetch(),
     ]);
   }
 
@@ -134,7 +121,6 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
     customers: customersQuery.data ?? [],
     orders: ordersQuery.data ?? [],
     payments: paymentsQuery.data ?? [],
-    skus: skusQuery.data ?? [],
   };
   const queryError =
     productsQuery.error ||
@@ -142,8 +128,7 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
     shopsQuery.error ||
     customersQuery.error ||
     ordersQuery.error ||
-    paymentsQuery.error ||
-    skusQuery.error;
+    paymentsQuery.error;
   const mutationError = workspaceMutation.error;
   const feedback: WorkspaceFeedback = mutationError
     ? { kind: "error", message: getErrorMessage(mutationError, "API request failed") }
@@ -160,24 +145,21 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
     shopsQuery.isLoading ||
     customersQuery.isLoading ||
     ordersQuery.isLoading ||
-    paymentsQuery.isLoading ||
-    skusQuery.isLoading;
+    paymentsQuery.isLoading;
   const fetching =
     productsQuery.isFetching ||
     categoriesQuery.isFetching ||
     shopsQuery.isFetching ||
     customersQuery.isFetching ||
     ordersQuery.isFetching ||
-    paymentsQuery.isFetching ||
-    skusQuery.isFetching;
+    paymentsQuery.isFetching;
   const isError =
     productsQuery.isError ||
     categoriesQuery.isError ||
     shopsQuery.isError ||
     customersQuery.isError ||
     ordersQuery.isError ||
-    paymentsQuery.isError ||
-    skusQuery.isError;
+    paymentsQuery.isError;
 
   return {
     data,

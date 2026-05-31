@@ -16,7 +16,6 @@ import com.techie.microservices.inventory.repository.InventoryRepository;
 import com.techie.microservices.inventory.repository.SkuAttributeValueRepository;
 import com.techie.microservices.inventory.repository.SkuRepository;
 import com.techie.microservices.inventory.vo.AttributeResponseVo;
-import com.techie.microservices.inventory.vo.AttributeValueResponseVo;
 import com.techie.microservices.inventory.vo.InventoryCheckResponseVo;
 import com.techie.microservices.inventory.vo.SkuResponseVo;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +25,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -45,37 +48,47 @@ public class InventoryService {
 
     @Transactional
     public AttributeResponseVo createAttribute(AttributeRequestDto attributeRequestDto) {
+        validateAttributeRequest(attributeRequestDto);
         String productId = attributeRequestDto.productId().toString();
-        if (attributeRepository.existsByProductIdAndCode(productId, attributeRequestDto.code())) {
+        if (attributeRepository.existsByProductIdAndCode(productId, attributeRequestDto.code().trim())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Attribute code already exists for product");
         }
         Attribute attribute = attributeMapper.toEntity(attributeRequestDto);
         attributeRepository.save(attribute);
+        List<AttributeValue> attributeValues = new ArrayList<>();
+        IntStream.range(0, attributeRequestDto.values().size()).forEach(index -> {
+            var requestValue = attributeRequestDto.values().get(index);
+            Integer sortOrder = requestValue.sortOrder() != null ? requestValue.sortOrder() : index;
+            AttributeValue attributeValue = attributeMapper.toEntity(
+                    attribute,
+                    new AttributeValueRequestDto(requestValue.value(), sortOrder)
+            );
+            attributeValues.add(attributeValue);
+        });
+        List<AttributeValue> savedValues = attributeValueRepository.saveAll(attributeValues);
+        List<com.techie.microservices.inventory.vo.AttributeValueResponseVo> responseValues = savedValues.stream()
+                .sorted(Comparator.comparing(AttributeValue::getSortOrder, Comparator.nullsLast(Integer::compareTo)))
+                .map(attributeMapper::toVo)
+                .toList();
         log.info("Attribute created successfully");
-        return attributeMapper.toVo(attribute);
-    }
-
-    @Transactional
-    public AttributeValueResponseVo createAttributeValue(UUID attributeId, AttributeValueRequestDto attributeValueRequestDto) {
-        Attribute attribute = attributeRepository.findById(attributeId.toString())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Attribute not found"));
-        AttributeValue attributeValue = attributeMapper.toEntity(attribute, attributeValueRequestDto);
-        attributeValueRepository.save(attributeValue);
-        log.info("Attribute value created successfully");
-        return attributeMapper.toVo(attributeValue);
+        return attributeMapper.toVo(attribute, responseValues);
     }
 
     @Transactional(readOnly = true)
     public List<AttributeResponseVo> getAttributes(UUID productId) {
-        return attributeRepository.findAllByProductId(productId.toString()).stream()
-                .map(attributeMapper::toVo)
+        List<Attribute> attributes = attributeRepository.findAllByProductId(productId.toString());
+        List<String> attributeIds = attributes.stream()
+                .map(Attribute::getId)
                 .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<AttributeValueResponseVo> getAttributeValues(UUID attributeId) {
-        return attributeValueRepository.findAllByAttributeIdOrderBySortOrderAsc(attributeId.toString()).stream()
-                .map(attributeMapper::toVo)
+        Map<String, List<AttributeValue>> valuesByAttributeId = attributeIds.isEmpty()
+                ? Map.of()
+                : attributeValueRepository.findAllByAttributeIds(attributeIds).stream()
+                .collect(Collectors.groupingBy(value -> value.getAttribute().getId()));
+        return attributes.stream()
+                .map(attribute -> attributeMapper.toVo(attribute, valuesByAttributeId.getOrDefault(attribute.getId(), List.of()).stream()
+                        .sorted(Comparator.comparing(AttributeValue::getSortOrder, Comparator.nullsLast(Integer::compareTo)))
+                        .map(attributeMapper::toVo)
+                        .toList()))
                 .toList();
     }
 
@@ -145,5 +158,30 @@ public class InventoryService {
                 .sorted(Comparator.comparing(UUID::toString))
                 .toList();
         return skuMapper.toVo(sku, inventory, attributeValueIds);
+    }
+
+    private void validateAttributeRequest(AttributeRequestDto attributeRequestDto) {
+        if (attributeRequestDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute request is required");
+        }
+        if (attributeRequestDto.productId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product id is required");
+        }
+        if (!hasText(attributeRequestDto.code())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute code is required");
+        }
+        if (!hasText(attributeRequestDto.name())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute name is required");
+        }
+        if (attributeRequestDto.values() == null || attributeRequestDto.values().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute values are required");
+        }
+        if (attributeRequestDto.values().stream().anyMatch(value -> value == null || !hasText(value.value()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute value is required");
+        }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

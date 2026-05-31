@@ -1,6 +1,7 @@
 package com.techie.microservices.inventory.vo;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record AttributeResponseVo(
@@ -8,7 +9,7 @@ public record AttributeResponseVo(
         UUID productId,
         String code,
         String name,
-        String inputType,
+        List<AttributeValueResponseVo> values,
         Instant createdAt,
         Instant updatedAt
 ) {

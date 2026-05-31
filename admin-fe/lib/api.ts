@@ -4,8 +4,6 @@ import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-tok
 import {
   AttributeRequestDto,
   AttributeResponseVo,
-  AttributeValueRequestDto,
-  AttributeValueResponseVo,
   CategoryRequestDto,
   CategoryResponseVo,
   CustomerResponseVo,
@@ -127,32 +125,11 @@ export async function createAttribute(attribute: AttributeRequestDto): Promise<A
   }
 }
 
-export async function createAttributeValue(
-  attributeId: UUID,
-  value: AttributeValueRequestDto
-): Promise<AttributeValueResponseVo> {
-  try {
-    const response = await api.post<AttributeValueResponseVo>(`/inventory/attributes/${attributeId}/values`, value);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
 export async function fetchAttributes(productId: UUID): Promise<AttributeResponseVo[]> {
   try {
     const response = await api.get<AttributeResponseVo[]>("/inventory/attributes", {
       params: { productId },
     });
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function fetchAttributeValues(attributeId: UUID): Promise<AttributeValueResponseVo[]> {
-  try {
-    const response = await api.get<AttributeValueResponseVo[]>(`/inventory/attributes/${attributeId}/values`);
     return response.data;
   } catch (error) {
     throw parseError(error);

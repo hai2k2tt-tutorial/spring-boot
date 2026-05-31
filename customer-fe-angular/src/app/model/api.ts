@@ -2,7 +2,6 @@ export type UUID = string;
 export type Instant = string;
 
 export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
-export type AttributeInputType = 'SELECT' | 'TEXT';
 export type OrderStatus = 'PENDING' | 'PAID' | 'CANCELED';
 export type PaymentMethod = 'BALANCE' | 'CARD' | 'MANUAL';
 export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
@@ -53,7 +52,7 @@ export interface AttributeRequestDto {
   productId: UUID;
   code: string;
   name: string;
-  inputType: AttributeInputType | string;
+  values: AttributeValueRequestDto[];
 }
 
 export interface AttributeValueRequestDto {
@@ -74,7 +73,7 @@ export interface AttributeResponseVo {
   productId: UUID;
   code: string;
   name: string;
-  inputType: AttributeInputType | string;
+  values: AttributeValueResponseVo[];
   createdAt: Instant;
   updatedAt: Instant;
 }

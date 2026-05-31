@@ -4,8 +4,6 @@ import {Observable} from "rxjs";
 import {
   AttributeRequestDto,
   AttributeResponseVo,
-  AttributeValueRequestDto,
-  AttributeValueResponseVo,
   InventoryCheckResponseVo,
   SkuRequestDto,
   SkuResponseVo,
@@ -24,16 +22,8 @@ export class InventoryService {
     return this.httpClient.post<AttributeResponseVo>('/api/inventory/attributes', attribute);
   }
 
-  createAttributeValue(attributeId: UUID, value: AttributeValueRequestDto): Observable<AttributeValueResponseVo> {
-    return this.httpClient.post<AttributeValueResponseVo>(`/api/inventory/attributes/${attributeId}/values`, value);
-  }
-
   getAttributes(productId: UUID): Observable<Array<AttributeResponseVo>> {
     return this.httpClient.get<Array<AttributeResponseVo>>('/api/inventory/attributes', {params: {productId}});
-  }
-
-  getAttributeValues(attributeId: UUID): Observable<Array<AttributeValueResponseVo>> {
-    return this.httpClient.get<Array<AttributeValueResponseVo>>(`/api/inventory/attributes/${attributeId}/values`);
   }
 
   createSku(sku: SkuRequestDto): Observable<SkuResponseVo> {

@@ -13,7 +13,7 @@ export const attributeSchema = z.object({
   productId: uuid,
   code: z.string().trim().min(1, "Code is required"),
   name: z.string().trim().min(1, "Name is required"),
-  inputType: z.enum(["SELECT", "TEXT"]),
+  values: z.string().trim().min(1, "Values are required"),
 });
 
 export const skuSchema = z.object({

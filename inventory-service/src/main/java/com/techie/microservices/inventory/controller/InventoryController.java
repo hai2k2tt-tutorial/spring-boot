@@ -1,11 +1,9 @@
 package com.techie.microservices.inventory.controller;
 
 import com.techie.microservices.inventory.dto.AttributeRequestDto;
-import com.techie.microservices.inventory.dto.AttributeValueRequestDto;
 import com.techie.microservices.inventory.dto.SkuRequestDto;
 import com.techie.microservices.inventory.service.InventoryService;
 import com.techie.microservices.inventory.vo.AttributeResponseVo;
-import com.techie.microservices.inventory.vo.AttributeValueResponseVo;
 import com.techie.microservices.inventory.vo.InventoryCheckResponseVo;
 import com.techie.microservices.inventory.vo.SkuResponseVo;
 import lombok.RequiredArgsConstructor;
@@ -34,12 +32,6 @@ public class InventoryController {
         return inventoryService.createAttribute(attributeRequestDto);
     }
 
-    @PostMapping("/attributes/{attributeId}/values")
-    @ResponseStatus(HttpStatus.CREATED)
-    public AttributeValueResponseVo createAttributeValue(@PathVariable UUID attributeId,
-                                                         @RequestBody AttributeValueRequestDto attributeValueRequestDto) {
-        return inventoryService.createAttributeValue(attributeId, attributeValueRequestDto);
-    }
 
     @GetMapping("/attributes")
     @ResponseStatus(HttpStatus.OK)
@@ -47,11 +39,6 @@ public class InventoryController {
         return inventoryService.getAttributes(productId);
     }
 
-    @GetMapping("/attributes/{attributeId}/values")
-    @ResponseStatus(HttpStatus.OK)
-    public List<AttributeValueResponseVo> getAttributeValues(@PathVariable UUID attributeId) {
-        return inventoryService.getAttributeValues(attributeId);
-    }
 
     @PostMapping("/skus")
     @ResponseStatus(HttpStatus.CREATED)
