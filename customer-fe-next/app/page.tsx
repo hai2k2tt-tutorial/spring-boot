@@ -14,6 +14,9 @@ export default function HomePage() {
         <Button asChild>
           <Link href="/dashboard">Open dashboard</Link>
         </Button>
+        <Button asChild variant="outline">
+          <Link href="/products">Browse products</Link>
+        </Button>
       </div>
       <p className="text-sm text-slate-600">
         Use the Login button in the header to authenticate before opening the

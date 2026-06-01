@@ -27,8 +27,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -94,14 +96,7 @@ public class InventoryService {
 
     @Transactional
     public SkuResponseVo createSku(SkuRequestDto skuRequestDto) {
-        if (skuRequestDto.attributeValueIds() == null || skuRequestDto.attributeValueIds().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one attribute value is required");
-        }
-        if (skuRequestDto.quantity() == null || skuRequestDto.quantity() < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be zero or greater");
-        }
-
-        Sku sku = skuRepository.save(skuMapper.toEntity(skuRequestDto));
+        validateSkuRequest(skuRequestDto);
 
         List<String> attributeValueIds = skuRequestDto.attributeValueIds().stream()
                 .map(UUID::toString)
@@ -110,11 +105,18 @@ public class InventoryService {
         if (attributeValues.size() != attributeValueIds.size()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "One or more attribute values were not found");
         }
+        validateSingleAttributeValuePerAttribute(attributeValues);
+        validateSkuAttributeCombinationIsUnique(skuRequestDto.productId().toString(), attributeValueIds);
 
         for (AttributeValue attributeValue : attributeValues) {
-            if (!attributeValue.getAttribute().getProductId().equals(sku.getProductId())) {
+            if (!attributeValue.getAttribute().getProductId().equals(skuRequestDto.productId().toString())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute value does not belong to product");
             }
+        }
+
+        Sku sku = skuRepository.save(skuMapper.toEntity(skuRequestDto));
+
+        for (AttributeValue attributeValue : attributeValues) {
             skuAttributeValueRepository.save(SkuAttributeValue.builder()
                     .sku(sku)
                     .attributeValue(attributeValue)
@@ -178,6 +180,53 @@ public class InventoryService {
         }
         if (attributeRequestDto.values().stream().anyMatch(value -> value == null || !hasText(value.value()))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute value is required");
+        }
+    }
+
+    private void validateSkuRequest(SkuRequestDto skuRequestDto) {
+        if (skuRequestDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SKU request is required");
+        }
+        if (skuRequestDto.productId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product id is required");
+        }
+        if (!hasText(skuRequestDto.skuCode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SKU code is required");
+        }
+        if (skuRequestDto.attributeValueIds() == null || skuRequestDto.attributeValueIds().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one attribute value is required");
+        }
+        if (new HashSet<>(skuRequestDto.attributeValueIds()).size() != skuRequestDto.attributeValueIds().size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only one value can be selected for each attribute");
+        }
+        if (skuRequestDto.quantity() == null || skuRequestDto.quantity() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be zero or greater");
+        }
+    }
+
+    private void validateSingleAttributeValuePerAttribute(List<AttributeValue> attributeValues) {
+        boolean hasDuplicateAttribute = attributeValues.stream()
+                .collect(Collectors.groupingBy(attributeValue -> attributeValue.getAttribute().getId(), Collectors.counting()))
+                .values()
+                .stream()
+                .anyMatch(count -> count > 1);
+        if (hasDuplicateAttribute) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only one value can be selected for each attribute");
+        }
+    }
+
+    private void validateSkuAttributeCombinationIsUnique(String productId, List<String> attributeValueIds) {
+        Set<String> requestedAttributeValueIds = new HashSet<>(attributeValueIds);
+        boolean hasExistingCombination = skuAttributeValueRepository.findAllByProductId(productId).stream()
+                .collect(Collectors.groupingBy(skuAttributeValue -> skuAttributeValue.getSku().getId()))
+                .values()
+                .stream()
+                .map(existingValues -> existingValues.stream()
+                        .map(existingValue -> existingValue.getAttributeValue().getId())
+                        .collect(Collectors.toSet()))
+                .anyMatch(existingAttributeValueIds -> existingAttributeValueIds.equals(requestedAttributeValueIds));
+        if (hasExistingCombination) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A SKU with the same attribute values already exists");
         }
     }
 

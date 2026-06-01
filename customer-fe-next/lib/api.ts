@@ -18,6 +18,7 @@ import {
   PaymentResponseVo,
   PaymentStatusUpdateRequestDto,
   Product,
+  ProductResponseVo,
   ShopResponseVo,
   ShopStatusUpdateRequestDto,
   ShopWalletUpdateRequestDto,
@@ -118,6 +119,15 @@ function parseError(error: unknown): Error {
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const response = await api.get<Product[]>("/product");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchProduct(productId: UUID): Promise<ProductResponseVo> {
+  try {
+    const response = await api.get<ProductResponseVo>(`/product/${productId}`);
     return response.data;
   } catch (error) {
     throw parseError(error);

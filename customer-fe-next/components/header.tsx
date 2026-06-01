@@ -18,6 +18,9 @@ export function Header() {
           Customer FE Next
         </Link>
         <div className="flex items-center gap-2">
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/products">Products</Link>
+          </Button>
           {isAuthenticated ? (
             <Button asChild variant="secondary" size="sm">
               <Link href="/dashboard">Dashboard</Link>

@@ -10,7 +10,9 @@ import { InputField, SelectField } from "@/components/forms";
 import { Modal } from "@/components/api-workspace/primitives";
 import { skuSchema } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
-import { createSku, fetchAttributes, fetchProducts } from "@/lib/api";
+import { FormMessage } from "@/components/ui/form-message";
+import { createSku, fetchAttributes, fetchProducts, fetchSkus } from "@/lib/api";
+import { AttributeResponseVo, SkuResponseVo } from "@/lib/types";
 import { FormDialogProps } from "./types";
 
 type SkuDialogProps = FormDialogProps & {
@@ -42,6 +44,13 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
     staleTime: 30 * 1000,
     retry: 1,
   });
+  const skusQuery = useQuery({
+    queryKey: ["shop-sku-combinations", selectedProductId],
+    queryFn: () => fetchSkus(selectedProductId),
+    enabled: open && !!selectedProductId,
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
   const productOptions = useMemo(
     () =>
       (productsQuery.data ?? [])
@@ -62,11 +71,39 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
     form.reset({ ...SKU_DEFAULTS, productId: defaultProductId ?? "" });
   }, [defaultProductId, form, open]);
 
-  function toggleAttributeValue(valueId: string) {
+  useEffect(() => {
+    form.setValue("attributeValueIds", [], { shouldDirty: true });
+    form.clearErrors("attributeValueIds");
+  }, [form, selectedProductId]);
+
+  function toggleAttributeValue(attributeId: string, valueId: string) {
+    const attributeValueIds = new Set(
+      attributesQuery.data?.find((attribute) => attribute.id === attributeId)?.values.map((value) => value.id) ?? [],
+    );
     const nextValueIds = selectedAttributeValueIds.includes(valueId)
       ? selectedAttributeValueIds.filter((id) => id !== valueId)
-      : [...selectedAttributeValueIds, valueId];
+      : [...selectedAttributeValueIds.filter((id) => !attributeValueIds.has(id)), valueId];
     form.setValue("attributeValueIds", nextValueIds, { shouldDirty: true, shouldValidate: true });
+  }
+
+  function handleSubmit(values: z.output<typeof skuSchema>) {
+    const attributeValueIds = values.attributeValueIds ?? [];
+    if (hasDuplicateAttributeSelection(attributesQuery.data ?? [], attributeValueIds)) {
+      form.setError("attributeValueIds", {
+        type: "validate",
+        message: "Select only one value for each attribute",
+      });
+      return;
+    }
+    if (hasExistingSkuCombination(skusQuery.data ?? [], attributeValueIds)) {
+      form.setError("attributeValueIds", {
+        type: "validate",
+        message: "A SKU with the same attribute values already exists",
+      });
+      return;
+    }
+
+    return submit(() => createSku({ ...values, attributeValueIds }));
   }
 
   return (
@@ -74,9 +111,7 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
       <FormProvider {...form}>
         <form
           className="grid gap-4 sm:grid-cols-2"
-          onSubmit={form.handleSubmit((values) =>
-            submit(() => createSku({ ...values, attributeValueIds: values.attributeValueIds ?? [] }))
-          )}
+          onSubmit={form.handleSubmit(handleSubmit)}
         >
           {usesDetailProduct ? (
             <input type="hidden" {...form.register("productId")} />
@@ -94,6 +129,7 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
           <InputField name="quantity" label="Quantity" type="number" />
           <div className="space-y-3 sm:col-span-2">
             <span className="text-sm font-medium text-slate-950">Attribute values</span>
+            <FormMessage>{form.formState.errors.attributeValueIds?.message}</FormMessage>
             {!selectedProductId ? <p className="text-sm text-slate-500">Select a product first.</p> : null}
             {attributesQuery.isLoading ? <p className="text-sm text-slate-500">Loading attributes...</p> : null}
             {attributesQuery.isError ? <p className="text-sm text-red-600">Unable to load attributes.</p> : null}
@@ -113,7 +149,7 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
                           type="button"
                           variant={selected ? "default" : "outline"}
                           size="sm"
-                          onClick={() => toggleAttributeValue(value.id)}
+                          onClick={() => toggleAttributeValue(attribute.id, value.id)}
                         >
                           {value.value}
                         </Button>
@@ -132,4 +168,19 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
       </FormProvider>
     </Modal>
   );
+}
+
+function hasDuplicateAttributeSelection(attributes: AttributeResponseVo[], selectedValueIds: string[]) {
+  const selectedAttributeIds = selectedValueIds
+    .map((valueId) => attributes.find((attribute) => attribute.values.some((value) => value.id === valueId))?.id)
+    .filter((attributeId): attributeId is string => Boolean(attributeId));
+  return new Set(selectedAttributeIds).size !== selectedAttributeIds.length;
+}
+
+function hasExistingSkuCombination(skus: SkuResponseVo[], selectedValueIds: string[]) {
+  const selectedValues = new Set(selectedValueIds);
+  return skus.some((sku) => {
+    const skuValues = new Set(sku.attributeValueIds);
+    return skuValues.size === selectedValues.size && sku.attributeValueIds.every((valueId) => selectedValues.has(valueId));
+  });
 }
