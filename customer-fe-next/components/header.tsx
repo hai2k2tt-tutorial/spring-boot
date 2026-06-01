@@ -20,7 +20,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <Button asChild variant="secondary" size="sm">
-              <Link href="/">Account</Link>
+              <Link href="/dashboard">Dashboard</Link>
             </Button>
           ) : null}
           {username ? <span className="hidden text-sm text-slate-500 sm:inline">Hi {String(username)}</span> : null}
