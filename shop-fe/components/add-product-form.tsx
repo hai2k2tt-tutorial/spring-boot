@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 import { signIn, useSession } from "next-auth/react";
+import { useMemo } from "react";
 import { z } from "zod";
-import { createProduct } from "@/lib/api";
+import { createProduct, fetchCategories } from "@/lib/api";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,23 @@ export function AddProductForm() {
       status: "DRAFT",
     },
   });
+  const categoriesQuery = useQuery({
+    queryKey: ["shop-category-options"],
+    queryFn: () => fetchCategories(),
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const categoryOptions = useMemo(
+    () => (categoriesQuery.data ?? []).map((category) => ({ label: category.name, value: category.id })),
+    [categoriesQuery.data],
+  );
+  const categoryPlaceholder = categoriesQuery.isLoading
+    ? "Loading categories..."
+    : categoriesQuery.isError
+      ? "Unable to load categories"
+      : categoryOptions.length
+        ? "Select category"
+        : "No categories available";
 
   const createProductMutation = useMutation({
     mutationFn: (values: ProductFormValues) => createProduct(values),
@@ -92,7 +110,13 @@ export function AddProductForm() {
               ) : null}
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <InputField name="categoryId" label="Category UUID" />
+                <SelectField
+                  name="categoryId"
+                  label="Category"
+                  options={categoryOptions}
+                  placeholder={categoryPlaceholder}
+                  disabled={categoriesQuery.isLoading || categoriesQuery.isError}
+                />
                 <InputField name="name" label="Name" />
                 <SelectField name="status" label="Status" options={["DRAFT", "ACTIVE", "ARCHIVED"]} />
               </div>

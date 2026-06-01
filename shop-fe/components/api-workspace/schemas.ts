@@ -30,7 +30,7 @@ export const skuSchema = z.object({
   skuCode: z.string().trim().min(1, "SKU code is required"),
   priceOverride: z.coerce.number().optional(),
   quantity: z.coerce.number().int().min(0, "Quantity cannot be negative"),
-  attributeValueIds: optionalText,
+  attributeValueIds: z.array(uuid).default([]),
 });
 
 export const orderSchema = z.object({

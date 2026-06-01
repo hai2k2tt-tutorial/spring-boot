@@ -2,14 +2,15 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
-import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
-import { InputField } from "@/components/forms";
+import { InputField, SelectField } from "@/components/forms";
 import { Modal } from "@/components/api-workspace/primitives";
 import { attributeSchema } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
-import { createAttribute } from "@/lib/api";
+import { createAttribute, fetchProducts } from "@/lib/api";
 import { FormDialogProps } from "./types";
 
 type AttributeDialogProps = FormDialogProps & {
@@ -23,6 +24,30 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
     resolver: zodResolver(attributeSchema),
     defaultValues: ATTRIBUTE_DEFAULTS,
   });
+
+  const productsQuery = useQuery({
+    queryKey: ["shop-product-options"],
+    queryFn: () => fetchProducts(),
+    enabled: open,
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+
+  const productOptions = useMemo(
+    () =>
+      (productsQuery.data ?? [])
+        .filter((product) => !!product.id)
+        .map((product) => ({ label: product.name, value: product.id! })),
+    [productsQuery.data],
+  );
+
+  const productPlaceholder = productsQuery.isLoading
+    ? "Loading products..."
+    : productsQuery.isError
+      ? "Unable to load products"
+      : productOptions.length
+        ? "Select product"
+        : "No products available";
 
   useEffect(() => {
     if (!open) return;
@@ -43,7 +68,13 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
             return submit(() => createAttribute({ ...values, values: attributeValues }));
           })}
         >
-          <InputField name="productId" label="Product UUID" />
+          <SelectField
+            name="productId"
+            label="Product"
+            options={productOptions}
+            placeholder={productPlaceholder}
+            disabled={productsQuery.isLoading || productsQuery.isError}
+          />
           <InputField name="code" label="Code" />
           <InputField name="name" label="Name" />
           <InputField name="values" label="Values (comma separated)" className="space-y-2 sm:col-span-2" />

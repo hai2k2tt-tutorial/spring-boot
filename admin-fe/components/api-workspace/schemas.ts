@@ -2,8 +2,6 @@ import { z } from "zod";
 
 const uuid = z.string().trim().uuid("Use a valid UUID");
 const optionalUuid = z.string().trim().uuid("Use a valid UUID").optional().or(z.literal(""));
-const optionalText = z.string().trim().optional().or(z.literal(""));
-
 export const categorySchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   parentId: optionalUuid,
@@ -21,7 +19,7 @@ export const skuSchema = z.object({
   skuCode: z.string().trim().min(1, "SKU code is required"),
   priceOverride: z.coerce.number().optional(),
   quantity: z.coerce.number().int().min(0, "Quantity cannot be negative"),
-  attributeValueIds: optionalText,
+  attributeValueIds: z.array(uuid).default([]),
 });
 
 export const stockSchema = z.object({
