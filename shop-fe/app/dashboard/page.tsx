@@ -27,7 +27,7 @@ export default function ShopDashboardPage() {
 
       <ApiTable title="Catalog" headers={["Product", "Price", "Status", "Category", "Updated", "Actions"]} action={<Button size="sm" onClick={() => auth.setDialog("product")}>Create</Button>}>
         {products.length === 0 ? <EmptyRow colSpan={6} label="No products returned." /> : null}
-        {products.map((product) => <TableRow key={product.id ?? product.name}><TableCell className="font-medium">{product.name}</TableCell><TableCell>${product.price}</TableCell><TableCell><Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge></TableCell><TableCell>{product.categoryId ?? "-"}</TableCell><TableCell className="text-slate-500">{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-"}</TableCell><TableCell><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" asChild disabled={!product.id}><Link href={product.id ? `/shop/products/${product.id}` : "#"}>Details</Link></Button><Button size="sm" variant="outline" disabled={!product.id} onClick={() => auth.submit(() => updateProduct(product.id!, { ...product, status: product.status === "ACTIVE" ? "DRAFT" : "ACTIVE" }))}>Toggle</Button></div></TableCell></TableRow>)}
+        {products.map((product) => <TableRow key={product.id ?? product.name}><TableCell className="font-medium">{product.name}</TableCell><TableCell>${product.price}</TableCell><TableCell><Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge></TableCell><TableCell>{product.categoryName ?? product.categoryId ?? "-"}</TableCell><TableCell className="text-slate-500">{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-"}</TableCell><TableCell><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" asChild disabled={!product.id}><Link href={product.id ? `/shop/products/${product.id}` : "#"}>Details</Link></Button><Button size="sm" variant="outline" disabled={!product.id} onClick={() => auth.submit(() => updateProduct(product.id!, { ...product, status: product.status === "ACTIVE" ? "DRAFT" : "ACTIVE" }))}>Toggle</Button></div></TableCell></TableRow>)}
       </ApiTable>
 
       <ApiTable title="Orders" headers={["Order", "Customer", "Status", "Total", "Items", "Created", "Actions"]}>
@@ -44,4 +44,3 @@ export default function ShopDashboardPage() {
     </main>
   );
 }
-

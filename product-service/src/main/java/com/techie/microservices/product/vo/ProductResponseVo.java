@@ -12,6 +12,7 @@ public record ProductResponseVo(
         BigDecimal price,
         String imageUrl,
         UUID categoryId,
+        String categoryName,
         String status,
         Instant createdAt,
         Instant updatedAt,

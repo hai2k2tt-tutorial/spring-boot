@@ -27,6 +27,7 @@ export interface ProductResponseVo {
   price: number;
   imageUrl?: string;
   categoryId?: UUID;
+  categoryName?: string;
   status?: ProductStatus | string;
   createdAt?: Instant;
   updatedAt?: Instant;

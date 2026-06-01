@@ -1,10 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { InputField, SelectField } from "@/components/forms";
 import { Modal } from "@/components/api-workspace/primitives";
@@ -17,18 +17,23 @@ type AttributeDialogProps = FormDialogProps & {
   defaultProductId?: string;
 };
 
-const ATTRIBUTE_DEFAULTS = { productId: "", code: "", name: "", values: "" };
+const ATTRIBUTE_DEFAULTS = { productId: "", code: "", name: "", values: [{ value: "" }] };
 
 export function AttributeDialog({ open, onClose, saving, submit, defaultProductId }: AttributeDialogProps) {
   const form = useForm<z.input<typeof attributeSchema>, undefined, z.output<typeof attributeSchema>>({
     resolver: zodResolver(attributeSchema),
     defaultValues: ATTRIBUTE_DEFAULTS,
   });
+  const valuesFieldArray = useFieldArray({
+    control: form.control,
+    name: "values",
+  });
+  const usesDetailProduct = Boolean(defaultProductId);
 
   const productsQuery = useQuery({
     queryKey: ["shop-product-options"],
     queryFn: () => fetchProducts(),
-    enabled: open,
+    enabled: open && !usesDetailProduct,
     staleTime: 30 * 1000,
     retry: 1,
   });
@@ -61,23 +66,55 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
           className="grid gap-4 sm:grid-cols-2"
           onSubmit={form.handleSubmit((values) => {
             const attributeValues = values.values
-              .split(",")
-              .map((value) => value.trim())
+              .map((item) => item.value.trim())
               .filter(Boolean)
               .map((value, index) => ({ value, sortOrder: index }));
             return submit(() => createAttribute({ ...values, values: attributeValues }));
           })}
         >
-          <SelectField
-            name="productId"
-            label="Product"
-            options={productOptions}
-            placeholder={productPlaceholder}
-            disabled={productsQuery.isLoading || productsQuery.isError}
-          />
+          {usesDetailProduct ? (
+            <input type="hidden" {...form.register("productId")} />
+          ) : (
+            <SelectField
+              name="productId"
+              label="Product"
+              options={productOptions}
+              placeholder={productPlaceholder}
+              disabled={productsQuery.isLoading || productsQuery.isError}
+            />
+          )}
           <InputField name="code" label="Code" />
           <InputField name="name" label="Name" />
-          <InputField name="values" label="Values (comma separated)" className="space-y-2 sm:col-span-2" />
+          <div className="space-y-3 sm:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-slate-950">Values</span>
+              <Button type="button" variant="outline" size="sm" onClick={() => valuesFieldArray.append({ value: "" })}>
+                <Plus className="h-4 w-4" />
+                Add
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {valuesFieldArray.fields.map((field, index) => (
+                <div key={field.id} className="flex items-start gap-2">
+                  <InputField
+                    name={`values.${index}.value`}
+                    label={`Value ${index + 1}`}
+                    className="flex-1 space-y-2"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-7 h-10 px-3"
+                    disabled={valuesFieldArray.fields.length === 1}
+                    onClick={() => valuesFieldArray.remove(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
           <Button className="sm:col-span-2" type="submit" disabled={saving}>
             <Save className="h-4 w-4" />
             Save attribute

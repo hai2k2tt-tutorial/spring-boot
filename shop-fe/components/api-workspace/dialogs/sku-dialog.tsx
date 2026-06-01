@@ -26,10 +26,12 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
   });
 
   const selectedProductId = useWatch({ control: form.control, name: "productId" });
+  const selectedAttributeValueIds = useWatch({ control: form.control, name: "attributeValueIds" }) ?? [];
+  const usesDetailProduct = Boolean(defaultProductId);
   const productsQuery = useQuery({
     queryKey: ["shop-product-options"],
     queryFn: () => fetchProducts(),
-    enabled: open,
+    enabled: open && !usesDetailProduct,
     staleTime: 30 * 1000,
     retry: 1,
   });
@@ -47,16 +49,6 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
         .map((product) => ({ label: product.name, value: product.id! })),
     [productsQuery.data],
   );
-  const attributeValueOptions = useMemo(
-    () =>
-      (attributesQuery.data ?? []).flatMap((attribute) =>
-        attribute.values.map((value) => ({
-          label: `${attribute.name}: ${value.value}`,
-          value: value.id,
-        })),
-      ),
-    [attributesQuery.data],
-  );
   const productPlaceholder = productsQuery.isLoading
     ? "Loading products..."
     : productsQuery.isError
@@ -70,6 +62,13 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
     form.reset({ ...SKU_DEFAULTS, productId: defaultProductId ?? "" });
   }, [defaultProductId, form, open]);
 
+  function toggleAttributeValue(valueId: string) {
+    const nextValueIds = selectedAttributeValueIds.includes(valueId)
+      ? selectedAttributeValueIds.filter((id) => id !== valueId)
+      : [...selectedAttributeValueIds, valueId];
+    form.setValue("attributeValueIds", nextValueIds, { shouldDirty: true, shouldValidate: true });
+  }
+
   return (
     <Modal title="Create SKU" open={open} onClose={onClose}>
       <FormProvider {...form}>
@@ -79,26 +78,52 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
             submit(() => createSku({ ...values, attributeValueIds: values.attributeValueIds ?? [] }))
           )}
         >
-          <SelectField
-            name="productId"
-            label="Product"
-            options={productOptions}
-            placeholder={productPlaceholder}
-            disabled={productsQuery.isLoading || productsQuery.isError}
-          />
+          {usesDetailProduct ? (
+            <input type="hidden" {...form.register("productId")} />
+          ) : (
+            <SelectField
+              name="productId"
+              label="Product"
+              options={productOptions}
+              placeholder={productPlaceholder}
+              disabled={productsQuery.isLoading || productsQuery.isError}
+            />
+          )}
           <InputField name="skuCode" label="SKU code" />
           <InputField name="priceOverride" label="Price override" type="number" />
           <InputField name="quantity" label="Quantity" type="number" />
-          <SelectField
-            name="attributeValueIds"
-            label="Attribute values"
-            options={attributeValueOptions}
-            multiple
-            size={6}
-            disabled={!selectedProductId || attributesQuery.isLoading || attributesQuery.isError}
-            className="space-y-2 sm:col-span-2"
-            selectClassName="h-auto min-h-[9rem]"
-          />
+          <div className="space-y-3 sm:col-span-2">
+            <span className="text-sm font-medium text-slate-950">Attribute values</span>
+            {!selectedProductId ? <p className="text-sm text-slate-500">Select a product first.</p> : null}
+            {attributesQuery.isLoading ? <p className="text-sm text-slate-500">Loading attributes...</p> : null}
+            {attributesQuery.isError ? <p className="text-sm text-red-600">Unable to load attributes.</p> : null}
+            {!attributesQuery.isLoading && !attributesQuery.isError && selectedProductId && !attributesQuery.data?.length ? (
+              <p className="text-sm text-slate-500">No attributes available.</p>
+            ) : null}
+            <div className="space-y-3">
+              {attributesQuery.data?.map((attribute) => (
+                <div key={attribute.id} className="grid gap-2 rounded-md border border-slate-200 p-3 sm:grid-cols-[9rem_1fr]">
+                  <div className="text-sm font-medium text-slate-700">{attribute.name}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {attribute.values.map((value) => {
+                      const selected = selectedAttributeValueIds.includes(value.id);
+                      return (
+                        <Button
+                          key={value.id}
+                          type="button"
+                          variant={selected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleAttributeValue(value.id)}
+                        >
+                          {value.value}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           <Button className="sm:col-span-2" type="submit" disabled={saving}>
             <Save className="h-4 w-4" />
             Save SKU

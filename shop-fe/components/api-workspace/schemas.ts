@@ -22,7 +22,11 @@ export const attributeSchema = z.object({
   productId: uuid,
   code: z.string().trim().min(1, "Code is required"),
   name: z.string().trim().min(1, "Name is required"),
-  values: z.string().trim().min(1, "Values are required"),
+  values: z.array(
+    z.object({
+      value: z.string().trim().min(1, "Value is required"),
+    }),
+  ).min(1, "Add at least one value"),
 });
 
 export const skuSchema = z.object({

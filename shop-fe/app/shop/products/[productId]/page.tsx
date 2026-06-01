@@ -145,7 +145,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             </div>
             <div>
               <span className="font-medium text-slate-950">Category</span>
-              <div>{product.categoryId ?? "-"}</div>
+              <div>{product.categoryName ?? product.categoryId ?? "-"}</div>
             </div>
             <div>
               <span className="font-medium text-slate-950">Updated</span>
