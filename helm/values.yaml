@@ -68,6 +68,30 @@ infrastructure:
       CREATE DATABASE shop_service;
       CREATE DATABASE customer_service;
 
+  minio:
+    enabled: true
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    replicaCount: 1
+    rootUser: minioadmin
+    rootPassword: minioadmin
+    bucket:
+      productImages: product-images
+    service:
+      apiPort: 9000
+      consolePort: 9001
+    persistence:
+      enabled: true
+      storageClassName: standard
+      size: 1Gi
+      hostPath: /data/minio
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
   kafka:
     enabled: true
     broker:
@@ -409,6 +433,11 @@ applications:
         memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service
+      minioEndpoint: http://minio.microservices.svc.cluster.local:9000
+      minioPublicEndpoint: http://minio.haint.fyi
+      minioSecretName: minio-secrets
+      minioProductImagesBucket: product-images
+      minioProductImagesPublicPath: /api/product/images
   orderService:
     enabled: true
     image: docker.io/hai2k2tt/order-service:2-amd64
@@ -654,6 +683,10 @@ k8sGateway:
       hostname: mailhog.haint.fyi
       backendRefName: mailhog
       backendRefPort: 8025
+    - name: minio-route
+      hostname: minio.haint.fyi
+      backendRefName: minio
+      backendRefPort: 9000
     - name: schema-registry-route
       hostname: schema-registry.haint.fyi
       backendRefName: schema-registry

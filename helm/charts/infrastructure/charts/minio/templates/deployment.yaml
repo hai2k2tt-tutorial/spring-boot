@@ -1,0 +1,64 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: minio
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+{{- with .Values.global.workloadScheduling.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+      containers:
+        - name: minio
+          image: {{ .Values.image }}
+          args:
+            - server
+            - /data
+            - --console-address
+            - ":9001"
+          ports:
+            - name: api
+              containerPort: {{ .Values.service.apiPort }}
+            - name: console
+              containerPort: {{ .Values.service.consolePort }}
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secrets
+                  key: root_user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secrets
+                  key: root_password
+          volumeMounts:
+            - name: minio-data
+              mountPath: /data
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: minio-data
+          persistentVolumeClaim:
+            claimName: minio-pvc
+{{- end }}

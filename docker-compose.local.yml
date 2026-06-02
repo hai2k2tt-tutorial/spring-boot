@@ -151,6 +151,19 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9001:9000"
+      - "9002:9001"
+    volumes:
+      - minio-data:/data
+
   product-service:
     image: maven:3.9.9-eclipse-temurin-21
     working_dir: /workspace
@@ -158,12 +171,20 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
     ports:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_service
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9001
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_PRODUCT_IMAGES: product-images
+      MINIO_PRODUCT_IMAGES_PUBLIC_PATH: /api/product/images
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
@@ -452,6 +473,7 @@ volumes:
   postgres-data:
   keycloak-mysql-data:
   grafana-data:
+  minio-data:
   backend-maven-cache:
   landing-fe-node-modules:
   landing-fe-next-cache:

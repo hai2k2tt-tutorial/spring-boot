@@ -21,6 +21,7 @@
     "next-auth": "^5.0.0-beta.30",
     "react": "latest",
     "react-dom": "latest",
+    "react-dropzone": "^14.4.1",
     "react-hook-form": "^7.57.0",
     "tailwind-merge": "^3.3.0",
     "zod": "^4.0.0",

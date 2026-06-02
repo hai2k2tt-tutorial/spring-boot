@@ -37,6 +37,15 @@ export interface ProductResponseVo {
 
 export type Product = ProductResponseVo & { skuCode: string };
 
+export interface ProductImagePresignResponseVo {
+  objectName: string;
+  uploadUrl: string;
+  imageUrl: string;
+  contentType: string;
+  maxSize: number;
+  expiresInSeconds: number;
+}
+
 export interface CategoryRequestDto {
   name: string;
   parentId?: UUID;

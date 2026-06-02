@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +40,12 @@ function ProductOrderCard({
   });
 
   return (
-    <Card className="h-full">
+    <Card className="h-full overflow-hidden">
+      {product.imageUrl ? (
+        <div className="relative h-44 bg-slate-100">
+          <Image src={product.imageUrl} alt={product.name} fill unoptimized className="object-cover" />
+        </div>
+      ) : null}
       <CardHeader className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">

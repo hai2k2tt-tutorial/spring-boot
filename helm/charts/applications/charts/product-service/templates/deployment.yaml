@@ -45,6 +45,36 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: LOKI_URL
+            - name: MINIO_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: product-service-config
+                  key: MINIO_ENDPOINT
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.minioSecretName }}
+                  key: root_user
+            - name: MINIO_PUBLIC_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: product-service-config
+                  key: MINIO_PUBLIC_ENDPOINT
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.minioSecretName }}
+                  key: root_password
+            - name: MINIO_BUCKET_PRODUCT_IMAGES
+              valueFrom:
+                configMapKeyRef:
+                  name: product-service-config
+                  key: MINIO_BUCKET_PRODUCT_IMAGES
+            - name: MINIO_PRODUCT_IMAGES_PUBLIC_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: product-service-config
+                  key: MINIO_PRODUCT_IMAGES_PUBLIC_PATH
             - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
               valueFrom:
                 configMapKeyRef:

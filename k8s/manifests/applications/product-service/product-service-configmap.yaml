@@ -4,3 +4,7 @@ metadata:
   name: product-service-config
 data:
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service"
+  MINIO_ENDPOINT: "http://minio.microservices.svc.cluster.local:9000"
+  MINIO_PUBLIC_ENDPOINT: "http://minio.local:8080"
+  MINIO_BUCKET_PRODUCT_IMAGES: "product-images"
+  MINIO_PRODUCT_IMAGES_PUBLIC_PATH: "/api/product/images"

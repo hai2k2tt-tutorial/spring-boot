@@ -1,0 +1,23 @@
+namespace: microservices
+enabled: true
+image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+replicaCount: 1
+rootUser: minioadmin
+rootPassword: minioadmin
+bucket:
+  productImages: product-images
+service:
+  apiPort: 9000
+  consolePort: 9001
+persistence:
+  enabled: true
+  storageClassName: standard
+  size: 1Gi
+  hostPath: /data/minio
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

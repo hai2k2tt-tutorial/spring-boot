@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
-import { InputField, SelectField, TextareaField } from "@/components/forms";
+import { InputField, ProductImageDropzoneField, SelectField, TextareaField } from "@/components/forms";
 import { Modal } from "@/components/api-workspace/primitives";
 import { productSchema, toOptional } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ export function ProductDialog({ open, onClose, saving, submit }: FormDialogProps
             disabled={categoriesQuery.isLoading || categoriesQuery.isError}
           />
           <SelectField name="status" label="Status" options={["DRAFT", "ACTIVE", "ARCHIVED"]} />
-          <InputField name="imageUrl" label="Image URL" />
+          <ProductImageDropzoneField name="imageUrl" className="sm:col-span-2" />
           <TextareaField name="description" label="Description" className="space-y-2 sm:col-span-2" />
           <Button className="sm:col-span-2" type="submit" disabled={saving}><Save className="h-4 w-4" />Save product</Button>
         </form>

@@ -53,6 +53,11 @@ productService:
       memory: 1Gi
   config:
     datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service
+    minioEndpoint: http://minio.microservices.svc.cluster.local:9000
+    minioPublicEndpoint: http://minio.haint.fyi
+    minioSecretName: minio-secrets
+    minioProductImagesBucket: product-images
+    minioProductImagesPublicPath: /api/product/images
 
 orderService:
   enabled: true

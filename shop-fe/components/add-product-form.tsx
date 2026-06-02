@@ -13,7 +13,7 @@ import { buildCategoryTreeOptions } from "@/lib/category-options";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { InputField, SelectField, TextareaField } from "@/components/forms";
+import { InputField, ProductImageDropzoneField, SelectField, TextareaField } from "@/components/forms";
 
 const productSchema = z.object({
   categoryId: z.string().trim().uuid("Use a valid category UUID"),
@@ -125,7 +125,7 @@ export function AddProductForm() {
               <TextareaField name="description" label="Description" rows={5} />
 
               <InputField name="price" label="Price" type="number" min="0.01" step="0.01" className="max-w-xs space-y-2" />
-              <InputField name="imageUrl" label="Image URL" />
+              <ProductImageDropzoneField name="imageUrl" />
 
               <Button type="submit" disabled={createProductMutation.isPending}>
                 {createProductMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}

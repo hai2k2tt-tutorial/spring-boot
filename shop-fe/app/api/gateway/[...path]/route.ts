@@ -38,7 +38,7 @@ async function proxyRequest(
   const response = await fetch(targetUrl, {
     method: request.method,
     headers,
-    body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.text(),
+    body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
     redirect: "manual",
   });
 

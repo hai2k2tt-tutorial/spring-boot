@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus } from "lucide-react";
@@ -134,26 +135,35 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
       {product ? (
         <div className="rounded-md border border-slate-200 bg-white p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-lg font-semibold text-slate-950">Overview</h2>
-            <Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge>
-          </div>
-          <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+          <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
+            {product.imageUrl ? (
+              <div className="relative min-h-56 overflow-hidden rounded-lg bg-slate-100">
+                <Image src={product.imageUrl} alt={product.name} fill unoptimized className="object-cover" />
+              </div>
+            ) : null}
             <div>
-              <span className="font-medium text-slate-950">Price</span>
-              <div>${product.price}</div>
-            </div>
-            <div>
-              <span className="font-medium text-slate-950">Category</span>
-              <div>{product.categoryName ?? product.categoryId ?? "-"}</div>
-            </div>
-            <div>
-              <span className="font-medium text-slate-950">Updated</span>
-              <div>{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-"}</div>
-            </div>
-            <div>
-              <span className="font-medium text-slate-950">Description</span>
-              <div>{product.description}</div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-lg font-semibold text-slate-950">Overview</h2>
+                <Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge>
+              </div>
+              <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                <div>
+                  <span className="font-medium text-slate-950">Price</span>
+                  <div>${product.price}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-950">Category</span>
+                  <div>{product.categoryName ?? product.categoryId ?? "-"}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-950">Updated</span>
+                  <div>{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : "-"}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-950">Description</span>
+                  <div>{product.description}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

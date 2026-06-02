@@ -6,4 +6,8 @@ metadata:
   namespace: {{ .Values.namespace }}
 data:
   SPRING_DATASOURCE_URL: {{ .Values.config.datasourceUrl | quote }}
+  MINIO_ENDPOINT: {{ .Values.config.minioEndpoint | quote }}
+  MINIO_PUBLIC_ENDPOINT: {{ .Values.config.minioPublicEndpoint | quote }}
+  MINIO_BUCKET_PRODUCT_IMAGES: {{ .Values.config.minioProductImagesBucket | quote }}
+  MINIO_PRODUCT_IMAGES_PUBLIC_PATH: {{ .Values.config.minioProductImagesPublicPath | quote }}
 {{- end }}

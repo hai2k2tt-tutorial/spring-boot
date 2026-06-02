@@ -18,6 +18,7 @@ import {
   PaymentResponseVo,
   PaymentStatusUpdateRequestDto,
   Product,
+  ProductImagePresignResponseVo,
   ProductRequestDto,
   ProductResponseVo,
   ShopResponseVo,
@@ -109,10 +110,20 @@ function toProductRequest(product: ProductRequestDto | Product): ProductRequestD
   };
 }
 
+function toGatewayImageUrl(imageUrl: string): string {
+  if (imageUrl.startsWith("/api/gateway/")) return imageUrl;
+  if (imageUrl.startsWith("/api/")) return `/api/gateway/${imageUrl.slice("/api/".length)}`;
+  return imageUrl;
+}
+
+function normalizeProductImageUrl<T extends { imageUrl?: string }>(product: T): T {
+  return product.imageUrl ? { ...product, imageUrl: toGatewayImageUrl(product.imageUrl) } : product;
+}
+
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const response = await api.get<Product[]>("/product");
-    return response.data;
+    return response.data.map(normalizeProductImageUrl);
   } catch (error) {
     throw parseError(error);
   }
@@ -121,7 +132,7 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchProduct(productId: UUID): Promise<ProductResponseVo> {
   try {
     const response = await api.get<ProductResponseVo>(`/product/${productId}`);
-    return response.data;
+    return normalizeProductImageUrl(response.data);
   } catch (error) {
     throw parseError(error);
   }
@@ -130,7 +141,38 @@ export async function fetchProduct(productId: UUID): Promise<ProductResponseVo> 
 export async function createProduct(product: ProductRequestDto | Product): Promise<ProductResponseVo> {
   try {
     const response = await api.post<ProductResponseVo>("/product", toProductRequest(product));
-    return response.data;
+    return normalizeProductImageUrl(response.data);
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function uploadProductImage(file: File): Promise<ProductImagePresignResponseVo> {
+  try {
+    const response = await api.post<ProductImagePresignResponseVo>("/product/images/presign", {
+      fileName: file.name,
+      contentType: file.type,
+      size: file.size,
+    });
+
+    const presigned = {
+      ...response.data,
+      imageUrl: toGatewayImageUrl(response.data.imageUrl),
+    };
+
+    const uploadResponse = await fetch(presigned.uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+      },
+      body: file,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error(`MinIO upload failed with status ${uploadResponse.status}`);
+    }
+
+    return presigned;
   } catch (error) {
     throw parseError(error);
   }
@@ -139,7 +181,7 @@ export async function createProduct(product: ProductRequestDto | Product): Promi
 export async function updateProduct(productId: UUID, product: ProductRequestDto | Product): Promise<ProductResponseVo> {
   try {
     const response = await api.put<ProductResponseVo>("/product", { ...toProductRequest(product), id: productId });
-    return response.data;
+    return normalizeProductImageUrl(response.data);
   } catch (error) {
     throw parseError(error);
   }
