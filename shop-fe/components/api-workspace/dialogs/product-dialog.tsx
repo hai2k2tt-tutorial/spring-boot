@@ -11,6 +11,7 @@ import { Modal } from "@/components/api-workspace/primitives";
 import { productSchema, toOptional } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
 import { createProduct, fetchCategories } from "@/lib/api";
+import { buildCategoryTreeOptions } from "@/lib/category-options";
 import { FormDialogProps } from "./types";
 
 export function ProductDialog({ open, onClose, saving, submit }: FormDialogProps) {
@@ -26,7 +27,7 @@ export function ProductDialog({ open, onClose, saving, submit }: FormDialogProps
     retry: 1,
   });
   const categoryOptions = useMemo(
-    () => (categoriesQuery.data ?? []).map((category) => ({ label: category.name, value: category.id })),
+    () => buildCategoryTreeOptions(categoriesQuery.data ?? []),
     [categoriesQuery.data],
   );
   const categoryPlaceholder = categoriesQuery.isLoading

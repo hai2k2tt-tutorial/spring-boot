@@ -9,6 +9,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { z } from "zod";
 import { createProduct, fetchCategories } from "@/lib/api";
+import { buildCategoryTreeOptions } from "@/lib/category-options";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +48,7 @@ export function AddProductForm() {
     retry: 1,
   });
   const categoryOptions = useMemo(
-    () => (categoriesQuery.data ?? []).map((category) => ({ label: category.name, value: category.id })),
+    () => buildCategoryTreeOptions(categoriesQuery.data ?? []),
     [categoriesQuery.data],
   );
   const categoryPlaceholder = categoriesQuery.isLoading
