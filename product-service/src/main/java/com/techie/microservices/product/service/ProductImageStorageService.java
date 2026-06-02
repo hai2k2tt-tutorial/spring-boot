@@ -9,8 +9,6 @@ import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.Http;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
-import io.minio.SetBucketCorsArgs;
-import io.minio.messages.CORSConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -77,14 +74,13 @@ public class ProductImageStorageService {
         } catch (ResponseStatusException exception) {
             throw exception;
         } catch (Exception exception) {
+            log.error("Unable to create product image upload URL for shop {}", shopId, exception);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to create product image upload URL", exception);
         }
     }
 
     public GetObjectResponse getObject(String objectName) {
-        if (objectName == null || objectName.isBlank() || objectName.contains("/") || objectName.contains("..")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image object name");
-        }
+        validateObjectName(objectName);
 
         try {
             return minioClient.getObject(GetObjectArgs.builder()
@@ -120,17 +116,12 @@ public class ProductImageStorageService {
                     .bucket(bucketName)
                     .build());
         }
-        minioClient.setBucketCors(SetBucketCorsArgs.builder()
-                .bucket(bucketName)
-                .config(new CORSConfiguration(List.of(new CORSConfiguration.CORSRule(
-                        List.of("*"),
-                        List.of("PUT", "GET", "HEAD"),
-                        List.of("*"),
-                        List.of("ETag"),
-                        "product-images-direct-upload",
-                        3600
-                ))))
-                .build());
+    }
+
+    private void validateObjectName(String objectName) {
+        if (objectName == null || objectName.isBlank() || objectName.contains("/") || objectName.contains("..")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image object name");
+        }
     }
 
     private String extension(String originalFilename, String contentType) {
