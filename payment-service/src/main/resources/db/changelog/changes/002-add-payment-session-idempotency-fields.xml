@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        logicalFilePath="src/main/resources/db/changelog/db.changelog-master.xml"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="2-add-payment-session-idempotency-fields" author="codex">
+        <addColumn tableName="t_payment">
+            <column name="session_status" type="VARCHAR(32)" defaultValue="READY"/>
+            <column name="payment_url" type="VARCHAR(1024)"/>
+            <column name="client_secret" type="VARCHAR(255)"/>
+            <column name="provider" type="VARCHAR(64)"/>
+            <column name="provider_session_id" type="VARCHAR(128)"/>
+            <column name="session_expires_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="idempotency_key" type="VARCHAR(128)"/>
+        </addColumn>
+
+        <createIndex tableName="t_payment" indexName="idx_payment_customer_idempotency_key" unique="true">
+            <column name="customer_id"/>
+            <column name="idempotency_key"/>
+        </createIndex>
+
+        <createIndex tableName="t_payment" indexName="idx_payment_order_status">
+            <column name="order_id"/>
+            <column name="status"/>
+        </createIndex>
+
+        <sql>
+            UPDATE t_payment SET session_status = 'READY' WHERE session_status IS NULL;
+        </sql>
+
+        <addNotNullConstraint tableName="t_payment" columnName="session_status" columnDataType="VARCHAR(32)"/>
+
+        <rollback>
+            <dropIndex tableName="t_payment" indexName="idx_payment_order_status"/>
+            <dropIndex tableName="t_payment" indexName="idx_payment_customer_idempotency_key"/>
+            <dropColumn tableName="t_payment" columnName="idempotency_key"/>
+            <dropColumn tableName="t_payment" columnName="session_expires_at"/>
+            <dropColumn tableName="t_payment" columnName="provider_session_id"/>
+            <dropColumn tableName="t_payment" columnName="provider"/>
+            <dropColumn tableName="t_payment" columnName="client_secret"/>
+            <dropColumn tableName="t_payment" columnName="payment_url"/>
+            <dropColumn tableName="t_payment" columnName="session_status"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

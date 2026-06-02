@@ -1,6 +1,9 @@
 package com.techie.microservices.inventory.controller;
 
 import com.techie.microservices.inventory.dto.AttributeRequestDto;
+import com.techie.microservices.inventory.dto.InventoryDeductRequestDto;
+import com.techie.microservices.inventory.dto.InventoryReleaseRequestDto;
+import com.techie.microservices.inventory.dto.InventoryReserveRequestDto;
 import com.techie.microservices.inventory.dto.SkuRequestDto;
 import com.techie.microservices.inventory.service.InventoryService;
 import com.techie.microservices.inventory.vo.AttributeResponseVo;
@@ -62,5 +65,25 @@ public class InventoryController {
     @ResponseStatus(HttpStatus.OK)
     public InventoryCheckResponseVo isInStock(@RequestParam String skuCode, @RequestParam Integer quantity) {
         return inventoryService.isInStock(skuCode, quantity);
+    }
+
+    @PostMapping("/deduct")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deductStock(@RequestBody InventoryDeductRequestDto request) {
+        inventoryService.reserveStock(new InventoryReserveRequestDto(null, request.items().stream()
+                .map(item -> new InventoryReserveRequestDto.ItemRequestDto(item.skuId(), item.quantity()))
+                .toList()));
+    }
+
+    @PostMapping("/reserve")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reserveStock(@RequestBody InventoryReserveRequestDto request) {
+        inventoryService.reserveStock(request);
+    }
+
+    @PostMapping("/release")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void releaseStock(@RequestBody InventoryReleaseRequestDto request) {
+        inventoryService.releaseStock(request);
     }
 }

@@ -14,7 +14,7 @@ function buildTargetUrl(path: string[], request: NextRequest): URL {
 
 function buildProxyHeaders(request: NextRequest): Headers {
   const headers = new Headers();
-  const forwardedHeaders = ["accept", "authorization", "content-type", "idempotency-key"];
+  const forwardedHeaders = ["accept", "authorization", "content-type", "idempotency-key", "x-mock-provider-secret"];
 
   for (const headerName of forwardedHeaders) {
     const value = request.headers.get(headerName);

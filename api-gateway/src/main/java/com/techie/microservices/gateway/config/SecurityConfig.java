@@ -35,7 +35,8 @@ import java.util.function.Supplier;
 public class SecurityConfig {
 
     private final String[] freeResourceUrls = {"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
-            "/swagger-resources/**", "/api-docs/**", "/aggregate/**", "/actuator/prometheus"};
+            "/swagger-resources/**", "/api-docs/**", "/aggregate/**", "/actuator/prometheus",
+            "/api/payments/webhooks/**"};
 
     @Value("${app.security.customer-issuer-uri}")
     private String customerIssuerUri;

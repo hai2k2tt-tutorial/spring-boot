@@ -3,6 +3,7 @@ package com.techie.microservices.payment.service;
 import com.techie.microservices.payment.client.OrderClient;
 import com.techie.microservices.payment.dto.OrderResponseDto;
 import com.techie.microservices.payment.dto.PaymentCreateRequestDto;
+import com.techie.microservices.payment.dto.PaymentProviderWebhookRequestDto;
 import com.techie.microservices.payment.dto.PaymentStatusUpdateRequestDto;
 import com.techie.microservices.payment.mapper.PaymentHistoryMapper;
 import com.techie.microservices.payment.mapper.PaymentMapper;
@@ -25,6 +26,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -40,6 +42,9 @@ public class PaymentService {
 
     @Value("${payment.mock.checkout-base-url:http://localhost:3004/payments/checkout}")
     private String mockCheckoutBaseUrl;
+
+    @Value("${payment.webhook.mock-secret:}")
+    private String mockWebhookSecret;
 
     @Transactional
     public PaymentResponseVo createPayment(PaymentCreateRequestDto paymentCreateRequestDto, String authorization, String idempotencyKey) {
@@ -71,10 +76,52 @@ public class PaymentService {
     public PaymentResponseVo updatePaymentStatus(UUID paymentId, PaymentStatusUpdateRequestDto paymentStatusUpdateRequestDto) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
-        payment.setStatus(paymentMapper.resolveStatus(paymentStatusUpdateRequestDto.status()));
+        PaymentStatus previousStatus = payment.getStatus();
+        PaymentStatus newStatus = paymentMapper.resolveStatus(paymentStatusUpdateRequestDto.status());
+        payment.setStatus(newStatus);
+        payment.setSessionStatus(newStatus == PaymentStatus.SUCCESS ? "COMPLETED" : newStatus == PaymentStatus.FAILED ? "FAILED" : payment.getSessionStatus());
         paymentRepository.save(payment);
         paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
+        if (previousStatus != PaymentStatus.SUCCESS && newStatus == PaymentStatus.SUCCESS) {
+            orderClient.confirmPaid(payment.getOrderId().toString());
+        } else if (newStatus == PaymentStatus.FAILED) {
+            orderClient.cancelPayment(payment.getOrderId().toString());
+        }
         log.info("Payment status updated successfully");
+        return paymentMapper.toVo(payment);
+    }
+
+    @Transactional
+    public PaymentResponseVo handleProviderWebhook(PaymentProviderWebhookRequestDto request, String webhookSecret) {
+        validateWebhookSecret(webhookSecret);
+        validateWebhookRequest(request);
+
+        Payment payment = findWebhookPayment(request);
+        validateWebhookPayment(payment, request);
+
+        PaymentStatus newStatus = paymentMapper.resolveStatus(request.status());
+        if (newStatus == PaymentStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Webhook status must be SUCCESS or FAILED");
+        }
+        if (payment.getStatus() == newStatus) {
+            return paymentMapper.toVo(payment);
+        }
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment has already been finalized");
+        }
+
+        payment.setStatus(newStatus);
+        payment.setSessionStatus(newStatus == PaymentStatus.SUCCESS ? "COMPLETED" : "FAILED");
+        paymentRepository.save(payment);
+        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
+
+        if (newStatus == PaymentStatus.SUCCESS) {
+            orderClient.confirmPaid(payment.getOrderId().toString());
+        } else {
+            orderClient.cancelPayment(payment.getOrderId().toString());
+        }
+
+        log.info("Payment {} finalized by provider webhook with status {}", payment.getId(), newStatus);
         return paymentMapper.toVo(payment);
     }
 
@@ -117,6 +164,49 @@ public class PaymentService {
             }
         }
         return paymentRepository.findFirstByCustomerIdAndOrderIdAndStatusOrderByCreatedAtDesc(customerId, orderId, PaymentStatus.PENDING).orElse(null);
+    }
+
+    private Payment findWebhookPayment(PaymentProviderWebhookRequestDto request) {
+        if (request.paymentId() != null) {
+            return paymentRepository.findById(request.paymentId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+        }
+        return paymentRepository.findByProviderSessionId(request.providerSessionId().trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+    }
+
+    private void validateWebhookSecret(String webhookSecret) {
+        if (mockWebhookSecret == null || mockWebhookSecret.isBlank()) {
+            return;
+        }
+        if (!mockWebhookSecret.equals(webhookSecret)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid webhook secret");
+        }
+    }
+
+    private void validateWebhookRequest(PaymentProviderWebhookRequestDto request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Webhook request is required");
+        }
+        if (request.paymentId() == null && (request.providerSessionId() == null || request.providerSessionId().isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment id or provider session id is required");
+        }
+        if (request.status() == null || request.status().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Webhook status is required");
+        }
+    }
+
+    private void validateWebhookPayment(Payment payment, PaymentProviderWebhookRequestDto request) {
+        if (request.providerSessionId() != null
+                && !request.providerSessionId().isBlank()
+                && !Objects.equals(payment.getProviderSessionId(), request.providerSessionId().trim())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provider session does not match payment");
+        }
+        if (request.clientSecret() != null
+                && !request.clientSecret().isBlank()
+                && !Objects.equals(payment.getClientSecret(), request.clientSecret().trim())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Client secret does not match payment");
+        }
     }
 
     private void applyMockProviderSession(Payment payment) {

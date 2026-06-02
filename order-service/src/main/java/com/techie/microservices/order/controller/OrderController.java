@@ -53,4 +53,16 @@ public class OrderController {
                                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return orderService.getOrder(orderId, authorization);
     }
+
+    @PostMapping("/{orderId}/confirm-paid")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderResponseVo confirmPaid(@PathVariable UUID orderId) {
+        return orderService.confirmPaid(orderId);
+    }
+
+    @PostMapping("/{orderId}/cancel-payment")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderResponseVo cancelPayment(@PathVariable UUID orderId) {
+        return orderService.cancelPayment(orderId);
+    }
 }

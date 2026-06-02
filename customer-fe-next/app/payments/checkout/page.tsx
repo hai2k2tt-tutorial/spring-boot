@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MockProviderActions } from "./components/mock-provider-actions";
 
 type PaymentCheckoutPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -56,9 +57,7 @@ export default async function PaymentCheckoutPage({ searchParams }: PaymentCheck
             </div>
           )}
 
-          <Alert>
-            Current backend support stops at creating a pending payment record. A provider checkout page requires the backend to return `paymentUrl` or `clientSecret` from payment creation.
-          </Alert>
+          <MockProviderActions paymentId={paymentId} clientSecret={clientSecret} />
 
           <div className="flex flex-wrap gap-3">
             <Button asChild>

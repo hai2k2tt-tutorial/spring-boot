@@ -154,6 +154,14 @@ export interface PaymentStatusUpdateRequestDto {
   status: PaymentStatus | string;
 }
 
+export interface PaymentProviderWebhookRequestDto {
+  paymentId?: UUID;
+  providerSessionId?: string;
+  clientSecret?: string;
+  status: PaymentStatus | string;
+  eventId?: string;
+}
+
 export interface PaymentResponseVo {
   id: UUID;
   customerId: UUID;

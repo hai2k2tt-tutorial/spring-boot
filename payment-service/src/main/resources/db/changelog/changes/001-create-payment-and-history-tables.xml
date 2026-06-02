@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        logicalFilePath="src/main/resources/db/changelog/db.changelog-master.xml"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="1-create-payment-and-history-tables" author="codex">
+        <createTable tableName="t_payment">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="customer_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="NUMERIC(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="method" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_payment_history">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="customer_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="NUMERIC(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="t_payment_history"
+                baseColumnNames="payment_id"
+                constraintName="fk_payment_history_payment"
+                referencedTableName="t_payment"
+                referencedColumnNames="id"/>
+
+        <createIndex tableName="t_payment" indexName="idx_payment_customer_id">
+            <column name="customer_id"/>
+        </createIndex>
+
+        <createIndex tableName="t_payment" indexName="idx_payment_order_id">
+            <column name="order_id"/>
+        </createIndex>
+
+        <createIndex tableName="t_payment_history" indexName="idx_payment_history_payment_id">
+            <column name="payment_id"/>
+        </createIndex>
+
+        <sql>
+            ALTER TABLE t_payment
+            ADD CONSTRAINT chk_payment_method
+            CHECK (method IN ('BALANCE', 'CARD', 'MANUAL'));
+        </sql>
+
+        <sql>
+            ALTER TABLE t_payment
+            ADD CONSTRAINT chk_payment_status
+            CHECK (status IN ('PENDING', 'SUCCESS', 'FAILED'));
+        </sql>
+
+        <sql>
+            ALTER TABLE t_payment_history
+            ADD CONSTRAINT chk_payment_history_type
+            CHECK (type IN ('TOPUP', 'PURCHASE', 'REFUND'));
+        </sql>
+
+        <rollback>
+            <dropTable tableName="t_payment_history"/>
+            <dropTable tableName="t_payment"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

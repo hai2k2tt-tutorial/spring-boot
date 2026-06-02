@@ -1,6 +1,7 @@
 package com.techie.microservices.payment.controller;
 
 import com.techie.microservices.payment.dto.PaymentCreateRequestDto;
+import com.techie.microservices.payment.dto.PaymentProviderWebhookRequestDto;
 import com.techie.microservices.payment.dto.PaymentStatusUpdateRequestDto;
 import com.techie.microservices.payment.service.PaymentService;
 import com.techie.microservices.payment.vo.PaymentHistoryResponseVo;
@@ -42,6 +43,13 @@ public class PaymentController {
     public PaymentResponseVo updatePaymentStatus(@PathVariable UUID paymentId,
                                                  @RequestBody PaymentStatusUpdateRequestDto paymentStatusUpdateRequestDto) {
         return paymentService.updatePaymentStatus(paymentId, paymentStatusUpdateRequestDto);
+    }
+
+    @PostMapping("/webhooks/mock-provider")
+    @ResponseStatus(HttpStatus.OK)
+    public PaymentResponseVo handleMockProviderWebhook(@RequestBody PaymentProviderWebhookRequestDto request,
+                                                       @RequestHeader(name = "X-Mock-Provider-Secret", required = false) String webhookSecret) {
+        return paymentService.handleProviderWebhook(request, webhookSecret);
     }
 
     @GetMapping

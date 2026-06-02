@@ -17,6 +17,7 @@ import {
   OrderResponseVo,
   PaymentCreateRequestDto,
   PaymentHistoryResponseVo,
+  PaymentProviderWebhookRequestDto,
   PaymentResponseVo,
   PaymentStatusUpdateRequestDto,
   Product,
@@ -277,6 +278,20 @@ export async function updatePaymentStatus(
 ): Promise<PaymentResponseVo> {
   try {
     const response = await api.patch<PaymentResponseVo>(`/payments/${paymentId}/status`, status);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function sendMockPaymentWebhook(
+  webhook: PaymentProviderWebhookRequestDto,
+  secret?: string
+): Promise<PaymentResponseVo> {
+  try {
+    const response = await api.post<PaymentResponseVo>("/payments/webhooks/mock-provider", webhook, {
+      headers: secret ? { "X-Mock-Provider-Secret": secret } : undefined,
+    });
     return response.data;
   } catch (error) {
     throw parseError(error);

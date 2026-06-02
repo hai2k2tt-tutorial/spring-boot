@@ -2,17 +2,22 @@ package com.techie.microservices.inventory.service;
 
 import com.techie.microservices.inventory.dto.AttributeRequestDto;
 import com.techie.microservices.inventory.dto.AttributeValueRequestDto;
+import com.techie.microservices.inventory.dto.InventoryDeductRequestDto;
+import com.techie.microservices.inventory.dto.InventoryReleaseRequestDto;
+import com.techie.microservices.inventory.dto.InventoryReserveRequestDto;
 import com.techie.microservices.inventory.dto.SkuRequestDto;
 import com.techie.microservices.inventory.mapper.AttributeMapper;
 import com.techie.microservices.inventory.mapper.SkuMapper;
 import com.techie.microservices.inventory.model.Attribute;
 import com.techie.microservices.inventory.model.AttributeValue;
 import com.techie.microservices.inventory.model.Inventory;
+import com.techie.microservices.inventory.model.InventoryReservation;
 import com.techie.microservices.inventory.model.Sku;
 import com.techie.microservices.inventory.model.SkuAttributeValue;
 import com.techie.microservices.inventory.repository.AttributeRepository;
 import com.techie.microservices.inventory.repository.AttributeValueRepository;
 import com.techie.microservices.inventory.repository.InventoryRepository;
+import com.techie.microservices.inventory.repository.InventoryReservationRepository;
 import com.techie.microservices.inventory.repository.SkuAttributeValueRepository;
 import com.techie.microservices.inventory.repository.SkuRepository;
 import com.techie.microservices.inventory.vo.AttributeResponseVo;
@@ -45,6 +50,7 @@ public class InventoryService {
     private final SkuRepository skuRepository;
     private final SkuAttributeValueRepository skuAttributeValueRepository;
     private final InventoryRepository inventoryRepository;
+    private final InventoryReservationRepository inventoryReservationRepository;
     private final AttributeMapper attributeMapper;
     private final SkuMapper skuMapper;
 
@@ -152,6 +158,62 @@ public class InventoryService {
         return skuMapper.toInventoryCheckVo(skuCode, quantity, inStock);
     }
 
+    @Transactional
+    public void reserveStock(InventoryReserveRequestDto request) {
+        validateReserveRequest(request);
+        String orderId = request.orderId() == null ? null : request.orderId().toString();
+        Map<UUID, Integer> requestedQuantities = aggregateRequestedQuantities(request.items());
+
+        if (orderId != null) {
+            List<InventoryReservation> existingReservations = inventoryReservationRepository.findAllByOrderId(orderId);
+            if (!existingReservations.isEmpty()) {
+                validateExistingReservation(existingReservations, requestedQuantities);
+                return;
+            }
+        }
+
+        requestedQuantities.forEach((skuId, quantity) -> {
+            Inventory inventory = inventoryRepository.findBySkuIdForUpdate(skuId.toString())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU"));
+            if (inventory.getQuantity() < quantity) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient stock for skuId " + skuId);
+            }
+            inventory.setQuantity(inventory.getQuantity() - quantity);
+            inventoryRepository.save(inventory);
+            if (orderId != null) {
+                inventoryReservationRepository.save(InventoryReservation.builder()
+                        .orderId(orderId)
+                        .skuId(skuId.toString())
+                        .quantity(quantity)
+                        .build());
+            }
+            log.info("Reserved {} item(s) from skuId {}", quantity, skuId);
+        });
+    }
+
+    @Transactional
+    public void releaseStock(InventoryReleaseRequestDto request) {
+        if (request == null || request.orderId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required");
+        }
+
+        String orderId = request.orderId().toString();
+        List<InventoryReservation> reservations = inventoryReservationRepository.findAllByOrderId(orderId);
+        if (reservations.isEmpty()) {
+            return;
+        }
+
+        reservations.forEach(reservation -> {
+            Inventory inventory = inventoryRepository.findBySkuIdForUpdate(reservation.getSkuId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU"));
+            inventory.setQuantity(inventory.getQuantity() + reservation.getQuantity());
+            inventoryRepository.save(inventory);
+            log.info("Released {} item(s) back to skuId {}", reservation.getQuantity(), reservation.getSkuId());
+        });
+
+        inventoryReservationRepository.deleteAll(reservations);
+    }
+
     private SkuResponseVo mapSku(Sku sku) {
         Inventory inventory = inventoryRepository.findBySkuId(sku.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inventory not found for SKU"));
@@ -201,6 +263,39 @@ public class InventoryService {
         }
         if (skuRequestDto.quantity() == null || skuRequestDto.quantity() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be zero or greater");
+        }
+    }
+
+    private Map<UUID, Integer> aggregateRequestedQuantities(List<InventoryReserveRequestDto.ItemRequestDto> items) {
+        return items.stream()
+                .collect(Collectors.groupingBy(
+                        InventoryReserveRequestDto.ItemRequestDto::skuId,
+                        Collectors.summingInt(InventoryReserveRequestDto.ItemRequestDto::quantity)
+                ));
+    }
+
+    private void validateReserveRequest(InventoryReserveRequestDto request) {
+        if (request == null || request.items() == null || request.items().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one inventory item is required");
+        }
+        for (InventoryReserveRequestDto.ItemRequestDto item : request.items()) {
+            if (item == null || item.skuId() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SKU id is required");
+            }
+            if (item.quantity() == null || item.quantity() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be greater than zero");
+            }
+        }
+    }
+
+    private void validateExistingReservation(List<InventoryReservation> existingReservations, Map<UUID, Integer> requestedQuantities) {
+        Map<String, Integer> existingQuantities = existingReservations.stream()
+                .collect(Collectors.toMap(InventoryReservation::getSkuId, InventoryReservation::getQuantity));
+        Map<String, Integer> requestedBySkuId = requestedQuantities.entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getKey().toString(), Map.Entry::getValue));
+
+        if (!existingQuantities.equals(requestedBySkuId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Existing reservation does not match requested inventory");
         }
     }
 

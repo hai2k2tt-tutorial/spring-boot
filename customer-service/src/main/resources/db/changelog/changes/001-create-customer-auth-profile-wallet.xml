@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        logicalFilePath="src/main/resources/db/changelog/db.changelog-master.xml"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="1-create-customer-auth-profile-wallet" author="codex">
+        <createTable tableName="t_customer_auth">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password_hash" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_customer_profile">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="auth_id" type="UUID">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="first_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="phone" type="VARCHAR(64)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_customer_wallet">
+            <column name="customer_id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="balance" type="NUMERIC(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="VARCHAR(8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="t_customer_profile" baseColumnNames="auth_id"
+                                 constraintName="fk_customer_profile_auth"
+                                 referencedTableName="t_customer_auth" referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="t_customer_wallet" baseColumnNames="customer_id"
+                                 constraintName="fk_customer_wallet_customer"
+                                 referencedTableName="t_customer_profile" referencedColumnNames="id"/>
+
+        <createIndex tableName="t_customer_profile" indexName="idx_customer_profile_auth_id">
+            <column name="auth_id"/>
+        </createIndex>
+
+        <sql>
+            ALTER TABLE t_customer_auth
+            ADD CONSTRAINT chk_customer_auth_status
+            CHECK (status IN ('ACTIVE', 'LOCKED'));
+        </sql>
+
+        <rollback>
+            <dropTable tableName="t_customer_wallet"/>
+            <dropTable tableName="t_customer_profile"/>
+            <dropTable tableName="t_customer_auth"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

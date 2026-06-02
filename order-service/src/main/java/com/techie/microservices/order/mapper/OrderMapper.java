@@ -19,9 +19,11 @@ import java.util.UUID;
 public class OrderMapper {
 
     public Order toEntity(OrderCreateRequestDto orderCreateRequestDto, String orderNumber, UUID customerId,
+                          String orderId,
                           String idempotencyKey,
                           List<ResolvedOrderItemDto> resolvedItems) {
         return Order.builder()
+                .id(orderId)
                 .orderNumber(orderNumber)
                 .customerId(customerId.toString())
                 .idempotencyKey(idempotencyKey)

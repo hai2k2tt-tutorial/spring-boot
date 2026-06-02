@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -62,5 +63,10 @@ public class Order {
         if (status == null) {
             status = OrderStatus.PENDING_PAYMENT;
         }
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = Instant.now();
     }
 }
