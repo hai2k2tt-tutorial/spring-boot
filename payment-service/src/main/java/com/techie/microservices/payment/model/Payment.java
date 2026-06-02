@@ -47,6 +47,26 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status;
 
+    @Column(length = 32)
+    private String sessionStatus;
+
+    @Column(length = 1024)
+    private String paymentUrl;
+
+    @Column(length = 255)
+    private String clientSecret;
+
+    @Column(length = 64)
+    private String provider;
+
+    @Column(length = 128)
+    private String providerSessionId;
+
+    private Instant sessionExpiresAt;
+
+    @Column(length = 128)
+    private String idempotencyKey;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -59,6 +79,9 @@ public class Payment {
     public void applyDefaults() {
         if (status == null) {
             status = PaymentStatus.PENDING;
+        }
+        if (sessionStatus == null) {
+            sessionStatus = "READY";
         }
     }
 }

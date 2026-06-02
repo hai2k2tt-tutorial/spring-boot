@@ -32,8 +32,9 @@ public class PaymentController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PaymentResponseVo createPayment(@RequestBody PaymentCreateRequestDto paymentCreateRequestDto,
-                                           @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
-        return paymentService.createPayment(paymentCreateRequestDto, authorization);
+                                           @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+                                           @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
+        return paymentService.createPayment(paymentCreateRequestDto, authorization, idempotencyKey);
     }
 
     @PatchMapping("/{paymentId}/status")

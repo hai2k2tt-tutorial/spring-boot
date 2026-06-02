@@ -61,6 +61,7 @@ public class Routes {
     @Bean
     public RouterFunction<ServerResponse> orderServiceRoute() {
         return GatewayRouterFunctions.route("order_service")
+                .route(RequestPredicates.path("/api/order"), HandlerFunctions.http(orderServiceUrl))
                 .route(RequestPredicates.path("/api/order/**"), HandlerFunctions.http(orderServiceUrl))
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("orderServiceCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))
@@ -99,6 +100,7 @@ public class Routes {
     @Bean
     public RouterFunction<ServerResponse> paymentServiceRoute() {
         return GatewayRouterFunctions.route("payment_service")
+                .route(RequestPredicates.path("/api/payments"), HandlerFunctions.http(paymentServiceUrl))
                 .route(RequestPredicates.path("/api/payments/**"), HandlerFunctions.http(paymentServiceUrl))
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("paymentServiceCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))

@@ -33,6 +33,9 @@ public class Order {
     @Column(nullable = false, length = 36)
     private String customerId;
 
+    @Column(length = 128)
+    private String idempotencyKey;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;
@@ -57,7 +60,7 @@ public class Order {
         }
         updatedAt = now;
         if (status == null) {
-            status = OrderStatus.PENDING;
+            status = OrderStatus.PENDING_PAYMENT;
         }
     }
 }

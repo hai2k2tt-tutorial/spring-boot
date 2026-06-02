@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, LoaderCircle, ShoppingCart } from "lucide-react";
@@ -17,7 +18,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { fetchAttributes, fetchProduct, fetchSkus, placeOrder } from "@/lib/api";
+import { createOrderCheckout, fetchAttributes, fetchProduct, fetchSkus } from "@/lib/api";
 import { AttributeResponseVo, AttributeValueResponseVo, SkuResponseVo } from "@/lib/types";
 
 type ProductDetailPageProps = {
@@ -54,6 +55,19 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function buildPaymentHandoffUrl(params: { orderId: string; paymentId: string; clientSecret?: string }) {
+  const searchParams = new URLSearchParams({
+    orderId: params.orderId,
+    paymentId: params.paymentId,
+  });
+
+  if (params.clientSecret) {
+    searchParams.set("clientSecret", params.clientSecret);
+  }
+
+  return `/payments/checkout?${searchParams.toString()}`;
+}
+
 function findMatchingSku(skus: SkuResponseVo[], selectedValueIds: string[]) {
   if (selectedValueIds.length === 0) {
     return skus.find((sku) => sku.attributeValueIds.length === 0) ?? (skus.length === 1 ? skus[0] : null);
@@ -79,6 +93,7 @@ function getSkuAttributeLabels(sku: SkuResponseVo, lookup: Map<string, Attribute
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { productId } = use(params);
   const { status } = useSession();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const form = useForm<OrderFormInput, undefined, OrderFormValues>({
@@ -114,14 +129,28 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   });
 
   const orderMutation = useMutation({
-    mutationFn: ({ skuCode, quantity }: { skuCode: string; quantity: number }) =>
-      placeOrder({ items: [{ skuCode, quantity }] }),
-    onSuccess: async () => {
+    mutationFn: ({ skuCode, quantity, idempotencyKey }: { skuCode: string; quantity: number; idempotencyKey: string }) =>
+      createOrderCheckout({ items: [{ skuCode, quantity }] }, "CARD", idempotencyKey),
+    onSuccess: async (checkout) => {
       await Promise.allSettled([
         skusQuery.refetch(),
         queryClient.invalidateQueries({ queryKey: ["customer-orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["customer-payments"] }),
         queryClient.invalidateQueries({ queryKey: ["customer-products"] }),
       ]);
+
+      if (checkout.paymentUrl) {
+        window.location.assign(checkout.paymentUrl);
+        return;
+      }
+
+      router.push(
+        buildPaymentHandoffUrl({
+          orderId: checkout.order.id,
+          paymentId: checkout.payment.id,
+          clientSecret: checkout.clientSecret,
+        }),
+      );
     },
   });
 
@@ -197,7 +226,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       return;
     }
 
-    await orderMutation.mutateAsync({ skuCode: sku.skuCode, quantity: values.quantity });
+    await orderMutation.mutateAsync({ skuCode: sku.skuCode, quantity: values.quantity, idempotencyKey: crypto.randomUUID() });
   });
 
   return (
@@ -222,7 +251,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       </div>
 
       {status !== "authenticated" ? <Alert>Login is required before placing orders.</Alert> : null}
-      {orderMutation.isSuccess ? <Alert variant="success">Order placed successfully.</Alert> : null}
+      {orderMutation.isSuccess ? <Alert variant="success">Order created. Redirecting to payment...</Alert> : null}
       {orderMutation.isError ? (
         <Alert variant="destructive">{getErrorMessage(orderMutation.error, "Order failed, please try again later.")}</Alert>
       ) : null}
@@ -274,7 +303,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="font-semibold text-slate-950">Create order</h2>
-            <p className="mt-1 text-sm text-slate-500">Each attribute requires one selected value.</p>
+            <p className="mt-1 text-sm text-slate-500">Creates a pending order, starts card payment, then redirects to checkout.</p>
           </div>
           <Badge variant={selectedSku && stock >= quantity && quantity > 0 ? "secondary" : "outline"}>
             Stock {stock}
@@ -330,7 +359,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               {selectedSku && stock < quantity ? <p className="mt-4 text-sm text-red-600">Requested quantity is higher than stock.</p> : null}
               <Button type="submit" className="mt-5 w-full" disabled={cannotOrder}>
                 {orderMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-                {status === "authenticated" ? "Place order" : "Login to order"}
+                {status === "authenticated" ? "Create order and pay" : "Login to order"}
               </Button>
             </div>
           </form>

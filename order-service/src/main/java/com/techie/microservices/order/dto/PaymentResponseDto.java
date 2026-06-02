@@ -1,10 +1,10 @@
-package com.techie.microservices.payment.vo;
+package com.techie.microservices.order.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-public record PaymentResponseVo(
+public record PaymentResponseDto(
         UUID id,
         UUID customerId,
         UUID orderId,

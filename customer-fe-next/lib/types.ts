@@ -2,7 +2,7 @@ export type UUID = string;
 export type Instant = string;
 
 export type ProductStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
-export type OrderStatus = "PENDING" | "PAID" | "CANCELED";
+export type OrderStatus = "PENDING_PAYMENT" | "PENDING" | "PAID" | "CANCELED";
 export type PaymentMethod = "BALANCE" | "CARD" | "MANUAL";
 export type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED";
 export type PaymentHistoryType = "TOPUP" | "PURCHASE" | "REFUND";
@@ -145,6 +145,11 @@ export interface PaymentCreateRequestDto {
   method: PaymentMethod | string;
 }
 
+export interface CheckoutCreateRequestDto {
+  items: OrderItemRequestDto[];
+  paymentMethod: PaymentMethod | string;
+}
+
 export interface PaymentStatusUpdateRequestDto {
   status: PaymentStatus | string;
 }
@@ -156,8 +161,20 @@ export interface PaymentResponseVo {
   amount: number;
   method: PaymentMethod | string;
   status: PaymentStatus | string;
+  sessionStatus?: string;
+  paymentUrl?: string;
+  payment_url?: string;
+  clientSecret?: string;
+  client_secret?: string;
   createdAt: Instant;
   updatedAt: Instant;
+}
+
+export interface OrderCheckoutResponseVo {
+  order: OrderResponseVo;
+  payment: PaymentResponseVo;
+  paymentUrl?: string;
+  clientSecret?: string;
 }
 
 export interface PaymentHistoryResponseVo {

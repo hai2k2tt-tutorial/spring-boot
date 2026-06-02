@@ -9,6 +9,7 @@ import com.techie.microservices.payment.mapper.PaymentMapper;
 import com.techie.microservices.payment.model.Payment;
 import com.techie.microservices.payment.model.PaymentHistory;
 import com.techie.microservices.payment.model.PaymentHistoryType;
+import com.techie.microservices.payment.model.PaymentStatus;
 import com.techie.microservices.payment.repository.PaymentHistoryRepository;
 import com.techie.microservices.payment.repository.PaymentRepository;
 import com.techie.microservices.payment.util.TokenIdentity;
@@ -16,9 +17,11 @@ import com.techie.microservices.payment.vo.PaymentHistoryResponseVo;
 import com.techie.microservices.payment.vo.PaymentResponseVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -35,19 +38,29 @@ public class PaymentService {
     private final PaymentHistoryMapper paymentHistoryMapper;
     private final TokenIdentity tokenIdentity;
 
+    @Value("${payment.mock.checkout-base-url:http://localhost:3004/payments/checkout}")
+    private String mockCheckoutBaseUrl;
+
     @Transactional
-    public PaymentResponseVo createPayment(PaymentCreateRequestDto paymentCreateRequestDto, String authorization) {
+    public PaymentResponseVo createPayment(PaymentCreateRequestDto paymentCreateRequestDto, String authorization, String idempotencyKey) {
         if (paymentCreateRequestDto.orderId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required");
         }
 
         UUID customerId = tokenIdentity.currentUserId(authorization);
+        Payment existingPayment = findExistingPayment(customerId, paymentCreateRequestDto.orderId(), idempotencyKey);
+        if (existingPayment != null) {
+            return paymentMapper.toVo(existingPayment);
+        }
+
         OrderResponseDto order = orderClient.getOrder(paymentCreateRequestDto.orderId().toString(), authorization);
         if (!customerId.equals(order.customerId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to current customer");
         }
 
-        Payment payment = paymentMapper.toEntity(paymentCreateRequestDto, customerId, order.totalAmount());
+        Payment payment = paymentMapper.toEntity(paymentCreateRequestDto, customerId, order.totalAmount(), normalizeIdempotencyKey(idempotencyKey));
+        paymentRepository.save(payment);
+        applyMockProviderSession(payment);
         paymentRepository.save(payment);
         paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
         log.info("Payment created successfully");
@@ -95,9 +108,45 @@ public class PaymentService {
         return paymentRepository.findAll();
     }
 
+    private Payment findExistingPayment(UUID customerId, UUID orderId, String idempotencyKey) {
+        String normalizedKey = normalizeIdempotencyKey(idempotencyKey);
+        if (normalizedKey != null) {
+            Payment payment = paymentRepository.findByCustomerIdAndIdempotencyKey(customerId, normalizedKey).orElse(null);
+            if (payment != null) {
+                return payment;
+            }
+        }
+        return paymentRepository.findFirstByCustomerIdAndOrderIdAndStatusOrderByCreatedAtDesc(customerId, orderId, PaymentStatus.PENDING).orElse(null);
+    }
+
+    private void applyMockProviderSession(Payment payment) {
+        String clientSecret = createMockClientSecret(payment);
+        payment.setClientSecret(clientSecret);
+        payment.setPaymentUrl(createMockPaymentUrl(payment, clientSecret));
+        payment.setProviderSessionId("mock_ps_" + payment.getId());
+        payment.setSessionStatus("READY");
+    }
+
+    private String normalizeIdempotencyKey(String idempotencyKey) {
+        return idempotencyKey == null || idempotencyKey.isBlank() ? null : idempotencyKey.trim();
+    }
+
     private PaymentHistoryType resolveHistoryType(Payment payment) {
         return switch (payment.getMethod()) {
             case BALANCE, CARD, MANUAL -> PaymentHistoryType.PURCHASE;
         };
+    }
+
+    private String createMockClientSecret(Payment payment) {
+        return "mock_cs_" + payment.getId() + "_" + UUID.randomUUID();
+    }
+
+    private String createMockPaymentUrl(Payment payment, String clientSecret) {
+        return UriComponentsBuilder.fromUriString(mockCheckoutBaseUrl)
+                .queryParam("orderId", payment.getOrderId())
+                .queryParam("paymentId", payment.getId())
+                .queryParam("clientSecret", clientSecret)
+                .build()
+                .toUriString();
     }
 }

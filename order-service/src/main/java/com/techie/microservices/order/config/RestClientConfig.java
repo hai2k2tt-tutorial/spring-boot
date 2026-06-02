@@ -1,6 +1,7 @@
 package com.techie.microservices.order.config;
 
 import com.techie.microservices.order.client.InventoryClient;
+import com.techie.microservices.order.client.PaymentClient;
 import com.techie.microservices.order.client.ProductClient;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,9 @@ public class RestClientConfig {
     @Value("${product.service.url}")
     private String productServiceUrl;
 
+    @Value("${payment.service.url}")
+    private String paymentServiceUrl;
+
     private final ObservationRegistry observationRegistry;
 
     @Bean
@@ -36,6 +40,11 @@ public class RestClientConfig {
     @Bean
     public ProductClient productClient() {
         return createClient(ProductClient.class, productServiceUrl);
+    }
+
+    @Bean
+    public PaymentClient paymentClient() {
+        return createClient(PaymentClient.class, paymentServiceUrl);
     }
 
     private <T> T createClient(Class<T> clientType, String baseUrl) {

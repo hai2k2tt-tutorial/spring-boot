@@ -6,11 +6,13 @@ import {
   AttributeResponseVo,
   CategoryRequestDto,
   CategoryResponseVo,
+  CheckoutCreateRequestDto,
   CustomerResponseVo,
   CustomerStatusUpdateRequestDto,
   CustomerWalletUpdateRequestDto,
   InventoryCheckResponseVo,
   Order,
+  OrderCheckoutResponseVo,
   OrderCreateRequestDto,
   OrderResponseVo,
   PaymentCreateRequestDto,
@@ -238,6 +240,32 @@ export async function createPayment(payment: PaymentCreateRequestDto): Promise<P
   try {
     const response = await api.post<PaymentResponseVo>("/payments", payment);
     return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function createOrderCheckout(
+  order: OrderCreateRequestDto,
+  method: PaymentCreateRequestDto["method"] = "CARD",
+  idempotencyKey: string = crypto.randomUUID()
+): Promise<OrderCheckoutResponseVo> {
+  try {
+    const checkoutRequest: CheckoutCreateRequestDto = {
+      items: order.items,
+      paymentMethod: method,
+    };
+    const response = await api.post<OrderCheckoutResponseVo>("/order/checkout", checkoutRequest, {
+      headers: { "Idempotency-Key": idempotencyKey },
+    });
+    const paymentUrl = response.data.payment.paymentUrl ?? response.data.payment.payment_url;
+    const clientSecret = response.data.payment.clientSecret ?? response.data.payment.client_secret;
+
+    return {
+      ...response.data,
+      paymentUrl,
+      clientSecret,
+    };
   } catch (error) {
     throw parseError(error);
   }

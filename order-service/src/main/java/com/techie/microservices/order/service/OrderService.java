@@ -39,9 +39,14 @@ public class OrderService {
     private final TokenIdentity tokenIdentity;
 
     @Transactional
-    public OrderResponseVo placeOrder(OrderCreateRequestDto orderCreateRequestDto, String authorization) {
+    public OrderResponseVo placeOrder(OrderCreateRequestDto orderCreateRequestDto, String authorization, String idempotencyKey) {
         validateRequest(orderCreateRequestDto);
         TokenIdentity.CurrentCustomer currentCustomer = tokenIdentity.currentCustomer(authorization);
+        Order existingOrder = findExistingOrder(currentCustomer.id(), idempotencyKey);
+        if (existingOrder != null) {
+            return orderMapper.toVo(existingOrder, orderItemRepository.findAllByOrderId(existingOrder.getId()));
+        }
+
         List<ResolvedOrderItemDto> resolvedItems = orderCreateRequestDto.items().stream()
                 .map(item -> resolveOrderItem(item, authorization))
                 .toList();
@@ -55,7 +60,7 @@ public class OrderService {
         }
 
         String orderNumber = UUID.randomUUID().toString();
-        Order order = orderMapper.toEntity(orderCreateRequestDto, orderNumber, currentCustomer.id(), resolvedItems);
+        Order order = orderMapper.toEntity(orderCreateRequestDto, orderNumber, currentCustomer.id(), normalizeIdempotencyKey(idempotencyKey), resolvedItems);
         orderRepository.save(order);
 
         List<OrderItem> orderItems = resolvedItems.stream()
@@ -72,6 +77,18 @@ public class OrderService {
         kafkaTemplate.send("order-placed", orderPlacedEvent);
         log.info("End - Sending OrderPlacedEvent {} to Kafka topic order-placed", orderPlacedEvent);
         return orderMapper.toVo(order, orderItems);
+    }
+
+    private Order findExistingOrder(UUID customerId, String idempotencyKey) {
+        String normalizedKey = normalizeIdempotencyKey(idempotencyKey);
+        if (normalizedKey == null) {
+            return null;
+        }
+        return orderRepository.findByCustomerIdAndIdempotencyKey(customerId.toString(), normalizedKey).orElse(null);
+    }
+
+    private String normalizeIdempotencyKey(String idempotencyKey) {
+        return idempotencyKey == null || idempotencyKey.isBlank() ? null : idempotencyKey.trim();
     }
 
     @Transactional(readOnly = true)

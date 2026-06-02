@@ -15,13 +15,16 @@ import java.util.UUID;
 @Component
 public class PaymentMapper {
 
-    public Payment toEntity(PaymentCreateRequestDto paymentCreateRequestDto, UUID customerId, BigDecimal amount) {
+    public Payment toEntity(PaymentCreateRequestDto paymentCreateRequestDto, UUID customerId, BigDecimal amount, String idempotencyKey) {
         return Payment.builder()
                 .customerId(customerId)
                 .orderId(paymentCreateRequestDto.orderId())
                 .amount(amount)
                 .method(resolveMethod(paymentCreateRequestDto.method()))
                 .status(PaymentStatus.PENDING)
+                .sessionStatus("READY")
+                .provider("MOCK")
+                .idempotencyKey(idempotencyKey)
                 .build();
     }
 
@@ -33,6 +36,9 @@ public class PaymentMapper {
                 payment.getAmount(),
                 payment.getMethod().name(),
                 payment.getStatus().name(),
+                payment.getSessionStatus(),
+                payment.getPaymentUrl(),
+                payment.getClientSecret(),
                 payment.getCreatedAt(),
                 payment.getUpdatedAt()
         );

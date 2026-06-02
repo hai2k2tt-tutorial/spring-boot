@@ -19,10 +19,12 @@ import java.util.UUID;
 public class OrderMapper {
 
     public Order toEntity(OrderCreateRequestDto orderCreateRequestDto, String orderNumber, UUID customerId,
+                          String idempotencyKey,
                           List<ResolvedOrderItemDto> resolvedItems) {
         return Order.builder()
                 .orderNumber(orderNumber)
                 .customerId(customerId.toString())
+                .idempotencyKey(idempotencyKey)
                 .status(resolveStatus(orderCreateRequestDto.status()))
                 .totalAmount(calculateTotal(resolvedItems))
                 .build();
@@ -65,7 +67,7 @@ public class OrderMapper {
 
     public OrderStatus resolveStatus(String status) {
         if (status == null || status.isBlank()) {
-            return OrderStatus.PENDING;
+            return OrderStatus.PENDING_PAYMENT;
         }
         try {
             return OrderStatus.valueOf(status.trim().toUpperCase());

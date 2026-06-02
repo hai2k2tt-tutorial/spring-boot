@@ -79,4 +79,38 @@
             <dropTable tableName="t_order"/>
         </rollback>
     </changeSet>
+
+    <changeSet id="2-add-checkout-idempotency-and-pending-payment-status" author="codex">
+        <addColumn tableName="t_order">
+            <column name="idempotency_key" type="VARCHAR(128)"/>
+        </addColumn>
+
+        <createIndex tableName="t_order" indexName="idx_order_customer_idempotency_key" unique="true">
+            <column name="customer_id"/>
+            <column name="idempotency_key"/>
+        </createIndex>
+
+        <sql>
+            ALTER TABLE t_order DROP CONSTRAINT chk_order_status;
+        </sql>
+
+        <sql>
+            ALTER TABLE t_order
+            ADD CONSTRAINT chk_order_status
+            CHECK (status IN ('PENDING_PAYMENT', 'PENDING', 'PAID', 'CANCELED'));
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE t_order DROP CONSTRAINT chk_order_status;
+            </sql>
+            <sql>
+                ALTER TABLE t_order
+                ADD CONSTRAINT chk_order_status
+                CHECK (status IN ('PENDING', 'PAID', 'CANCELED'));
+            </sql>
+            <dropIndex tableName="t_order" indexName="idx_order_customer_idempotency_key"/>
+            <dropColumn tableName="t_order" columnName="idempotency_key"/>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
