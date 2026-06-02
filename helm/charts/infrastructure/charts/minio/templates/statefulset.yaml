@@ -1,16 +1,19 @@
 {{- if .Values.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: minio
   namespace: {{ .Values.namespace }}
   labels:
     app: minio
 spec:
+  serviceName: minio
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: minio
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:

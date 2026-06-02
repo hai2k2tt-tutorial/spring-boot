@@ -8,7 +8,7 @@ export default function HomePage() {
       <PageHeader
         eyebrow="CUSTOMER PORTAL"
         title="Customer workspace"
-        description="Sign in to browse products, manage orders, and review payments. The dashboard contains the API workspace lists and actions."
+        description="Sign in to browse products from the dashboard, then use the separate profile, orders, and payments pages for account activity."
       />
       <div className="flex flex-wrap gap-3">
         <Button asChild>

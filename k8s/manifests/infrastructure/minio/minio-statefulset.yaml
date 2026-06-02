@@ -1,14 +1,17 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   labels:
     app: minio
   name: minio
 spec:
+  serviceName: minio
   replicas: 1
   selector:
     matchLabels:
       app: minio
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
