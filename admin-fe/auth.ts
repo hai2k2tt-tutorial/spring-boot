@@ -7,6 +7,50 @@ const internalIssuer = process.env.AUTH_ISSUER_INTERNAL ?? issuer;
 const clientId = process.env.AUTH_CLIENT_ID;
 const clientSecret = process.env.AUTH_CLIENT_SECRET?.trim() || undefined;
 const scope = process.env.AUTH_SCOPE ?? "openid profile email";
+const cookiePrefix = process.env.AUTH_COOKIE_PREFIX ?? "admin-fe";
+const useSecureCookies = process.env.AUTH_URL?.startsWith("https://") ?? false;
+const authCookieOptions = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: "/",
+  secure: useSecureCookies,
+};
+const authCookies = {
+  sessionToken: {
+    name: `${cookiePrefix}.authjs.session-token`,
+    options: authCookieOptions,
+  },
+  callbackUrl: {
+    name: `${cookiePrefix}.authjs.callback-url`,
+    options: {
+      sameSite: "lax" as const,
+      path: "/",
+      secure: useSecureCookies,
+    },
+  },
+  csrfToken: {
+    name: `${cookiePrefix}.authjs.csrf-token`,
+    options: authCookieOptions,
+  },
+  pkceCodeVerifier: {
+    name: `${cookiePrefix}.authjs.pkce.code_verifier`,
+    options: {
+      ...authCookieOptions,
+      maxAge: 60 * 15,
+    },
+  },
+  state: {
+    name: `${cookiePrefix}.authjs.state`,
+    options: {
+      ...authCookieOptions,
+      maxAge: 60 * 15,
+    },
+  },
+  nonce: {
+    name: `${cookiePrefix}.authjs.nonce`,
+    options: authCookieOptions,
+  },
+};
 
 const oidcFetch: typeof fetch = async (input, init) => {
   if (!issuer || !internalIssuer || issuer === internalIssuer) {
@@ -66,6 +110,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
   },
+  cookies: authCookies,
   providers: issuer && clientId
     ? [
         Keycloak({

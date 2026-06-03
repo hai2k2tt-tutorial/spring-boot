@@ -1,3 +1,20 @@
+FROM node:22-alpine AS local
+WORKDIR /app
+RUN cat > /usr/local/bin/local-next-dev <<'EOF' && chmod +x /usr/local/bin/local-next-dev
+#!/bin/sh
+set -eu
+
+LOCK_HASH="$(sha256sum package-lock.json | cut -d" " -f1)"
+if [ ! -d node_modules/.bin ] || [ ! -f node_modules/.package-lock.hash ] || [ "$(cat node_modules/.package-lock.hash)" != "$LOCK_HASH" ]; then
+  npm ci --prefer-offline --no-audit --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+  echo "$LOCK_HASH" > node_modules/.package-lock.hash
+fi
+
+exec npm run dev -- --hostname 0.0.0.0
+EOF
+EXPOSE 3002
+CMD ["local-next-dev"]
+
 FROM node:22 AS build
 WORKDIR /app
 COPY package.json package-lock.json* ./

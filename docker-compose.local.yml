@@ -165,9 +165,9 @@ services:
       - minio-data:/data
 
   product-service:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "product-service", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,9 +192,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   inventory-service:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "inventory-service", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -211,9 +211,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   order-service:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "order-service", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -239,9 +239,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   notification-service:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "notification-service", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile.local
     depends_on:
       broker:
         condition: service_started
@@ -263,9 +263,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   payment-service:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "payment-service", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -282,9 +282,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   shop-service:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "shop-service", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: shop-service/Dockerfile.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -301,9 +301,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   customer-service:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "customer-service", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: customer-service/Dockerfile.local
     depends_on:
       postgres:
         condition: service_healthy
@@ -320,9 +320,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   api-gateway:
-    image: maven:3.9.9-eclipse-temurin-21
-    working_dir: /workspace
-    command: ["mvn", "-pl", "api-gateway", "spring-boot:run"]
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile.local
     depends_on:
       keycloak:
         condition: service_started
@@ -360,9 +360,9 @@ services:
       - backend-maven-cache:/root/.m2
 
   landing-fe:
-    image: node:22-alpine
-    working_dir: /app
-    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    build:
+      context: ./landing-fe
+      target: local
     ports:
       - "3005:3005"
     environment:
@@ -375,11 +375,12 @@ services:
       - ./landing-fe:/app
       - landing-fe-node-modules:/app/node_modules
       - landing-fe-next-cache:/app/.next
+      - frontend-npm-cache:/root/.npm
 
   admin-fe:
-    image: node:22-alpine
-    working_dir: /app
-    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    build:
+      context: ./admin-fe
+      target: local
     depends_on:
       - api-gateway
       - keycloak
@@ -395,18 +396,20 @@ services:
       AUTH_CLIENT_ID: admin-fe-client
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile email
-      AUTH_SECRET: replace-with-a-long-random-string
+      AUTH_COOKIE_PREFIX: admin-fe
+      AUTH_SECRET: replace-with-a-long-random-admin-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:
       - ./admin-fe:/app
       - admin-fe-node-modules:/app/node_modules
       - admin-fe-next-cache:/app/.next
+      - frontend-npm-cache:/root/.npm
 
   shop-fe:
-    image: node:22-alpine
-    working_dir: /app
-    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    build:
+      context: ./shop-fe
+      target: local
     depends_on:
       - api-gateway
       - keycloak
@@ -422,18 +425,20 @@ services:
       AUTH_CLIENT_ID: shop-fe-client
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile offline_access
-      AUTH_SECRET: replace-with-a-long-random-string
+      AUTH_COOKIE_PREFIX: shop-fe
+      AUTH_SECRET: replace-with-a-long-random-shop-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:
       - ./shop-fe:/app
       - shop-fe-node-modules:/app/node_modules
       - shop-fe-next-cache:/app/.next
+      - frontend-npm-cache:/root/.npm
 
   customer-fe-next:
-    image: node:22-alpine
-    working_dir: /app
-    command: sh -c "npm ci && npm run dev -- --hostname 0.0.0.0"
+    build:
+      context: ./customer-fe-next
+      target: local
     depends_on:
       - api-gateway
       - keycloak
@@ -449,18 +454,20 @@ services:
       AUTH_CLIENT_ID: customer-fe-client
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile offline_access
-      AUTH_SECRET: replace-with-a-long-random-string
+      AUTH_COOKIE_PREFIX: customer-fe-next
+      AUTH_SECRET: replace-with-a-long-random-customer-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:
       - ./customer-fe-next:/app
       - customer-fe-next-node-modules:/app/node_modules
       - customer-fe-next-cache:/app/.next
+      - frontend-npm-cache:/root/.npm
 
   customer-fe-angular:
-    image: node:22-alpine
-    working_dir: /app
-    command: sh -c "npm ci && npm run start -- --host 0.0.0.0"
+    build:
+      context: ./customer-fe-angular
+      target: local
     depends_on:
       - api-gateway
     ports:
@@ -468,6 +475,7 @@ services:
     volumes:
       - ./customer-fe-angular:/app
       - customer-fe-angular-node-modules:/app/node_modules
+      - frontend-npm-cache:/root/.npm
 
 volumes:
   postgres-data:
@@ -477,6 +485,7 @@ volumes:
   backend-maven-cache:
   landing-fe-node-modules:
   landing-fe-next-cache:
+  frontend-npm-cache:
   admin-fe-node-modules:
   admin-fe-next-cache:
   shop-fe-node-modules:
