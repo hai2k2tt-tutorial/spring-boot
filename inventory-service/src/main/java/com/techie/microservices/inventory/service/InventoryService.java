@@ -192,6 +192,19 @@ public class InventoryService {
     }
 
     @Transactional
+    public void deductStock(InventoryDeductRequestDto request) {
+        if (request == null || request.items() == null || request.items().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one inventory item is required");
+        }
+        reserveStock(new InventoryReserveRequestDto(null, request.items().stream()
+                .map(item -> new InventoryReserveRequestDto.ItemRequestDto(
+                        item == null ? null : item.skuId(),
+                        item == null ? null : item.quantity()
+                ))
+                .toList()));
+    }
+
+    @Transactional
     public void releaseStock(InventoryReleaseRequestDto request) {
         if (request == null || request.orderId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required");
@@ -312,17 +325,22 @@ public class InventoryService {
 
     private void validateSkuAttributeCombinationIsUnique(String productId, List<String> attributeValueIds) {
         Set<String> requestedAttributeValueIds = new HashSet<>(attributeValueIds);
-        boolean hasExistingCombination = skuAttributeValueRepository.findAllByProductId(productId).stream()
+        skuAttributeValueRepository.findAllByProductId(productId).stream()
                 .collect(Collectors.groupingBy(skuAttributeValue -> skuAttributeValue.getSku().getId()))
                 .values()
                 .stream()
-                .map(existingValues -> existingValues.stream()
+                .filter(existingValues -> existingValues.stream()
                         .map(existingValue -> existingValue.getAttributeValue().getId())
-                        .collect(Collectors.toSet()))
-                .anyMatch(existingAttributeValueIds -> existingAttributeValueIds.equals(requestedAttributeValueIds));
-        if (hasExistingCombination) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A SKU with the same attribute values already exists");
-        }
+                        .collect(Collectors.toSet())
+                        .equals(requestedAttributeValueIds))
+                .findFirst()
+                .ifPresent(existingValues -> {
+                    String skuCode = existingValues.getFirst().getSku().getSkuCode();
+                    throw new ResponseStatusException(
+                            HttpStatus.CONFLICT,
+                            "A SKU with the same attribute values already exists: " + skuCode
+                    );
+                });
     }
 
     private boolean hasText(String value) {

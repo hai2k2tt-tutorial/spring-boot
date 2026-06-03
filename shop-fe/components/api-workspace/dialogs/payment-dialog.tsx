@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import { Modal } from "@/components/api-workspace/primitives";
 import { paymentSchema } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
 import { createPayment, fetchOrders } from "@/lib/api";
+import { DialogErrorAlert, getErrorMessage } from "./error-alert";
 import { FormDialogProps } from "./types";
 
 type PaymentDialogProps = FormDialogProps & {
@@ -20,6 +21,7 @@ type PaymentDialogProps = FormDialogProps & {
 const PAYMENT_DEFAULTS = { orderId: "", method: "BALANCE" as const };
 
 export function PaymentDialog({ open, onClose, saving, submit, defaultOrderId }: PaymentDialogProps) {
+  const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<z.input<typeof paymentSchema>, undefined, z.output<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
     defaultValues: PAYMENT_DEFAULTS,
@@ -48,13 +50,28 @@ export function PaymentDialog({ open, onClose, saving, submit, defaultOrderId }:
     form.reset({ ...PAYMENT_DEFAULTS, orderId: defaultOrderId ?? "" });
   }, [defaultOrderId, form, open]);
 
+  async function handleSubmit(values: z.output<typeof paymentSchema>) {
+    setServerError(null);
+    try {
+      await submit(() => createPayment(values));
+    } catch (error) {
+      setServerError(getErrorMessage(error, "Unable to create payment"));
+    }
+  }
+
+  function handleClose() {
+    setServerError(null);
+    onClose();
+  }
+
   return (
-    <Modal title="Create payment" open={open} onClose={onClose}>
+    <Modal title="Create payment" open={open} onClose={handleClose}>
       <FormProvider {...form}>
         <form
           className="grid gap-4 sm:grid-cols-2"
-          onSubmit={form.handleSubmit((values) => submit(() => createPayment(values)))}
+          onSubmit={form.handleSubmit(handleSubmit)}
         >
+          <DialogErrorAlert message={serverError} />
           <SelectField
             name="orderId"
             label="Order"

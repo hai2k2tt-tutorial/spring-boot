@@ -113,22 +113,6 @@ export interface InventoryCheckResponseVo {
   inStock: boolean;
 }
 
-export interface Order {
-  id?: number;
-  orderNumber?: string;
-  skuCode: string;
-  quantity: number;
-}
-
-export interface OrderCreateRequestDto {
-  items: OrderItemRequestDto[];
-}
-
-export interface OrderItemRequestDto {
-  skuCode: string;
-  quantity: number;
-}
-
 export interface OrderResponseVo {
   id: UUID;
   orderNumber: string;

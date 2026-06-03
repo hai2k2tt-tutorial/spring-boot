@@ -23,6 +23,9 @@ public class CategoryService {
 
     @Transactional
     public CategoryResponseVo createCategory(CategoryRequestDto categoryRequestDto) {
+        if (categoryRequestDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category request is required");
+        }
         Category parent = null;
         if (categoryRequestDto.parentId() != null) {
             parent = categoryRepository.findById(categoryRequestDto.parentId())

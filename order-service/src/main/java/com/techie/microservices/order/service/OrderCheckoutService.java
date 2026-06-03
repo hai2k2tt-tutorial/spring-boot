@@ -52,7 +52,7 @@ public class OrderCheckoutService {
     }
 
     private void validateRequest(CheckoutCreateRequestDto checkoutCreateRequestDto) {
-        if (checkoutCreateRequestDto.items() == null || checkoutCreateRequestDto.items().isEmpty()) {
+        if (checkoutCreateRequestDto == null || checkoutCreateRequestDto.items() == null || checkoutCreateRequestDto.items().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one checkout item is required");
         }
     }

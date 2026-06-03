@@ -37,11 +37,6 @@ export const skuSchema = z.object({
   attributeValueIds: z.array(uuid).min(1, "Select at least one attribute value").default([]),
 });
 
-export const orderSchema = z.object({
-  skuCode: z.string().trim().min(1, "SKU code is required"),
-  quantity: z.coerce.number().int().min(1, "Quantity must be greater than 0"),
-});
-
 export const paymentSchema = z.object({
   orderId: uuid,
   method: z.enum(["BALANCE", "CARD", "MANUAL"]),

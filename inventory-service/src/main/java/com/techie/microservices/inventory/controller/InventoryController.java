@@ -70,9 +70,7 @@ public class InventoryController {
     @PostMapping("/deduct")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deductStock(@RequestBody InventoryDeductRequestDto request) {
-        inventoryService.reserveStock(new InventoryReserveRequestDto(null, request.items().stream()
-                .map(item -> new InventoryReserveRequestDto.ItemRequestDto(item.skuId(), item.quantity()))
-                .toList()));
+        inventoryService.deductStock(request);
     }
 
     @PostMapping("/reserve")

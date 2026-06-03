@@ -48,7 +48,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponseVo createPayment(PaymentCreateRequestDto paymentCreateRequestDto, String authorization, String idempotencyKey) {
-        if (paymentCreateRequestDto.orderId() == null) {
+        if (paymentCreateRequestDto == null || paymentCreateRequestDto.orderId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order id is required");
         }
 

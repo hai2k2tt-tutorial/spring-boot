@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { createSku, fetchAttributes, fetchProducts, fetchSkus } from "@/lib/api";
 import { AttributeResponseVo, SkuResponseVo } from "@/lib/types";
+import { DialogErrorAlert, getErrorMessage } from "./error-alert";
 import { FormDialogProps } from "./types";
 
 type SkuDialogProps = FormDialogProps & {
@@ -29,6 +30,8 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
 
   const selectedProductId = useWatch({ control: form.control, name: "productId" });
   const selectedAttributeValueIds = useWatch({ control: form.control, name: "attributeValueIds" }) ?? [];
+  const attributeValueError = form.formState.errors.attributeValueIds;
+  const serverError = attributeValueError?.type === "server" ? attributeValueError.message : null;
   const usesDetailProduct = Boolean(defaultProductId);
   const productsQuery = useQuery({
     queryKey: ["shop-product-options"],
@@ -86,7 +89,7 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
     form.setValue("attributeValueIds", nextValueIds, { shouldDirty: true, shouldValidate: true });
   }
 
-  function handleSubmit(values: z.output<typeof skuSchema>) {
+  async function handleSubmit(values: z.output<typeof skuSchema>) {
     const attributeValueIds = values.attributeValueIds ?? [];
     if (hasDuplicateAttributeSelection(attributesQuery.data ?? [], attributeValueIds)) {
       form.setError("attributeValueIds", {
@@ -95,15 +98,23 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
       });
       return;
     }
-    if (hasExistingSkuCombination(skusQuery.data ?? [], attributeValueIds)) {
+    const existingSku = findExistingSkuCombination(skusQuery.data ?? [], attributeValueIds);
+    if (existingSku) {
       form.setError("attributeValueIds", {
         type: "validate",
-        message: "A SKU with the same attribute values already exists",
+        message: `A SKU with the same attribute values already exists: ${existingSku.skuCode}`,
       });
       return;
     }
 
-    return submit(() => createSku({ ...values, attributeValueIds }));
+    try {
+      await submit(() => createSku({ ...values, attributeValueIds }));
+    } catch (error) {
+      form.setError("attributeValueIds", {
+        type: "server",
+        message: getErrorMessage(error, "Unable to create SKU"),
+      });
+    }
   }
 
   return (
@@ -113,6 +124,7 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
           className="grid gap-4 sm:grid-cols-2"
           onSubmit={form.handleSubmit(handleSubmit)}
         >
+          <DialogErrorAlert message={serverError} />
           {usesDetailProduct ? (
             <input type="hidden" {...form.register("productId")} />
           ) : (
@@ -177,9 +189,9 @@ function hasDuplicateAttributeSelection(attributes: AttributeResponseVo[], selec
   return new Set(selectedAttributeIds).size !== selectedAttributeIds.length;
 }
 
-function hasExistingSkuCombination(skus: SkuResponseVo[], selectedValueIds: string[]) {
+function findExistingSkuCombination(skus: SkuResponseVo[], selectedValueIds: string[]) {
   const selectedValues = new Set(selectedValueIds);
-  return skus.some((sku) => {
+  return skus.find((sku) => {
     const skuValues = new Set(sku.attributeValueIds);
     return skuValues.size === selectedValues.size && sku.attributeValueIds.every((valueId) => selectedValues.has(valueId));
   });

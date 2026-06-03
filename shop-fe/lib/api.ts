@@ -10,8 +10,6 @@ import {
   CustomerStatusUpdateRequestDto,
   CustomerWalletUpdateRequestDto,
   InventoryCheckResponseVo,
-  Order,
-  OrderCreateRequestDto,
   OrderResponseVo,
   PaymentCreateRequestDto,
   PaymentHistoryResponseVo,
@@ -87,12 +85,26 @@ api.interceptors.response.use(
   }
 );
 
+type ApiErrorBody = {
+  message?: unknown;
+  detail?: unknown;
+  reason?: unknown;
+  error?: unknown;
+  title?: unknown;
+};
+
+function getResponseErrorMessage(data: unknown): string | undefined {
+  if (typeof data === "string") return data;
+  if (!data || typeof data !== "object") return undefined;
+
+  const body = data as ApiErrorBody;
+  const message = body.message ?? body.detail ?? body.reason ?? body.error ?? body.title;
+  return typeof message === "string" && message.trim().length > 0 ? message : undefined;
+}
+
 function parseError(error: unknown): Error {
   if (axios.isAxiosError(error)) {
-    const responseMessage =
-      typeof error.response?.data === "string"
-        ? error.response.data
-        : error.response?.data?.message;
+    const responseMessage = getResponseErrorMessage(error.response?.data);
     return new Error(responseMessage || error.message || "Request failed");
   }
 
@@ -256,15 +268,6 @@ export async function checkStock(skuCode: string, quantity: number): Promise<Inv
   }
 }
 
-export async function placeOrder(order: OrderCreateRequestDto): Promise<OrderResponseVo> {
-  try {
-    const response = await api.post<OrderResponseVo>("/order", order);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
 export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]> {
   try {
     const response = await api.get<OrderResponseVo[]>("/order", {
@@ -279,17 +282,6 @@ export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]>
 export async function fetchOrder(orderId: UUID): Promise<OrderResponseVo> {
   try {
     const response = await api.get<OrderResponseVo>(`/order/${orderId}`);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function orderProduct(order: Order): Promise<OrderResponseVo> {
-  try {
-    const response = await api.post<OrderResponseVo>("/order", {
-      items: [{ skuCode: order.skuCode, quantity: order.quantity }],
-    });
     return response.data;
   } catch (error) {
     throw parseError(error);

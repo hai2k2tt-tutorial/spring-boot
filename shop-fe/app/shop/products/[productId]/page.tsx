@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus } from "lucide-react";
 import { use, useState } from "react";
 import { AttributeDialog } from "@/components/api-workspace/dialogs/attribute-dialog";
-import { OrderDialog } from "@/components/api-workspace/dialogs/order-dialog";
 import { SkuDialog } from "@/components/api-workspace/dialogs/sku-dialog";
 import { StockDialog } from "@/components/api-workspace/dialogs/stock-dialog";
 import { ApiTable, EmptyRow } from "@/components/api-workspace/primitives";
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { fetchAttributes, fetchProduct, fetchSkus } from "@/lib/api";
 
-type DialogName = "attribute" | "sku" | "stock" | "order" | null;
+type DialogName = "attribute" | "sku" | "stock" | null;
 
 type Feedback = { kind: "success" | "error"; message: string } | null;
 
@@ -83,11 +82,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     setActiveSkuCode(null);
   }
 
-  function openOrderDialog(skuCode: string) {
-    setActiveSkuCode(skuCode);
-    setDialog("order");
-  }
-
   function openStockDialog(skuCode: string) {
     setActiveSkuCode(skuCode);
     setDialog("stock");
@@ -106,7 +100,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
           <div>
             <Badge variant="outline">PRODUCT</Badge>
             <h1 className="mt-2 text-3xl font-semibold text-slate-950">{product?.name ?? "Product detail"}</h1>
-            <p className="mt-1 text-sm text-slate-600">Manage attributes, SKUs, inventory checks, and orders for this product.</p>
+            <p className="mt-1 text-sm text-slate-600">Manage attributes, SKUs, and inventory checks for this product.</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -198,9 +192,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 <Button size="sm" variant="outline" onClick={() => openStockDialog(sku.skuCode)}>
                   Stock check
                 </Button>
-                <Button size="sm" onClick={() => openOrderDialog(sku.skuCode)}>
-                  Create order
-                </Button>
               </div>
             </TableCell>
           </TableRow>
@@ -220,13 +211,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         saving={submitMutation.isPending}
         submit={handleSubmit}
         defaultProductId={productId}
-      />
-      <OrderDialog
-        open={dialog === "order"}
-        onClose={closeDialog}
-        saving={submitMutation.isPending}
-        submit={handleSubmit}
-        defaultSkuCode={activeSkuCode ?? undefined}
       />
       <StockDialog open={dialog === "stock"} onClose={closeDialog} defaultSkuCode={activeSkuCode} />
     </main>

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { InputField, SelectField } from "@/components/forms";
@@ -11,6 +11,7 @@ import { Modal } from "@/components/api-workspace/primitives";
 import { attributeSchema } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
 import { createAttribute, fetchProducts } from "@/lib/api";
+import { DialogErrorAlert, getErrorMessage } from "./error-alert";
 import { FormDialogProps } from "./types";
 
 type AttributeDialogProps = FormDialogProps & {
@@ -20,6 +21,7 @@ type AttributeDialogProps = FormDialogProps & {
 const ATTRIBUTE_DEFAULTS = { productId: "", code: "", name: "", values: [{ value: "" }] };
 
 export function AttributeDialog({ open, onClose, saving, submit, defaultProductId }: AttributeDialogProps) {
+  const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<z.input<typeof attributeSchema>, undefined, z.output<typeof attributeSchema>>({
     resolver: zodResolver(attributeSchema),
     defaultValues: ATTRIBUTE_DEFAULTS,
@@ -59,19 +61,32 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
     form.reset({ ...ATTRIBUTE_DEFAULTS, productId: defaultProductId ?? "" });
   }, [defaultProductId, form, open]);
 
+  async function handleSubmit(values: z.output<typeof attributeSchema>) {
+    const attributeValues = values.values
+      .map((item) => item.value.trim())
+      .filter(Boolean)
+      .map((value, index) => ({ value, sortOrder: index }));
+    setServerError(null);
+    try {
+      await submit(() => createAttribute({ ...values, values: attributeValues }));
+    } catch (error) {
+      setServerError(getErrorMessage(error, "Unable to create attribute"));
+    }
+  }
+
+  function handleClose() {
+    setServerError(null);
+    onClose();
+  }
+
   return (
-    <Modal title="Create inventory attribute" open={open} onClose={onClose}>
+    <Modal title="Create inventory attribute" open={open} onClose={handleClose}>
       <FormProvider {...form}>
         <form
           className="grid gap-4 sm:grid-cols-2"
-          onSubmit={form.handleSubmit((values) => {
-            const attributeValues = values.values
-              .map((item) => item.value.trim())
-              .filter(Boolean)
-              .map((value, index) => ({ value, sortOrder: index }));
-            return submit(() => createAttribute({ ...values, values: attributeValues }));
-          })}
+          onSubmit={form.handleSubmit(handleSubmit)}
         >
+          <DialogErrorAlert message={serverError} />
           {usesDetailProduct ? (
             <input type="hidden" {...form.register("productId")} />
           ) : (

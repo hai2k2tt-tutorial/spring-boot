@@ -186,7 +186,7 @@ public class OrderService {
     }
 
     private void validateRequest(OrderCreateRequestDto orderCreateRequestDto) {
-        if (orderCreateRequestDto.items() == null || orderCreateRequestDto.items().isEmpty()) {
+        if (orderCreateRequestDto == null || orderCreateRequestDto.items() == null || orderCreateRequestDto.items().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one order item is required");
         }
         for (OrderCreateRequestDto.OrderItemRequestDto item : orderCreateRequestDto.items()) {

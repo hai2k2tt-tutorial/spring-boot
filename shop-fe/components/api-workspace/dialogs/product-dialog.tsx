@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 import { CategoryTreeField, InputField, ProductImageDropzoneField, SelectField, TextareaField } from "@/components/forms";
@@ -12,9 +12,11 @@ import { productSchema, toOptional } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
 import { createProduct, fetchCategories } from "@/lib/api";
 import { buildCategoryTree } from "@/lib/category-options";
+import { DialogErrorAlert, getErrorMessage } from "./error-alert";
 import { FormDialogProps } from "./types";
 
 export function ProductDialog({ open, onClose, saving, submit }: FormDialogProps) {
+  const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<z.input<typeof productSchema>, undefined, z.output<typeof productSchema>>({
     resolver: zodResolver(productSchema),
     defaultValues: { name: "", description: "", price: "0", imageUrl: "", categoryId: "", status: "DRAFT" },
@@ -38,10 +40,29 @@ export function ProductDialog({ open, onClose, saving, submit }: FormDialogProps
         ? "Select category"
         : "No categories available";
 
+  async function handleSubmit(values: z.output<typeof productSchema>) {
+    setServerError(null);
+    try {
+      await submit(() => createProduct({
+        ...values,
+        categoryId: toOptional(values.categoryId),
+        imageUrl: toOptional(values.imageUrl),
+      }));
+    } catch (error) {
+      setServerError(getErrorMessage(error, "Unable to create product"));
+    }
+  }
+
+  function handleClose() {
+    setServerError(null);
+    onClose();
+  }
+
   return (
-    <Modal title="Create product" open={open} onClose={onClose}>
+    <Modal title="Create product" open={open} onClose={handleClose}>
       <FormProvider {...form}>
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => submit(() => createProduct({ ...values, categoryId: toOptional(values.categoryId), imageUrl: toOptional(values.imageUrl) })))}>
+        <form className="grid gap-4 sm:grid-cols-2" onSubmit={form.handleSubmit(handleSubmit)}>
+          <DialogErrorAlert message={serverError} />
           <InputField name="name" label="Name" />
           <InputField name="price" label="Price" type="number" />
           <CategoryTreeField

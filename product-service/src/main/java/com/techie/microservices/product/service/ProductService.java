@@ -29,6 +29,9 @@ public class ProductService {
 
     @Transactional
     public ProductResponseVo createProduct(ProductRequestDto productRequestDto, String authorization) {
+        if (productRequestDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product request is required");
+        }
         UUID shopId = tokenIdentity.currentUserId(authorization);
         Category category = categoryRepository.findById(productRequestDto.categoryId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
@@ -56,6 +59,9 @@ public class ProductService {
 
     @Transactional
     public ProductResponseVo updateProduct(ProductRequestDto productRequestDto, String authorization) {
+        if (productRequestDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product request is required");
+        }
         if (productRequestDto.id() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product id is required");
         }
