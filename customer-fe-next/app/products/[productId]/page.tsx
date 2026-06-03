@@ -4,21 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, LoaderCircle, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ImageIcon, LoaderCircle, ShoppingCart, Store } from "lucide-react";
 import { use, useMemo } from "react";
 import { FormProvider, Path, useForm, useWatch } from "react-hook-form";
 import { signIn, useSession } from "next-auth/react";
 import { z } from "zod";
-import { ApiTable, EmptyRow } from "@/components/api-workspace/primitives";
 import { InputField } from "@/components/forms";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { createOrderCheckout, fetchAttributes, fetchProduct, fetchSkus } from "@/lib/api";
+import { createOrderCheckout, fetchAttributes, fetchProduct, fetchShopByProductShopId, fetchSkus } from "@/lib/api";
 import { AttributeResponseVo, AttributeValueResponseVo, SkuResponseVo } from "@/lib/types";
 
 type ProductDetailPageProps = {
@@ -45,10 +42,6 @@ type OrderFormValues = z.output<typeof orderSchema>;
 
 function formatMoney(value: number) {
   return currencyFormatter.format(value);
-}
-
-function formatDate(value?: string) {
-  return value ? new Date(value).toLocaleString() : "-";
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -81,13 +74,6 @@ function findMatchingSku(skus: SkuResponseVo[], selectedValueIds: string[]) {
         sku.attributeValueIds.every((valueId) => selectedValues.has(valueId)),
     ) ?? null
   );
-}
-
-function getSkuAttributeLabels(sku: SkuResponseVo, lookup: Map<string, AttributeValueLookup>) {
-  return sku.attributeValueIds.map((valueId) => {
-    const match = lookup.get(valueId);
-    return match ? `${match.attribute.name}: ${match.value.value}` : valueId;
-  });
 }
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
@@ -128,6 +114,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     retry: 1,
   });
 
+  const product = productQuery.data;
+
+  const shopQuery = useQuery({
+    queryKey: ["customer-product-shop", product?.shopId],
+    queryFn: () => fetchShopByProductShopId(product?.shopId ?? ""),
+    enabled: Boolean(product?.shopId),
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
   const orderMutation = useMutation({
     mutationFn: ({ skuCode, quantity, idempotencyKey }: { skuCode: string; quantity: number; idempotencyKey: string }) =>
       createOrderCheckout({ items: [{ skuCode, quantity }] }, "CARD", idempotencyKey),
@@ -154,7 +150,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     },
   });
 
-  const product = productQuery.data;
   const attributes = useMemo(() => attributesQuery.data ?? [], [attributesQuery.data]);
   const skus = useMemo(() => skusQuery.data ?? [], [skusQuery.data]);
   const selectedByAttribute = useWatch({
@@ -188,6 +183,17 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const loading = productQuery.isLoading || attributesQuery.isLoading || skusQuery.isLoading;
   const isError = productQuery.isError || attributesQuery.isError || skusQuery.isError;
   const cannotOrder = !allAttributesSelected || !selectedSku || stock < quantity || quantity < 1 || orderMutation.isPending;
+  const shopName = shopQuery.data?.shopName ?? "Shop";
+  const shopHref = shopQuery.data?.shopId
+    ? `/shops/${shopQuery.data.shopId}`
+    : product?.shopId
+      ? `/shops/${product.shopId}`
+      : undefined;
+  const selectedLabels = selectedSku ? selectedSku.attributeValueIds
+    .map((valueId) => attributeValueLookup.get(valueId))
+    .filter((value): value is AttributeValueLookup => Boolean(value))
+    .map(({ attribute, value }) => `${attribute.name}: ${value.value}`) : [];
+  const selectedItemLabel = selectedLabels.length ? selectedLabels.join(" / ") : selectedSku ? "Base product" : "Choose options to resolve a SKU.";
 
   async function refetchDetail() {
     await Promise.all([productQuery.refetch(), attributesQuery.refetch(), skusQuery.refetch()]);
@@ -281,134 +287,134 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       ) : null}
 
       {product ? (
-        <div className="rounded-md border border-slate-200 bg-white p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-lg font-semibold text-slate-950">Overview</h2>
-            <Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge>
+        <section className="grid gap-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(18rem,0.95fr)_minmax(0,1.05fr)] lg:p-6">
+          <div className="md:sticky md:top-6 md:self-start">
+            <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-100 via-slate-50 to-orange-50">
+              <div className="aspect-square">
+                {product.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-slate-300">
+                    <ImageIcon className="h-16 w-16" />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="mt-4 grid gap-4 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
-            <div><span className="font-medium text-slate-950">Product ID</span><div className="break-all">{product.id ?? "-"}</div></div>
-            <div><span className="font-medium text-slate-950">Shop ID</span><div className="break-all">{product.shopId ?? "-"}</div></div>
-            <div><span className="font-medium text-slate-950">Base price</span><div>{formatMoney(product.price)}</div></div>
-            <div><span className="font-medium text-slate-950">Category</span><div>{product.categoryName ?? product.categoryId ?? "-"}</div></div>
-            <div><span className="font-medium text-slate-950">Created</span><div>{formatDate(product.createdAt)}</div></div>
-            <div><span className="font-medium text-slate-950">Updated</span><div>{formatDate(product.updatedAt)}</div></div>
-            <div className="sm:col-span-2 lg:col-span-3"><span className="font-medium text-slate-950">Image URL</span><div className="break-all">{product.imageUrl ?? "-"}</div></div>
-            <div className="sm:col-span-2 lg:col-span-3"><span className="font-medium text-slate-950">Description</span><div>{product.description}</div></div>
-          </div>
-        </div>
-      ) : null}
 
-      <div className="rounded-md border border-slate-200 bg-white p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="font-semibold text-slate-950">Create order</h2>
-            <p className="mt-1 text-sm text-slate-500">Creates a pending order, starts card payment, then redirects to checkout.</p>
-          </div>
-          <Badge variant={selectedSku && stock >= quantity && quantity > 0 ? "secondary" : "outline"}>
-            Stock {stock}
-          </Badge>
-        </div>
+          <div className="flex min-w-0 flex-col gap-5">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={product.status === "ACTIVE" ? "secondary" : "outline"}>{product.status ?? "N/A"}</Badge>
+                <Badge variant="outline">{product.categoryName ?? product.categoryId ?? "General"}</Badge>
+              </div>
+              <div>
+                <h2 className="text-3xl font-semibold tracking-tight text-slate-950">{product.name}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{product.description}</p>
+              </div>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <Store className="h-4 w-4 text-slate-500" />
+                <span>Sold by</span>
+                {shopHref ? (
+                  <Link href={shopHref} className="font-medium text-slate-950 underline-offset-4 hover:underline">
+                    {shopQuery.isLoading ? "Loading shop..." : shopName}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-slate-950">{shopQuery.isLoading ? "Loading shop..." : shopName}</span>
+                )}
+              </div>
+              <p className="text-3xl font-semibold tracking-tight text-orange-600">{formatMoney(unitPrice)}</p>
+            </div>
 
-        <FormProvider {...form}>
-          <form className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              {attributes.length === 0 ? (
-                <Alert>No attributes are configured for this product.</Alert>
-              ) : null}
-              {attributes.map((attribute) => {
-                const fieldName = `attributeValueIds.${attribute.id}` as Path<OrderFormInput>;
-                const error = form.formState.errors.attributeValueIds?.[attribute.id]?.message;
+            <FormProvider {...form}>
+              <form className="space-y-5" onSubmit={handleSubmit}>
+                <div className="space-y-5">
+                  {attributes.length === 0 ? (
+                    <Alert>No product variants are configured. You can order when a single base SKU exists.</Alert>
+                  ) : null}
 
-                return (
-                  <div key={attribute.id} className="grid gap-2 border-b border-slate-100 pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[12rem_minmax(0,1fr)]">
-                    <Label htmlFor={`attribute-${attribute.id}`} className="pt-2">
-                      {attribute.name}
-                    </Label>
-                    <div className="space-y-2">
-                      <Select id={`attribute-${attribute.id}`} {...form.register(fieldName)}>
-                        <option value="">Choose {attribute.name}</option>
-                        {attribute.values.map((value) => (
-                          <option key={value.id} value={value.id}>
-                            {value.value}
-                          </option>
-                        ))}
-                      </Select>
-                      <div className="flex flex-wrap gap-2 text-xs text-slate-500">
-                        <Badge variant="outline">{attribute.code}</Badge>
-                        <span className="break-all">ID {attribute.id}</span>
+                  {attributes.map((attribute) => {
+                    const fieldName = `attributeValueIds.${attribute.id}` as Path<OrderFormInput>;
+                    const selectedValueId = selectedByAttribute[attribute.id];
+                    const error = form.formState.errors.attributeValueIds?.[attribute.id]?.message;
+
+                    return (
+                      <div key={attribute.id} className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <Label className="text-sm font-semibold text-slate-950">{attribute.name}</Label>
+                          <span className="text-xs uppercase tracking-wide text-slate-400">{attribute.code}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {attribute.values
+                            .slice()
+                            .sort((left, right) => left.sortOrder - right.sortOrder)
+                            .map((value) => {
+                              const selected = selectedValueId === value.id;
+
+                              return (
+                                <Button
+                                  key={value.id}
+                                  type="button"
+                                  variant={selected ? "default" : "outline"}
+                                  className={selected ? "border-slate-950 bg-slate-950 text-white hover:bg-slate-800" : "bg-white"}
+                                  onClick={() => {
+                                    form.setValue(fieldName, value.id, { shouldDirty: true, shouldValidate: true });
+                                    form.clearErrors(fieldName);
+                                  }}
+                                >
+                                  {value.value}
+                                </Button>
+                              );
+                            })}
+                        </div>
+                        <FormMessage>{typeof error === "string" ? error : undefined}</FormMessage>
                       </div>
-                      <FormMessage>{typeof error === "string" ? error : undefined}</FormMessage>
+                    );
+                  })}
+
+                  <div className="max-w-40">
+                    <InputField<OrderFormInput> name="quantity" label="Quantity" type="number" min="1" />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-950">Selected item</h3>
+                      <p className="mt-1 text-sm text-slate-500">{selectedItemLabel}</p>
+                    </div>
+                    <Badge variant={selectedSku && stock >= quantity && quantity > 0 ? "secondary" : "outline"}>
+                      Stock {stock}
+                    </Badge>
+                  </div>
+                  <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                    <div>
+                      <span className="text-slate-500">SKU</span>
+                      <div className="break-all font-medium text-slate-950">{selectedSku?.skuCode ?? "-"}</div>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Unit price</span>
+                      <div className="font-medium text-slate-950">{formatMoney(unitPrice)}</div>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Total</span>
+                      <div className="font-semibold text-slate-950">{formatMoney(orderTotal)}</div>
                     </div>
                   </div>
-                );
-              })}
-              <InputField<OrderFormInput> name="quantity" label="Quantity" type="number" min="1" />
-            </div>
-
-            <div className="rounded-md border border-slate-200 p-4">
-              <h3 className="font-medium text-slate-950">Order summary</h3>
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="flex justify-between gap-3"><span className="text-slate-500">SKU</span><span className="break-all font-medium text-slate-950">{selectedSku?.skuCode ?? "-"}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-500">Unit price</span><span>{formatMoney(unitPrice)}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-500">Stock</span><span>{stock}</span></div>
-                <div className="flex justify-between gap-3 border-t border-slate-200 pt-3"><span className="font-medium text-slate-950">Total</span><span className="font-semibold text-slate-950">{formatMoney(orderTotal)}</span></div>
-              </div>
-              {!allAttributesSelected ? <p className="mt-4 text-sm text-slate-500">Choose all attributes to resolve the SKU.</p> : null}
-              {allAttributesSelected && !selectedSku ? <p className="mt-4 text-sm text-red-600">No SKU exists for this combination. Stock is 0.</p> : null}
-              {selectedSku && stock < quantity ? <p className="mt-4 text-sm text-red-600">Requested quantity is higher than stock.</p> : null}
-              <Button type="submit" className="mt-5 w-full" disabled={cannotOrder}>
-                {orderMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-                {status === "authenticated" ? "Create order and pay" : "Login to order"}
-              </Button>
-            </div>
-          </form>
-        </FormProvider>
-      </div>
-
-      <ApiTable title="Attributes" headers={["ID", "Product", "Code", "Name", "Values", "Created", "Updated"]}>
-        {attributesQuery.isLoading ? <EmptyRow colSpan={7} label="Loading attributes..." /> : null}
-        {!attributesQuery.isLoading && attributes.length === 0 ? <EmptyRow colSpan={7} label="No attributes returned." /> : null}
-        {attributes.map((attribute) => (
-          <TableRow key={attribute.id}>
-            <TableCell className="break-all font-medium">{attribute.id}</TableCell>
-            <TableCell className="break-all">{attribute.productId}</TableCell>
-            <TableCell>{attribute.code}</TableCell>
-            <TableCell>{attribute.name}</TableCell>
-            <TableCell>
-              <div className="flex flex-col gap-1">
-                {attribute.values.map((value) => (
-                  <span key={value.id}>{value.value} <span className="text-xs text-slate-500">({value.id}, order {value.sortOrder})</span></span>
-                ))}
-              </div>
-            </TableCell>
-            <TableCell className="text-slate-500">{formatDate(attribute.createdAt)}</TableCell>
-            <TableCell className="text-slate-500">{formatDate(attribute.updatedAt)}</TableCell>
-          </TableRow>
-        ))}
-      </ApiTable>
-
-      <ApiTable title="SKUs" headers={["ID", "Product", "SKU", "Attribute value IDs", "Attributes", "Price", "Stock", "Created", "Updated"]}>
-        {skusQuery.isLoading ? <EmptyRow colSpan={9} label="Loading SKUs..." /> : null}
-        {!skusQuery.isLoading && skus.length === 0 ? <EmptyRow colSpan={9} label="No SKUs returned." /> : null}
-        {skus.map((sku) => {
-          const attributeLabels = getSkuAttributeLabels(sku, attributeValueLookup);
-
-          return (
-            <TableRow key={sku.id}>
-              <TableCell className="break-all font-medium">{sku.id}</TableCell>
-              <TableCell className="break-all">{sku.productId}</TableCell>
-              <TableCell className="break-all">{sku.skuCode}</TableCell>
-              <TableCell className="break-all">{sku.attributeValueIds.length ? sku.attributeValueIds.join(", ") : "-"}</TableCell>
-              <TableCell>{attributeLabels.length ? attributeLabels.join(", ") : "-"}</TableCell>
-              <TableCell>{sku.priceOverride != null ? `${formatMoney(sku.priceOverride)} override` : `${formatMoney(product?.price ?? 0)} base`}</TableCell>
-              <TableCell>{sku.quantity}</TableCell>
-              <TableCell className="text-slate-500">{formatDate(sku.createdAt)}</TableCell>
-              <TableCell className="text-slate-500">{formatDate(sku.updatedAt)}</TableCell>
-            </TableRow>
-          );
-        })}
-      </ApiTable>
+                  {!allAttributesSelected ? <p className="mt-4 text-sm text-slate-500">Choose all product options before checkout.</p> : null}
+                  {allAttributesSelected && !selectedSku ? <p className="mt-4 text-sm text-red-600">This option combination is not available.</p> : null}
+                  {selectedSku && stock < quantity ? <p className="mt-4 text-sm text-red-600">Requested quantity is higher than stock.</p> : null}
+                  <Button type="submit" className="mt-5 w-full bg-orange-600 text-white hover:bg-orange-700" disabled={cannotOrder}>
+                    {orderMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                    {status === "authenticated" ? "Buy now" : "Login to order"}
+                  </Button>
+                </div>
+              </form>
+            </FormProvider>
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

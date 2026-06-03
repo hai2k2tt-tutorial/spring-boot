@@ -36,15 +36,19 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <Card className="group flex h-full overflow-hidden rounded-2xl border-slate-200 transition hover:-translate-y-0.5 hover:shadow-lg">
       <div className="flex min-w-0 flex-1 flex-col">
-        <div
-          className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-orange-50"
-          style={product.imageUrl ? { backgroundImage: `url(${product.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
-        >
-          {!product.imageUrl ? (
+        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-orange-50">
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+            />
+          ) : (
             <div className="flex h-full items-center justify-center text-3xl font-semibold text-slate-300 sm:text-4xl">
               {getProductInitials(product.name) || <ShoppingBag className="h-10 w-10" />}
             </div>
-          ) : null}
+          )}
           <div className="absolute left-3 top-3">
             <Badge variant={isActive ? "secondary" : "outline"} className="bg-white/90 backdrop-blur">
               {product.status ?? "N/A"}
