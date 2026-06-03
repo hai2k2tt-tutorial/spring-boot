@@ -5,8 +5,8 @@ import type { JWT } from "next-auth/jwt";
 const issuer = process.env.AUTH_ISSUER;
 const internalIssuer = process.env.AUTH_ISSUER_INTERNAL ?? issuer;
 const clientId = process.env.AUTH_CLIENT_ID;
-const clientSecret = process.env.AUTH_CLIENT_SECRET;
-const scope = process.env.AUTH_SCOPE ?? "openid profile offline_access";
+const clientSecret = process.env.AUTH_CLIENT_SECRET?.trim() || undefined;
+const scope = process.env.AUTH_SCOPE ?? "openid profile email";
 
 const oidcFetch: typeof fetch = async (input, init) => {
   if (!issuer || !internalIssuer || issuer === internalIssuer) {
@@ -72,7 +72,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           issuer,
           wellKnown: internalIssuer ? `${internalIssuer}/.well-known/openid-configuration` : undefined,
           clientId,
-          clientSecret,
+          ...(clientSecret ? { clientSecret } : {}),
           authorization: issuer
             ? {
                 url: `${issuer}/protocol/openid-connect/auth`,

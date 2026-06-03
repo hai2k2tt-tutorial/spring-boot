@@ -119,10 +119,20 @@ function parseError(error: unknown): Error {
   return error instanceof Error ? error : new Error("Request failed");
 }
 
+function toGatewayImageUrl(imageUrl: string): string {
+  if (imageUrl.startsWith("/api/gateway/")) return imageUrl;
+  if (imageUrl.startsWith("/api/")) return `/api/gateway/${imageUrl.slice("/api/".length)}`;
+  return imageUrl;
+}
+
+function normalizeProductImageUrl<T extends { imageUrl?: string }>(product: T): T {
+  return product.imageUrl ? { ...product, imageUrl: toGatewayImageUrl(product.imageUrl) } : product;
+}
+
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const response = await api.get<Product[]>("/product");
-    return response.data;
+    return response.data.map(normalizeProductImageUrl);
   } catch (error) {
     throw parseError(error);
   }
@@ -131,7 +141,7 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchProduct(productId: UUID): Promise<ProductResponseVo> {
   try {
     const response = await api.get<ProductResponseVo>(`/product/${productId}`);
-    return response.data;
+    return normalizeProductImageUrl(response.data);
   } catch (error) {
     throw parseError(error);
   }
