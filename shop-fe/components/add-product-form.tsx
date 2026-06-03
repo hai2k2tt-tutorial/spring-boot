@@ -9,11 +9,11 @@ import { signIn, useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { z } from "zod";
 import { createProduct, fetchCategories } from "@/lib/api";
-import { buildCategoryTreeOptions } from "@/lib/category-options";
+import { buildCategoryTree } from "@/lib/category-options";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { InputField, ProductImageDropzoneField, SelectField, TextareaField } from "@/components/forms";
+import { CategoryTreeField, InputField, ProductImageDropzoneField, SelectField, TextareaField } from "@/components/forms";
 
 const productSchema = z.object({
   categoryId: z.string().trim().uuid("Use a valid category UUID"),
@@ -47,15 +47,15 @@ export function AddProductForm() {
     staleTime: 30 * 1000,
     retry: 1,
   });
-  const categoryOptions = useMemo(
-    () => buildCategoryTreeOptions(categoriesQuery.data ?? []),
+  const categoryTree = useMemo(
+    () => buildCategoryTree(categoriesQuery.data ?? []),
     [categoriesQuery.data],
   );
   const categoryPlaceholder = categoriesQuery.isLoading
     ? "Loading categories..."
     : categoriesQuery.isError
       ? "Unable to load categories"
-      : categoryOptions.length
+      : categoryTree.length
         ? "Select category"
         : "No categories available";
 
@@ -111,12 +111,13 @@ export function AddProductForm() {
               ) : null}
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <SelectField
+                <CategoryTreeField
                   name="categoryId"
                   label="Category"
-                  options={categoryOptions}
+                  nodes={categoryTree}
                   placeholder={categoryPlaceholder}
                   disabled={categoriesQuery.isLoading || categoriesQuery.isError}
+                  className="space-y-2 sm:col-span-2"
                 />
                 <InputField name="name" label="Name" />
                 <SelectField name="status" label="Status" options={["DRAFT", "ACTIVE", "ARCHIVED"]} />
