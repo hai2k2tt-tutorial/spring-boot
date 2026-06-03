@@ -10,7 +10,7 @@ export function AppSessionProvider({ children }: PropsWithChildren) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <SessionProvider>
+    <SessionProvider basePath="/api/shop-fe/auth">
       <QueryClientProvider client={queryClient}>
         <AuthSync />
         {children}

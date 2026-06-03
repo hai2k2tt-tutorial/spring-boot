@@ -41,12 +41,15 @@ data:
           "redirectUris": [
             "http://localhost:3002",
             "http://localhost:3002/api/auth/callback/keycloak",
+            "http://localhost:3002/api/admin-fe/auth/callback/keycloak",
             "http://admin-fe.local:8080",
             "http://admin-fe.local:8080/*",
             "http://admin-fe.local:8080/api/auth/callback/keycloak",
+            "http://admin-fe.local:8080/api/admin-fe/auth/callback/keycloak",
             "http://admin-fe.haint.fyi",
             "http://admin-fe.haint.fyi/*",
-            "http://admin-fe.haint.fyi/api/auth/callback/keycloak"
+            "http://admin-fe.haint.fyi/api/auth/callback/keycloak",
+            "http://admin-fe.haint.fyi/api/admin-fe/auth/callback/keycloak"
           ],
           "webOrigins": [
             "*"
@@ -125,12 +128,15 @@ data:
             "http://localhost:4200",
             "http://localhost:3004",
             "http://localhost:3004/api/auth/callback/keycloak",
+            "http://localhost:3004/api/customer-fe-next/auth/callback/keycloak",
             "http://customer-fe-next.local:8080",
             "http://customer-fe-next.local:8080/*",
             "http://customer-fe-next.local:8080/api/auth/callback/keycloak",
+            "http://customer-fe-next.local:8080/api/customer-fe-next/auth/callback/keycloak",
             "http://customer-fe-next.haint.fyi",
             "http://customer-fe-next.haint.fyi/*",
             "http://customer-fe-next.haint.fyi/api/auth/callback/keycloak",
+            "http://customer-fe-next.haint.fyi/api/customer-fe-next/auth/callback/keycloak",
             "http://customer-fe-angular.local:8080",
             "http://customer-fe-angular.local:8080/*",
             "http://customer-fe-angular.haint.fyi",
@@ -212,12 +218,15 @@ data:
           "redirectUris": [
             "http://localhost:3003",
             "http://localhost:3003/api/auth/callback/keycloak",
+            "http://localhost:3003/api/shop-fe/auth/callback/keycloak",
             "http://shop-fe.local:8080",
             "http://shop-fe.local:8080/*",
             "http://shop-fe.local:8080/api/auth/callback/keycloak",
+            "http://shop-fe.local:8080/api/shop-fe/auth/callback/keycloak",
             "http://shop-fe.haint.fyi",
             "http://shop-fe.haint.fyi/*",
-            "http://shop-fe.haint.fyi/api/auth/callback/keycloak"
+            "http://shop-fe.haint.fyi/api/auth/callback/keycloak",
+            "http://shop-fe.haint.fyi/api/shop-fe/auth/callback/keycloak"
           ],
           "webOrigins": [
             "*"

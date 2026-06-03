@@ -8,11 +8,12 @@ const clientId = process.env.AUTH_CLIENT_ID;
 const clientSecret = process.env.AUTH_CLIENT_SECRET;
 const scope = process.env.AUTH_SCOPE ?? "openid profile offline_access";
 const cookiePrefix = process.env.AUTH_COOKIE_PREFIX ?? "shop-fe";
+const authBasePath = process.env.AUTH_BASE_PATH ?? "/api/shop-fe/auth";
 const useSecureCookies = process.env.AUTH_URL?.startsWith("https://") ?? false;
 const authCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
-  path: "/api/auth",
+  path: authBasePath,
   secure: useSecureCookies,
 };
 const authCookies = {
@@ -24,7 +25,7 @@ const authCookies = {
     name: `${cookiePrefix}.authjs.callback-url`,
     options: {
       sameSite: "lax" as const,
-      path: "/api/auth",
+      path: authBasePath,
       secure: useSecureCookies,
     },
   },
@@ -110,6 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
   },
+  basePath: authBasePath,
   cookies: authCookies,
   providers: issuer && clientId
     ? [

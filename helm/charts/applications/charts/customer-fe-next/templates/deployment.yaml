@@ -51,6 +51,10 @@ spec:
               value: {{ .Values.config.authClientSecret | quote }}
             - name: AUTH_SCOPE
               value: {{ .Values.config.authScope | quote }}
+            - name: AUTH_COOKIE_PREFIX
+              value: {{ .Values.config.authCookiePrefix | quote }}
+            - name: AUTH_BASE_PATH
+              value: {{ .Values.config.authBasePath | quote }}
             - name: AUTH_SECRET
               value: {{ .Values.config.authSecret | quote }}
           ports:

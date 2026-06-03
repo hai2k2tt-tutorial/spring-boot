@@ -397,6 +397,7 @@ services:
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile email
       AUTH_COOKIE_PREFIX: admin-fe
+      AUTH_BASE_PATH: /api/admin-fe/auth
       AUTH_SECRET: replace-with-a-long-random-admin-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
@@ -426,6 +427,7 @@ services:
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile offline_access
       AUTH_COOKIE_PREFIX: shop-fe
+      AUTH_BASE_PATH: /api/shop-fe/auth
       AUTH_SECRET: replace-with-a-long-random-shop-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
@@ -455,6 +457,7 @@ services:
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile offline_access
       AUTH_COOKIE_PREFIX: customer-fe-next
+      AUTH_BASE_PATH: /api/customer-fe-next/auth
       AUTH_SECRET: replace-with-a-long-random-customer-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"

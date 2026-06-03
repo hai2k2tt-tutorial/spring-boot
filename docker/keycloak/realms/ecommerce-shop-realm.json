@@ -24,12 +24,15 @@
       "redirectUris": [
         "http://localhost:3003",
         "http://localhost:3003/api/auth/callback/keycloak",
+        "http://localhost:3003/api/shop-fe/auth/callback/keycloak",
         "http://shop-fe.local:8080",
         "http://shop-fe.local:8080/*",
         "http://shop-fe.local:8080/api/auth/callback/keycloak",
+        "http://shop-fe.local:8080/api/shop-fe/auth/callback/keycloak",
         "http://shop-fe.haint.fyi",
         "http://shop-fe.haint.fyi/*",
-        "http://shop-fe.haint.fyi/api/auth/callback/keycloak"
+        "http://shop-fe.haint.fyi/api/auth/callback/keycloak",
+        "http://shop-fe.haint.fyi/api/shop-fe/auth/callback/keycloak"
       ],
       "webOrigins": [
         "*"

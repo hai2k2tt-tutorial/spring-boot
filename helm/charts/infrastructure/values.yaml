@@ -152,12 +152,15 @@ keycloak:
     - http://admin-fe.haint.fyi
     - http://admin-fe.haint.fyi/*
     - http://admin-fe.haint.fyi/api/auth/callback/keycloak
+    - http://admin-fe.haint.fyi/api/admin-fe/auth/callback/keycloak
     - http://shop-fe.haint.fyi
     - http://shop-fe.haint.fyi/*
     - http://shop-fe.haint.fyi/api/auth/callback/keycloak
+    - http://shop-fe.haint.fyi/api/shop-fe/auth/callback/keycloak
     - http://customer-fe-next.haint.fyi
     - http://customer-fe-next.haint.fyi/*
     - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
+    - http://customer-fe-next.haint.fyi/api/customer-fe-next/auth/callback/keycloak
     - http://customer-fe-angular.haint.fyi
     - http://customer-fe-angular.haint.fyi/*
   db:

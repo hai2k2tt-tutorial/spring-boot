@@ -206,6 +206,8 @@ adminFe:
     authClientId: admin-fe-client
     authClientSecret: ""
     authScope: openid profile offline_access
+    authCookiePrefix: admin-fe
+    authBasePath: /api/admin-fe/auth
     authSecret: replace-with-a-long-random-string
 
 shopFe:
@@ -231,6 +233,8 @@ shopFe:
     authClientId: shop-fe-client
     authClientSecret: ""
     authScope: openid profile offline_access
+    authCookiePrefix: shop-fe
+    authBasePath: /api/shop-fe/auth
     authSecret: replace-with-a-long-random-string
 
 customerFeNext:
@@ -256,6 +260,8 @@ customerFeNext:
     authClientId: customer-fe-client
     authClientSecret: ""
     authScope: openid profile offline_access
+    authCookiePrefix: customer-fe-next
+    authBasePath: /api/customer-fe-next/auth
     authSecret: replace-with-a-long-random-string
 
 customerFeAngular:
