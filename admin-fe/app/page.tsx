@@ -11,8 +11,10 @@ export default function HomePage() {
         description="Sign in to manage catalog, shops, customers, and payments. The dashboard hosts the API workspace lists and actions."
       />
       <div className="flex flex-wrap gap-3">
-        <Button asChild>
-          <Link href="/dashboard">Open dashboard</Link>
+        <Button asChild className="bg-slate-950 text-white hover:bg-slate-800 hover:text-white">
+          <Link href="/dashboard" className="text-white">
+            Open dashboard
+          </Link>
         </Button>
       </div>
       <p className="text-sm text-slate-600">

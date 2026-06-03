@@ -11,8 +11,10 @@ export default function HomePage() {
         description="Sign in to browse products from the dashboard, then use the separate profile, orders, and payments pages for account activity."
       />
       <div className="flex flex-wrap gap-3">
-        <Button asChild>
-          <Link href="/dashboard">Open dashboard</Link>
+        <Button asChild className="bg-slate-950 text-white hover:bg-slate-800 hover:text-white">
+          <Link href="/dashboard" className="text-white">
+            Open dashboard
+          </Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/products">Browse products</Link>

@@ -70,8 +70,8 @@ function ProductCard({ product }: { product: Product }) {
           </div>
 
           {productHref ? (
-            <Button asChild className="w-full">
-              <Link href={productHref}>
+            <Button asChild className="w-full bg-slate-950 text-white hover:bg-slate-800 hover:text-white">
+              <Link href={productHref} className="text-white">
                 View details
                 <ArrowRight className="h-4 w-4" />
               </Link>
