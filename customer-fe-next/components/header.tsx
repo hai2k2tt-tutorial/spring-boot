@@ -13,7 +13,6 @@ export function Header() {
     ? [
         { href: "/dashboard", label: "Products" },
         { href: "/orders", label: "Orders" },
-        { href: "/payments", label: "Payments" },
         { href: "/profile", label: "Profile" },
       ]
     : [{ href: "/products", label: "Products" }];

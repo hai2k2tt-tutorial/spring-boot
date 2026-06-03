@@ -88,22 +88,22 @@ public class OrderService {
                                             UUID orderId) {
         String orderNumber = UUID.randomUUID().toString();
         Order order = orderMapper.toEntity(orderCreateRequestDto, orderNumber, currentCustomer.id(), orderId.toString(), idempotencyKey, resolvedItems);
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
 
         List<OrderItem> orderItems = resolvedItems.stream()
-                .map(item -> orderMapper.toEntity(order, item))
+                .map(item -> orderMapper.toEntity(savedOrder, item))
                 .map(orderItemRepository::save)
                 .toList();
 
         OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent();
-        orderPlacedEvent.setOrderNumber(order.getOrderNumber());
+        orderPlacedEvent.setOrderNumber(savedOrder.getOrderNumber());
         orderPlacedEvent.setEmail(currentCustomer.email());
         orderPlacedEvent.setFirstName(currentCustomer.firstName());
         orderPlacedEvent.setLastName(currentCustomer.lastName());
         log.info("Start - Sending OrderPlacedEvent {} to Kafka topic order-placed", orderPlacedEvent);
         kafkaTemplate.send("order-placed", orderPlacedEvent);
         log.info("End - Sending OrderPlacedEvent {} to Kafka topic order-placed", orderPlacedEvent);
-        return orderMapper.toVo(order, orderItems);
+        return orderMapper.toVo(savedOrder, orderItems);
     }
 
     private Order findExistingOrder(UUID customerId, String idempotencyKey) {

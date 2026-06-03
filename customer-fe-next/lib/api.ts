@@ -236,6 +236,15 @@ export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]>
   }
 }
 
+export async function fetchOrder(orderId: UUID): Promise<OrderResponseVo> {
+  try {
+    const response = await api.get<OrderResponseVo>(`/order/${orderId}`);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
 export async function orderProduct(order: Order): Promise<OrderResponseVo> {
   try {
     const response = await api.post<OrderResponseVo>("/order", {
@@ -423,19 +432,15 @@ export async function fetchShop(shopId: UUID): Promise<ShopResponseVo> {
 
 export async function fetchShopByProductShopId(shopId: UUID): Promise<ShopResponseVo> {
   try {
-    return await fetchShop(shopId);
-  } catch (directError) {
-    try {
-      const shops = await fetchShops();
-      const matchingShop = shops.find((shop) => shop.shopId === shopId || shop.authId === shopId);
+    const shops = await fetchShops();
+    const matchingShop = shops.find((shop) => shop.shopId === shopId || shop.authId === shopId);
 
-      if (matchingShop) {
-        return matchingShop;
-      }
-    } catch {
-      // Keep the original lookup error because it is specific to the product's shop id.
+    if (matchingShop) {
+      return matchingShop;
     }
 
-    throw directError;
+    return await fetchShop(shopId);
+  } catch (error) {
+    throw parseError(error);
   }
 }

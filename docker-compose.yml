@@ -217,7 +217,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_service
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      PRODUCT_SERVICE_URL: http://product-service:8080
       INVENTORY_SERVICE_URL: http://inventory-service:8082
+      PAYMENT_SERVICE_URL: http://payment-service:8085
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
       SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       LOKI_URL: http://loki:3100/loki/api/v1/push
@@ -253,6 +255,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_service
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      ORDER_SERVICE_URL: http://order-service:8081
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
