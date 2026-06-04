@@ -2,6 +2,7 @@ package com.techie.microservices.customer.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techie.microservices.customer.dto.CustomerProfileUpdateRequestDto;
 import com.techie.microservices.customer.dto.CustomerStatusUpdateRequestDto;
 import com.techie.microservices.customer.dto.CustomerWalletUpdateRequestDto;
 import com.techie.microservices.customer.mapper.CustomerMapper;
@@ -46,6 +47,14 @@ public class CustomerService {
                 .orElseGet(() -> createCustomerFromClaims(authId, claims));
     }
 
+    @Transactional(readOnly = true)
+    public CustomerResponseVo getCurrentCustomer(String authorization) {
+        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
+        CustomerProfile customerProfile = customerProfileRepository.findByAuthId(authId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+        return mapCustomer(customerProfile);
+    }
+
     private CustomerResponseVo createCustomerFromClaims(UUID authId, TokenClaims claims) {
         customerAuthRepository.findByEmail(claims.email()).ifPresent(existing -> {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Customer email already exists for another auth id");
@@ -86,6 +95,44 @@ public class CustomerService {
         customerMapper.updateWallet(customerWallet, customerWalletUpdateRequestDto);
         customerWallet.setUpdatedAt(Instant.now());
         customerWalletRepository.save(customerWallet);
+        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+    }
+
+    @Transactional
+    public CustomerResponseVo updateProfile(
+            UUID customerId,
+            String authorization,
+            CustomerProfileUpdateRequestDto customerProfileUpdateRequestDto
+    ) {
+        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
+        CustomerProfile customerProfile = customerProfileRepository.findById(customerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+        CustomerAuth customerAuth = customerProfile.getAuth();
+        if (!customerAuth.getId().equals(authId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot update another customer profile");
+        }
+        CustomerWallet customerWallet = customerWalletRepository.findById(customerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
+        customerMapper.updateProfile(customerProfile, customerProfileUpdateRequestDto);
+        customerProfile.setUpdatedAt(Instant.now());
+        customerProfileRepository.save(customerProfile);
+        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+    }
+
+    @Transactional
+    public CustomerResponseVo updateCurrentProfile(
+            String authorization,
+            CustomerProfileUpdateRequestDto customerProfileUpdateRequestDto
+    ) {
+        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
+        CustomerProfile customerProfile = customerProfileRepository.findByAuthId(authId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+        CustomerAuth customerAuth = customerProfile.getAuth();
+        CustomerWallet customerWallet = customerWalletRepository.findById(customerProfile.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
+        customerMapper.updateProfile(customerProfile, customerProfileUpdateRequestDto);
+        customerProfile.setUpdatedAt(Instant.now());
+        customerProfileRepository.save(customerProfile);
         return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
     }
 

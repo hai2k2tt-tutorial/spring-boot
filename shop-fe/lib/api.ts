@@ -7,6 +7,7 @@ import {
   CategoryRequestDto,
   CategoryResponseVo,
   CustomerResponseVo,
+  CustomerProfileUpdateRequestDto,
   CustomerStatusUpdateRequestDto,
   CustomerWalletUpdateRequestDto,
   InventoryCheckResponseVo,
@@ -20,6 +21,7 @@ import {
   ProductRequestDto,
   ProductResponseVo,
   ShopResponseVo,
+  ShopProfileUpdateRequestDto,
   ShopStatusUpdateRequestDto,
   ShopWalletUpdateRequestDto,
   SkuRequestDto,
@@ -353,6 +355,36 @@ export async function updateCustomerWallet(
   }
 }
 
+export async function updateCustomerProfile(
+  customerId: UUID,
+  profile: CustomerProfileUpdateRequestDto
+): Promise<CustomerResponseVo> {
+  try {
+    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/profile`, profile);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentCustomer(): Promise<CustomerResponseVo> {
+  try {
+    const response = await api.get<CustomerResponseVo>("/customers/me");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function updateCurrentCustomerProfile(profile: CustomerProfileUpdateRequestDto): Promise<CustomerResponseVo> {
+  try {
+    const response = await api.patch<CustomerResponseVo>("/customers/me/profile", profile);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
 export async function fetchCustomers(): Promise<CustomerResponseVo[]> {
   try {
     const response = await api.get<CustomerResponseVo[]>("/customers");
@@ -380,6 +412,15 @@ export async function syncCurrentShop(): Promise<ShopResponseVo> {
   }
 }
 
+export async function fetchCurrentShop(): Promise<ShopResponseVo> {
+  try {
+    const response = await api.get<ShopResponseVo>("/shops/me");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
 export async function updateShopStatus(
   shopId: UUID,
   status: ShopStatusUpdateRequestDto
@@ -398,6 +439,24 @@ export async function updateShopWallet(
 ): Promise<ShopResponseVo> {
   try {
     const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/wallet`, wallet);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function updateShopProfile(shopId: UUID, profile: ShopProfileUpdateRequestDto): Promise<ShopResponseVo> {
+  try {
+    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/profile`, profile);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function updateCurrentShopProfile(profile: ShopProfileUpdateRequestDto): Promise<ShopResponseVo> {
+  try {
+    const response = await api.patch<ShopResponseVo>("/shops/me/profile", profile);
     return response.data;
   } catch (error) {
     throw parseError(error);

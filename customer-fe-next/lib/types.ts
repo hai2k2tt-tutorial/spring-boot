@@ -203,6 +203,12 @@ export interface CustomerWalletUpdateRequestDto {
   currency: string;
 }
 
+export interface CustomerProfileUpdateRequestDto {
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
+
 export interface CustomerResponseVo {
   authId: UUID;
   email: string;
@@ -227,6 +233,12 @@ export interface ShopStatusUpdateRequestDto {
 export interface ShopWalletUpdateRequestDto {
   balance: number;
   currency: string;
+}
+
+export interface ShopProfileUpdateRequestDto {
+  shopName: string;
+  ownerName: string;
+  phone?: string;
 }
 
 export interface ShopResponseVo {

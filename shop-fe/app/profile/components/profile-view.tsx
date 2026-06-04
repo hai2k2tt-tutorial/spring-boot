@@ -12,21 +12,21 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchCurrentCustomer, updateCurrentCustomerProfile } from "@/lib/api";
-import { CustomerResponseVo } from "@/lib/types";
+import { fetchCurrentShop, updateCurrentShopProfile } from "@/lib/api";
+import { ShopResponseVo } from "@/lib/types";
 
-const customerProfileSchema = z.object({
-  firstName: z.string().trim().min(1, "First name is required"),
-  lastName: z.string().trim().min(1, "Last name is required"),
+const shopProfileSchema = z.object({
+  shopName: z.string().trim().min(1, "Shop name is required"),
+  ownerName: z.string().trim().min(1, "Owner name is required"),
   phone: z.string().trim().optional(),
 });
 
-type CustomerProfileFormValues = z.infer<typeof customerProfileSchema>;
+type ShopProfileFormValues = z.infer<typeof shopProfileSchema>;
 
-function toDefaultValues(profile?: CustomerResponseVo): CustomerProfileFormValues {
+function toDefaultValues(profile?: ShopResponseVo): ShopProfileFormValues {
   return {
-    firstName: profile?.firstName ?? "",
-    lastName: profile?.lastName ?? "",
+    shopName: profile?.shopName ?? "",
+    ownerName: profile?.ownerName ?? "",
     phone: profile?.phone ?? "",
   };
 }
@@ -38,33 +38,33 @@ function formatDate(value?: string) {
 export function ProfileView() {
   const { status } = useSession();
   const queryClient = useQueryClient();
-  const form = useForm<CustomerProfileFormValues>({
-    resolver: zodResolver(customerProfileSchema),
+  const form = useForm<ShopProfileFormValues>({
+    resolver: zodResolver(shopProfileSchema),
     defaultValues: toDefaultValues(),
   });
 
   const profileQuery = useQuery({
-    queryKey: ["customer-profile"],
-    queryFn: fetchCurrentCustomer,
+    queryKey: ["shop-profile"],
+    queryFn: fetchCurrentShop,
     enabled: status === "authenticated",
     staleTime: 30 * 1000,
     retry: 1,
   });
 
   const updateMutation = useMutation({
-    mutationFn: (values: CustomerProfileFormValues) => {
+    mutationFn: (values: ShopProfileFormValues) => {
       if (!profileQuery.data) {
-        throw new Error("Customer profile is not loaded");
+        throw new Error("Shop profile is not loaded");
       }
 
-      return updateCurrentCustomerProfile({
-        firstName: values.firstName,
-        lastName: values.lastName,
+      return updateCurrentShopProfile({
+        shopName: values.shopName,
+        ownerName: values.ownerName,
         phone: values.phone?.trim() || undefined,
       });
     },
     onSuccess: (profile) => {
-      queryClient.setQueryData(["customer-profile"], profile);
+      queryClient.setQueryData(["shop-profile"], profile);
       form.reset(toDefaultValues(profile));
     },
   });
@@ -83,15 +83,15 @@ export function ProfileView() {
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <Badge variant="outline">CUSTOMER PROFILE</Badge>
+          <Badge variant="outline">SHOP PROFILE</Badge>
           <h1 className="mt-3 text-3xl font-semibold text-slate-950">Profile details</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-600">
-            View and update your customer profile. Wallet details are shown for context.
+            View and update your shop profile. Wallet details are shown for context.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
-            <Link href="/dashboard">Back to products</Link>
+            <Link href="/dashboard">Back to workspace</Link>
           </Button>
           <Button
             variant="outline"
@@ -122,7 +122,7 @@ export function ProfileView() {
         <Card>
           <CardHeader>
             <CardTitle>Editable profile</CardTitle>
-            <CardDescription>These fields are stored on your customer profile.</CardDescription>
+            <CardDescription>These fields are stored on your shop profile.</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? <p className="text-sm text-slate-500">Loading profile...</p> : null}
@@ -130,10 +130,10 @@ export function ProfileView() {
               <FormProvider {...form}>
                 <form className="space-y-5" onSubmit={form.handleSubmit((values) => updateMutation.mutate(values))}>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <InputField<CustomerProfileFormValues> name="firstName" label="First name" />
-                    <InputField<CustomerProfileFormValues> name="lastName" label="Last name" />
+                    <InputField<ShopProfileFormValues> name="shopName" label="Shop name" />
+                    <InputField<ShopProfileFormValues> name="ownerName" label="Owner name" />
                   </div>
-                  <InputField<CustomerProfileFormValues> name="phone" label="Phone" />
+                  <InputField<ShopProfileFormValues> name="phone" label="Phone" />
                   <div className="flex flex-wrap items-center gap-3">
                     <Button type="submit" disabled={status !== "authenticated" || isSaving || !profile}>
                       {isSaving ? "Saving..." : "Save profile"}
@@ -162,7 +162,7 @@ export function ProfileView() {
             <Detail label="Email" value={profile?.email} />
             <Detail label="Status" value={profile?.status} />
             <Detail label="Wallet" value={profile ? `${profile.balance} ${profile.currency}` : undefined} />
-            <Detail label="Customer ID" value={profile?.customerId} />
+            <Detail label="Shop ID" value={profile?.shopId} />
             <Detail label="Updated" value={formatDate(profile?.profileUpdatedAt)} />
           </CardContent>
         </Card>

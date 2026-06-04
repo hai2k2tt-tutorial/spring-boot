@@ -1,5 +1,6 @@
 package com.techie.microservices.shop.controller;
 
+import com.techie.microservices.shop.dto.ShopProfileUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopStatusUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopWalletUpdateRequestDto;
 import com.techie.microservices.shop.service.ShopService;
@@ -33,18 +34,41 @@ public class ShopController {
         return shopService.syncCurrentShop(authorization);
     }
 
-    @PatchMapping("/{shopId}/status")
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    public ShopResponseVo getCurrentShop(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return shopService.getCurrentShop(authorization);
+    }
+
+    @PatchMapping("/me/profile")
+    @ResponseStatus(HttpStatus.OK)
+    public ShopResponseVo updateCurrentProfile(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @RequestBody ShopProfileUpdateRequestDto shopProfileUpdateRequestDto
+    ) {
+        return shopService.updateCurrentProfile(authorization, shopProfileUpdateRequestDto);
+    }
+
+    @PatchMapping("/{shopId:[0-9a-fA-F-]{36}}/status")
     @ResponseStatus(HttpStatus.OK)
     public ShopResponseVo updateShopStatus(@PathVariable UUID shopId,
                                            @RequestBody ShopStatusUpdateRequestDto shopStatusUpdateRequestDto) {
         return shopService.updateShopStatus(shopId, shopStatusUpdateRequestDto);
     }
 
-    @PatchMapping("/{shopId}/wallet")
+    @PatchMapping("/{shopId:[0-9a-fA-F-]{36}}/wallet")
     @ResponseStatus(HttpStatus.OK)
     public ShopResponseVo updateWallet(@PathVariable UUID shopId,
                                        @RequestBody ShopWalletUpdateRequestDto shopWalletUpdateRequestDto) {
         return shopService.updateWallet(shopId, shopWalletUpdateRequestDto);
+    }
+
+    @PatchMapping("/{shopId:[0-9a-fA-F-]{36}}/profile")
+    @ResponseStatus(HttpStatus.OK)
+    public ShopResponseVo updateProfile(@PathVariable UUID shopId,
+                                        @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+                                        @RequestBody ShopProfileUpdateRequestDto shopProfileUpdateRequestDto) {
+        return shopService.updateProfile(shopId, authorization, shopProfileUpdateRequestDto);
     }
 
     @GetMapping
@@ -53,7 +77,7 @@ public class ShopController {
         return shopService.getShops();
     }
 
-    @GetMapping("/{shopId}")
+    @GetMapping("/{shopId:[0-9a-fA-F-]{36}}")
     @ResponseStatus(HttpStatus.OK)
     public ShopResponseVo getShop(@PathVariable UUID shopId) {
         return shopService.getShop(shopId);

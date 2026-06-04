@@ -1,5 +1,6 @@
 package com.techie.microservices.shop.mapper;
 
+import com.techie.microservices.shop.dto.ShopProfileUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopWalletUpdateRequestDto;
 import com.techie.microservices.shop.model.ShopAuth;
 import com.techie.microservices.shop.model.ShopProfile;
@@ -77,5 +78,23 @@ public class ShopMapper {
         if (shopWalletUpdateRequestDto.currency() != null && !shopWalletUpdateRequestDto.currency().isBlank()) {
             shopWallet.setCurrency(shopWalletUpdateRequestDto.currency());
         }
+    }
+
+    public void updateProfile(ShopProfile shopProfile, ShopProfileUpdateRequestDto shopProfileUpdateRequestDto) {
+        if (shopProfileUpdateRequestDto.shopName() != null && !shopProfileUpdateRequestDto.shopName().isBlank()) {
+            shopProfile.setShopName(shopProfileUpdateRequestDto.shopName().trim());
+        }
+        if (shopProfileUpdateRequestDto.ownerName() != null && !shopProfileUpdateRequestDto.ownerName().isBlank()) {
+            shopProfile.setOwnerName(shopProfileUpdateRequestDto.ownerName().trim());
+        }
+        shopProfile.setPhone(normalizeOptional(shopProfileUpdateRequestDto.phone()));
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
     }
 }

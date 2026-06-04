@@ -2,6 +2,7 @@ package com.techie.microservices.shop.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techie.microservices.shop.dto.ShopProfileUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopStatusUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopWalletUpdateRequestDto;
 import com.techie.microservices.shop.mapper.ShopMapper;
@@ -46,6 +47,14 @@ public class ShopService {
                 .orElseGet(() -> createShopFromClaims(authId, claims));
     }
 
+    @Transactional(readOnly = true)
+    public ShopResponseVo getCurrentShop(String authorization) {
+        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
+        ShopProfile shopProfile = shopProfileRepository.findByAuthId(authId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop not found"));
+        return mapShop(shopProfile);
+    }
+
     private ShopResponseVo createShopFromClaims(UUID authId, TokenClaims claims) {
         shopAuthRepository.findByEmail(claims.email()).ifPresent(existing -> {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Shop email already exists for another auth id");
@@ -86,6 +95,44 @@ public class ShopService {
         shopMapper.updateWallet(shopWallet, shopWalletUpdateRequestDto);
         shopWallet.setUpdatedAt(Instant.now());
         shopWalletRepository.save(shopWallet);
+        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+    }
+
+    @Transactional
+    public ShopResponseVo updateProfile(
+            UUID shopId,
+            String authorization,
+            ShopProfileUpdateRequestDto shopProfileUpdateRequestDto
+    ) {
+        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
+        ShopProfile shopProfile = shopProfileRepository.findById(shopId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop not found"));
+        ShopAuth shopAuth = shopProfile.getAuth();
+        if (!shopAuth.getId().equals(authId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot update another shop profile");
+        }
+        ShopWallet shopWallet = shopWalletRepository.findById(shopId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop wallet not found"));
+        shopMapper.updateProfile(shopProfile, shopProfileUpdateRequestDto);
+        shopProfile.setUpdatedAt(Instant.now());
+        shopProfileRepository.save(shopProfile);
+        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+    }
+
+    @Transactional
+    public ShopResponseVo updateCurrentProfile(
+            String authorization,
+            ShopProfileUpdateRequestDto shopProfileUpdateRequestDto
+    ) {
+        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
+        ShopProfile shopProfile = shopProfileRepository.findByAuthId(authId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop not found"));
+        ShopAuth shopAuth = shopProfile.getAuth();
+        ShopWallet shopWallet = shopWalletRepository.findById(shopProfile.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop wallet not found"));
+        shopMapper.updateProfile(shopProfile, shopProfileUpdateRequestDto);
+        shopProfile.setUpdatedAt(Instant.now());
+        shopProfileRepository.save(shopProfile);
         return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
     }
 

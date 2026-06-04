@@ -1,5 +1,6 @@
 package com.techie.microservices.customer.controller;
 
+import com.techie.microservices.customer.dto.CustomerProfileUpdateRequestDto;
 import com.techie.microservices.customer.dto.CustomerStatusUpdateRequestDto;
 import com.techie.microservices.customer.dto.CustomerWalletUpdateRequestDto;
 import com.techie.microservices.customer.service.CustomerService;
@@ -33,18 +34,41 @@ public class CustomerController {
         return customerService.syncCurrentCustomer(authorization);
     }
 
-    @PatchMapping("/{customerId}/status")
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    public CustomerResponseVo getCurrentCustomer(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return customerService.getCurrentCustomer(authorization);
+    }
+
+    @PatchMapping("/me/profile")
+    @ResponseStatus(HttpStatus.OK)
+    public CustomerResponseVo updateCurrentProfile(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @RequestBody CustomerProfileUpdateRequestDto customerProfileUpdateRequestDto
+    ) {
+        return customerService.updateCurrentProfile(authorization, customerProfileUpdateRequestDto);
+    }
+
+    @PatchMapping("/{customerId:[0-9a-fA-F-]{36}}/status")
     @ResponseStatus(HttpStatus.OK)
     public CustomerResponseVo updateCustomerStatus(@PathVariable UUID customerId,
                                                    @RequestBody CustomerStatusUpdateRequestDto customerStatusUpdateRequestDto) {
         return customerService.updateCustomerStatus(customerId, customerStatusUpdateRequestDto);
     }
 
-    @PatchMapping("/{customerId}/wallet")
+    @PatchMapping("/{customerId:[0-9a-fA-F-]{36}}/wallet")
     @ResponseStatus(HttpStatus.OK)
     public CustomerResponseVo updateWallet(@PathVariable UUID customerId,
                                            @RequestBody CustomerWalletUpdateRequestDto customerWalletUpdateRequestDto) {
         return customerService.updateWallet(customerId, customerWalletUpdateRequestDto);
+    }
+
+    @PatchMapping("/{customerId:[0-9a-fA-F-]{36}}/profile")
+    @ResponseStatus(HttpStatus.OK)
+    public CustomerResponseVo updateProfile(@PathVariable UUID customerId,
+                                            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+                                            @RequestBody CustomerProfileUpdateRequestDto customerProfileUpdateRequestDto) {
+        return customerService.updateProfile(customerId, authorization, customerProfileUpdateRequestDto);
     }
 
     @GetMapping
@@ -53,7 +77,7 @@ public class CustomerController {
         return customerService.getCustomers();
     }
 
-    @GetMapping("/{customerId}")
+    @GetMapping("/{customerId:[0-9a-fA-F-]{36}}")
     @ResponseStatus(HttpStatus.OK)
     public CustomerResponseVo getCustomer(@PathVariable UUID customerId) {
         return customerService.getCustomer(customerId);
