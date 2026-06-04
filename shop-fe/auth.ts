@@ -2,13 +2,13 @@ import NextAuth, { customFetch } from "next-auth";
 import Keycloak from "next-auth/providers/keycloak";
 import type { JWT } from "next-auth/jwt";
 
-const issuer = process.env.AUTH_ISSUER;
-const internalIssuer = process.env.AUTH_ISSUER_INTERNAL ?? issuer;
+export const authIssuer = process.env.AUTH_ISSUER;
+const internalIssuer = process.env.AUTH_ISSUER_INTERNAL ?? authIssuer;
 const clientId = process.env.AUTH_CLIENT_ID;
 const clientSecret = process.env.AUTH_CLIENT_SECRET;
 const scope = process.env.AUTH_SCOPE ?? "openid profile offline_access";
-const cookiePrefix = process.env.AUTH_COOKIE_PREFIX ?? "shop-fe";
-const authBasePath = process.env.AUTH_BASE_PATH ?? "/api/shop-fe/auth";
+export const authCookiePrefix = process.env.AUTH_COOKIE_PREFIX ?? "shop-fe";
+export const authBasePath = process.env.AUTH_BASE_PATH ?? "/api/shop-fe/auth";
 const useSecureCookies = process.env.AUTH_URL?.startsWith("https://") ?? false;
 const authCookieOptions = {
   httpOnly: true,
@@ -18,11 +18,11 @@ const authCookieOptions = {
 };
 const authCookies = {
   sessionToken: {
-    name: `${cookiePrefix}.authjs.session-token`,
+    name: `${authCookiePrefix}.authjs.session-token`,
     options: authCookieOptions,
   },
   callbackUrl: {
-    name: `${cookiePrefix}.authjs.callback-url`,
+    name: `${authCookiePrefix}.authjs.callback-url`,
     options: {
       sameSite: "lax" as const,
       path: authBasePath,
@@ -30,41 +30,41 @@ const authCookies = {
     },
   },
   csrfToken: {
-    name: `${cookiePrefix}.authjs.csrf-token`,
+    name: `${authCookiePrefix}.authjs.csrf-token`,
     options: authCookieOptions,
   },
   pkceCodeVerifier: {
-    name: `${cookiePrefix}.authjs.pkce.code_verifier`,
+    name: `${authCookiePrefix}.authjs.pkce.code_verifier`,
     options: {
       ...authCookieOptions,
       maxAge: 60 * 15,
     },
   },
   state: {
-    name: `${cookiePrefix}.authjs.state`,
+    name: `${authCookiePrefix}.authjs.state`,
     options: {
       ...authCookieOptions,
       maxAge: 60 * 15,
     },
   },
   nonce: {
-    name: `${cookiePrefix}.authjs.nonce`,
+    name: `${authCookiePrefix}.authjs.nonce`,
     options: authCookieOptions,
   },
 };
 
 const oidcFetch: typeof fetch = async (input, init) => {
-  if (!issuer || !internalIssuer || issuer === internalIssuer) {
+  if (!authIssuer || !internalIssuer || authIssuer === internalIssuer) {
     return fetch(input, init);
   }
 
   const requestUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
 
-  if (!requestUrl.startsWith(issuer)) {
+  if (!requestUrl.startsWith(authIssuer)) {
     return fetch(input, init);
   }
 
-  const rewrittenUrl = `${internalIssuer}${requestUrl.slice(issuer.length)}`;
+  const rewrittenUrl = `${internalIssuer}${requestUrl.slice(authIssuer.length)}`;
   return fetch(rewrittenUrl, init);
 };
 
@@ -113,16 +113,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   basePath: authBasePath,
   cookies: authCookies,
-  providers: issuer && clientId
+  providers: authIssuer && clientId
     ? [
         Keycloak({
-          issuer,
+          issuer: authIssuer,
           wellKnown: internalIssuer ? `${internalIssuer}/.well-known/openid-configuration` : undefined,
           clientId,
           clientSecret,
-          authorization: issuer
+          authorization: authIssuer
             ? {
-                url: `${issuer}/protocol/openid-connect/auth`,
+                url: `${authIssuer}/protocol/openid-connect/auth`,
                 params: {
                   scope,
                 },
