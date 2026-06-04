@@ -37,13 +37,15 @@ function expireAuthCookies(request: NextRequest, response: NextResponse): void {
       return;
     }
 
-    response.cookies.set({
-      name: cookie.name,
-      value: "",
-      expires: new Date(0),
-      maxAge: 0,
-      path: authBasePath,
-    });
+    for (const path of [authBasePath, "/"]) {
+      response.cookies.set({
+        name: cookie.name,
+        value: "",
+        expires: new Date(0),
+        maxAge: 0,
+        path,
+      });
+    }
   });
 }
 

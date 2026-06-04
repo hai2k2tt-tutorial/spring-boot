@@ -13,7 +13,7 @@ const useSecureCookies = process.env.AUTH_URL?.startsWith("https://") ?? false;
 const authCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
-  path: authBasePath,
+  path: "/",
   secure: useSecureCookies,
 };
 const authCookies = {
@@ -25,7 +25,7 @@ const authCookies = {
     name: `${authCookiePrefix}.authjs.callback-url`,
     options: {
       sameSite: "lax" as const,
-      path: authBasePath,
+      path: "/",
       secure: useSecureCookies,
     },
   },
