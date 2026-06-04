@@ -26,6 +26,7 @@ notification-service
 payment-service
 shop-service
 customer-service
+wallet-service
 "
 
 DEFAULT_FRONTEND_APPS="
@@ -34,6 +35,8 @@ admin-fe
 shop-fe
 customer-fe-next
 customer-fe-angular
+customer-wallet-fe
+shop-wallet-fe
 "
 
 BACKEND_MODULES="${BACKEND_MODULES:-$DEFAULT_BACKEND_MODULES}"

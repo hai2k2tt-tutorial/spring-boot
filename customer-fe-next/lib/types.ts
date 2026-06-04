@@ -226,6 +226,38 @@ export interface CustomerResponseVo {
   walletUpdatedAt: Instant;
 }
 
+export interface CustomerWalletResponseVo {
+  id?: UUID;
+  ownerType?: "CUSTOMER" | "SHOP" | string;
+  ownerId?: UUID;
+  customerId?: UUID;
+  balance: number;
+  currency: string;
+  updatedAt: Instant;
+}
+
+export interface CustomerWalletTransactionResponseVo {
+  id: UUID;
+  walletId?: UUID;
+  ownerType?: "CUSTOMER" | "SHOP" | string;
+  ownerId?: UUID;
+  customerId?: UUID;
+  type: "CREDIT" | "DEBIT" | string;
+  amount: number;
+  balanceAfter: number;
+  currency: string;
+  externalRef?: string;
+  description?: string;
+  createdAt: Instant;
+}
+
+export interface CustomerWalletMoneyRequestDto {
+  amount: number;
+  currency?: string;
+  externalRef?: string;
+  description?: string;
+}
+
 export interface ShopStatusUpdateRequestDto {
   status: AccountStatus | string;
 }

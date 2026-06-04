@@ -1,0 +1,5 @@
+apiVersion: v2
+name: shop-wallet-fe
+description: Shop wallet frontend application
+version: 0.1.0
+appVersion: "1.0.0"

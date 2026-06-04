@@ -271,6 +271,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      wallet-service:
+        condition: service_started
     ports:
       - "8085:8085"
     environment:
@@ -278,6 +280,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       ORDER_SERVICE_URL: http://order-service:8081
+      WALLET_SERVICE_URL: http://wallet-service:8088
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
@@ -322,6 +325,31 @@ services:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
 
+  wallet-service:
+    build:
+      context: .
+      dockerfile: wallet-service/Dockerfile.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      customer-service:
+        condition: service_started
+      shop-service:
+        condition: service_started
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/wallet_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      CUSTOMER_SERVICE_URL: http://customer-service:8087
+      SHOP_SERVICE_URL: http://shop-service:8086
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
+    volumes:
+      - ./:/workspace
+      - backend-maven-cache:/root/.m2
+
   api-gateway:
     build:
       context: .
@@ -341,6 +369,8 @@ services:
         condition: service_started
       customer-service:
         condition: service_started
+      wallet-service:
+        condition: service_started
     ports:
       - "9000:9000"
     environment:
@@ -358,6 +388,7 @@ services:
       PAYMENT_SERVICE_URL: http://payment-service:8085
       SHOP_SERVICE_URL: http://shop-service:8086
       CUSTOMER_SERVICE_URL: http://customer-service:8087
+      WALLET_SERVICE_URL: http://wallet-service:8088
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -470,6 +501,67 @@ services:
       - customer-fe-next-cache:/app/.next
       - frontend-npm-cache:/root/.npm
 
+
+  customer-wallet-fe:
+    build:
+      context: ./customer-wallet-fe
+      target: local
+    depends_on:
+      - api-gateway
+      - keycloak
+    ports:
+      - "3006:3005"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3006
+      NEXTAUTH_URL: http://localhost:3006
+      AUTH_ISSUER: http://localhost:8181/realms/ecommerce-customer
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/ecommerce-customer
+      AUTH_CLIENT_ID: customer-fe-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_COOKIE_PREFIX: customer-wallet-fe
+      AUTH_BASE_PATH: /api/customer-wallet-fe/auth
+      AUTH_SECRET: replace-with-a-long-random-customer-wallet-string
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./customer-wallet-fe:/app
+      - customer-wallet-fe-node-modules:/app/node_modules
+      - customer-wallet-fe-next-cache:/app/.next
+      - frontend-npm-cache:/root/.npm
+
+  shop-wallet-fe:
+    build:
+      context: ./shop-wallet-fe
+      target: local
+    depends_on:
+      - api-gateway
+      - keycloak
+    ports:
+      - "3007:3006"
+    environment:
+      API_BASE_URL: http://api-gateway:9000/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9000/api
+      AUTH_URL: http://localhost:3007
+      NEXTAUTH_URL: http://localhost:3007
+      AUTH_ISSUER: http://localhost:8181/realms/ecommerce-shop
+      AUTH_ISSUER_INTERNAL: http://keycloak:8080/realms/ecommerce-shop
+      AUTH_CLIENT_ID: shop-fe-client
+      AUTH_CLIENT_SECRET: ""
+      AUTH_SCOPE: openid profile offline_access
+      AUTH_COOKIE_PREFIX: shop-wallet-fe
+      AUTH_BASE_PATH: /api/shop-wallet-fe/auth
+      AUTH_SECRET: replace-with-a-long-random-shop-wallet-string
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./shop-wallet-fe:/app
+      - shop-wallet-fe-node-modules:/app/node_modules
+      - shop-wallet-fe-next-cache:/app/.next
+      - frontend-npm-cache:/root/.npm
+
   customer-fe-angular:
     build:
       context: ./customer-fe-angular
@@ -499,3 +591,7 @@ volumes:
   customer-fe-next-node-modules:
   customer-fe-next-cache:
   customer-fe-angular-node-modules:
+  customer-wallet-fe-node-modules:
+  customer-wallet-fe-next-cache:
+  shop-wallet-fe-node-modules:
+  shop-wallet-fe-next-cache:

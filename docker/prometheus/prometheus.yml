@@ -51,3 +51,9 @@ scrape_configs:
       - targets: ['customer-service:8087']
         labels:
           application: 'Customer Service'
+  - job_name: 'wallet-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['wallet-service:8088']
+        labels:
+          application: 'Wallet Service'

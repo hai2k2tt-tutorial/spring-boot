@@ -49,8 +49,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          DEFAULT_BACKEND_MODULES="api-gateway product-service inventory-service order-service notification-service payment-service shop-service customer-service"
-          DEFAULT_FRONTEND_APPS="landing-fe admin-fe shop-fe customer-fe-next customer-fe-angular"
+          DEFAULT_BACKEND_MODULES="api-gateway product-service inventory-service order-service notification-service payment-service shop-service customer-service wallet-service"
+          DEFAULT_FRONTEND_APPS="landing-fe admin-fe shop-fe customer-fe-next customer-fe-angular customer-wallet-fe shop-wallet-fe"
 
           normalize_list() {
             printf '%s' "$1" | tr ',\n' '  ' | xargs
@@ -113,6 +113,9 @@ jobs:
                   customer-service/*)
                     backend_modules="$(append_unique "$backend_modules" "customer-service")"
                     ;;
+                  wallet-service/*)
+                    backend_modules="$(append_unique "$backend_modules" "wallet-service")"
+                    ;;
                   landing-fe/*)
                     frontend_apps="$(append_unique "$frontend_apps" "landing-fe")"
                     ;;
@@ -127,6 +130,12 @@ jobs:
                     ;;
                   customer-fe-angular/*)
                     frontend_apps="$(append_unique "$frontend_apps" "customer-fe-angular")"
+                    ;;
+                  customer-wallet-fe/*)
+                    frontend_apps="$(append_unique "$frontend_apps" "customer-wallet-fe")"
+                    ;;
+                  shop-wallet-fe/*)
+                    frontend_apps="$(append_unique "$frontend_apps" "shop-wallet-fe")"
                     ;;
                 esac
               done < <(printf '%s\n' "$changed_files")
@@ -256,17 +265,20 @@ jobs:
               payment-service) printf '%s' "paymentService" ;;
               shop-service) printf '%s' "shopService" ;;
               customer-service) printf '%s' "customerService" ;;
+              wallet-service) printf '%s' "walletService" ;;
               landing-fe) printf '%s' "landingFe" ;;
               admin-fe) printf '%s' "adminFe" ;;
               shop-fe) printf '%s' "shopFe" ;;
               customer-fe-next) printf '%s' "customerFeNext" ;;
               customer-fe-angular) printf '%s' "customerFeAngular" ;;
+              customer-wallet-fe) printf '%s' "customerWalletFe" ;;
+              shop-wallet-fe) printf '%s' "shopWalletFe" ;;
               *) echo "Unknown deploy name: $1" >&2; return 1 ;;
             esac
           }
 
           if [ "$DEPLOY_MODE" = "all" ]; then
-            deployments="api-gateway product-service order-service inventory-service notification-service payment-service shop-service customer-service landing-fe admin-fe shop-fe customer-fe-next customer-fe-angular"
+            deployments="api-gateway product-service order-service inventory-service notification-service payment-service shop-service customer-service wallet-service landing-fe admin-fe shop-fe customer-fe-next customer-fe-angular customer-wallet-fe shop-wallet-fe"
           else
             deployments=""
             if [ "$BACKEND_MODULES" != "__NONE__" ]; then

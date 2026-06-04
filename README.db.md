@@ -25,6 +25,7 @@ This document summarizes the database tables/collections for selected services b
   - `shop-service`
   - `customer-service`
   - `payment-service`
+  - `wallet-service`
 
 ## api-gateway
 
@@ -136,9 +137,61 @@ sh payment-service/scripts/db.sh update
 sh payment-service/scripts/db.sh rollback-last
 ```
 
+## wallet-service (Postgres)
+
+- **Database:** `wallet_service`
+- **Tables:** `t_wallet`, `t_wallet_transaction`
+- **Responsibility:** owns operational customer and shop wallet balances used by wallet top-up, wallet checkout payment, and shop credit after purchase.
+- **t_wallet columns:**
+  - `id` (UUID, PK)
+  - `owner_type` (`CUSTOMER` / `SHOP`)
+  - `owner_id` (UUID; customer profile id or shop profile id)
+  - `balance` (numeric / BigDecimal)
+  - `currency` (varchar, default application value `USD`)
+  - `created_at` (timestamp with time zone)
+  - `updated_at` (timestamp with time zone)
+- **t_wallet_transaction columns:**
+  - `id` (UUID, PK)
+  - `wallet_id` (UUID, FK to `t_wallet`)
+  - `owner_type` (`CUSTOMER` / `SHOP`)
+  - `owner_id` (UUID)
+  - `type` (`CREDIT` / `DEBIT`)
+  - `amount` (numeric / BigDecimal)
+  - `balance_after` (numeric / BigDecimal)
+  - `currency` (varchar)
+  - `external_ref` (varchar, nullable; used for idempotent debit/credit)
+  - `description` (varchar, nullable)
+  - `created_at` (timestamp with time zone)
+- **Indexes/constraints:**
+  - unique owner wallet: `owner_type`, `owner_id`
+  - transaction lookup: `owner_type`, `owner_id`, `created_at`
+  - idempotency key: unique `owner_type`, `owner_id`, `type`, `external_ref`
+  - check constraints for owner and transaction enum values
+- **Application structure:** wallet-service resolves current customer/shop identity by calling customer-service or shop-service with the caller bearer token. Payment-service calls wallet-service to debit customer wallets and credit shop wallets for `BALANCE` payments.
+- **Migration flow:** application startup does not run DB migration automatically. `wallet-service` uses Liquibase and migrations are executed manually with Maven commands or the local wrapper script.
+
+### wallet-service manual migration commands
+
+Run from repository root:
+
+```bash
+mvn -pl wallet-service -DskipTests liquibase:status
+mvn -pl wallet-service -DskipTests liquibase:update
+mvn -pl wallet-service -DskipTests -Dliquibase.rollbackCount=1 liquibase:rollback
+```
+
+Wrapper script:
+
+```bash
+sh wallet-service/scripts/db.sh status
+sh wallet-service/scripts/db.sh update
+sh wallet-service/scripts/db.sh rollback-last
+```
+
 ## shop-service (Postgres)
 
 - **Tables:** `t_shop_auth`, `t_shop_profile`, `t_shop_wallet`
+- **Wallet note:** `t_shop_wallet` remains in shop-service schema for profile-sync compatibility. Operational shop balances for payments are owned by `wallet-service.t_wallet` with `owner_type = SHOP`.
 - **t_shop_auth columns:**
   - `id` (UUID, PK; Keycloak `sub`)
   - `email` (varchar, unique)
@@ -183,6 +236,7 @@ sh shop-service/scripts/db.sh rollback-last
 ## customer-service (Postgres)
 
 - **Tables:** `t_customer_auth`, `t_customer_profile`, `t_customer_wallet`
+- **Wallet note:** `t_customer_wallet` remains in customer-service schema for profile-sync compatibility. Operational customer balances for wallet top-up and checkout payment are owned by `wallet-service.t_wallet` with `owner_type = CUSTOMER`.
 - **t_customer_auth columns:**
   - `id` (UUID, PK; Keycloak `sub`)
   - `email` (varchar, unique)
@@ -328,6 +382,8 @@ sh inventory-service/scripts/db.sh rollback-last
 - `product-service/liquibase.properties`
 - `payment-service/src/main/resources/db/changelog/db.changelog-master.xml`
 - `payment-service/liquibase.properties`
+- `wallet-service/src/main/resources/db/changelog/db.changelog-master.xml`
+- `wallet-service/liquibase.properties`
 - `shop-service/src/main/resources/db/changelog/db.changelog-master.xml`
 - `shop-service/liquibase.properties`
 - `customer-service/src/main/resources/db/changelog/db.changelog-master.xml`
@@ -337,6 +393,8 @@ sh inventory-service/scripts/db.sh rollback-last
 - `product-service/src/main/java/com/techie/microservices/product/model/Category.java`
 - `inventory-service/src/main/java/com/techie/microservices/inventory/model/Sku.java`
 - `payment-service/src/main/java/com/techie/microservices/payment/model/Payment.java`
+- `wallet-service/src/main/java/com/techie/microservices/wallet/model/Wallet.java`
+- `wallet-service/src/main/java/com/techie/microservices/wallet/model/WalletTransaction.java`
 - `shop-service/src/main/java/com/techie/microservices/shop/model/ShopProfile.java`
 - `customer-service/src/main/java/com/techie/microservices/customer/model/CustomerProfile.java`
 - `api-gateway/src/main/resources/application.properties`

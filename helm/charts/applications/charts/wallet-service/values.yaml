@@ -1,0 +1,16 @@
+enabled: true
+namespace: microservices
+image: docker.io/hai2k2tt/wallet-service:2-amd64
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+service:
+  port: 8088
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+config:
+  datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/wallet_service

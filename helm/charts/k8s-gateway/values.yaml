@@ -64,6 +64,14 @@ routes:
     hostname: customer-fe-next.haint.fyi
     backendRefName: customer-fe-next
     backendRefPort: 3004
+  - name: customer-wallet-fe-route
+    hostname: customer-wallet-fe.haint.fyi
+    backendRefName: customer-wallet-fe
+    backendRefPort: 3005
+  - name: shop-wallet-fe-route
+    hostname: shop-wallet-fe.haint.fyi
+    backendRefName: shop-wallet-fe
+    backendRefPort: 3006
   - name: customer-fe-angular-route
     hostname: customer-fe-angular.haint.fyi
     backendRefName: customer-fe-angular
@@ -84,6 +92,12 @@ proxySettingsPolicies:
       - group: gateway.networking.k8s.io
         kind: HTTPRoute
         name: customer-fe-next-route
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: customer-wallet-fe-route
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: shop-wallet-fe-route
       - group: gateway.networking.k8s.io
         kind: HTTPRoute
         name: customer-fe-angular-route

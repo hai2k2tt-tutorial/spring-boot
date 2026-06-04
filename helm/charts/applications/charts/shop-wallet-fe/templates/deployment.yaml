@@ -1,0 +1,64 @@
+{{- if .Values.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-wallet-fe
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: shop-wallet-fe
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: shop-wallet-fe
+  template:
+    metadata:
+      labels:
+        app: shop-wallet-fe
+    spec:
+{{- with .Values.global.workloadScheduling.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.global.workloadScheduling.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+      containers:
+        - name: shop-wallet-fe
+          image: {{ .Values.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: API_BASE_URL
+              value: {{ .Values.config.apiBaseUrl | quote }}
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: {{ .Values.config.nextPublicApiBaseUrl | quote }}
+            - name: AUTH_URL
+              value: {{ .Values.config.authUrl | quote }}
+            - name: NEXTAUTH_URL
+              value: {{ .Values.config.authUrl | quote }}
+            - name: AUTH_ISSUER
+              value: {{ .Values.config.authIssuer | quote }}
+            - name: AUTH_ISSUER_INTERNAL
+              value: {{ .Values.config.authIssuerInternal | quote }}
+            - name: AUTH_CLIENT_ID
+              value: {{ .Values.config.authClientId | quote }}
+            - name: AUTH_CLIENT_SECRET
+              value: {{ .Values.config.authClientSecret | quote }}
+            - name: AUTH_SCOPE
+              value: {{ .Values.config.authScope | quote }}
+            - name: AUTH_COOKIE_PREFIX
+              value: {{ .Values.config.authCookiePrefix | quote }}
+            - name: AUTH_BASE_PATH
+              value: {{ .Values.config.authBasePath | quote }}
+            - name: AUTH_SECRET
+              value: {{ .Values.config.authSecret | quote }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          resources:
+{{ toYaml .Values.resources | nindent 12 }}
+{{- end }}

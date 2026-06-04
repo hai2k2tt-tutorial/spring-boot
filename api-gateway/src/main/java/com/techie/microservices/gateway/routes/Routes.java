@@ -31,6 +31,9 @@ public class Routes {
     @Value("${payment.service.url}")
     private String paymentServiceUrl;
 
+    @Value("${wallet.service.url}")
+    private String walletServiceUrl;
+
     @Value("${shop.service.url}")
     private String shopServiceUrl;
 
@@ -104,6 +107,25 @@ public class Routes {
                 .route(RequestPredicates.path("/api/payments/**"), HandlerFunctions.http(paymentServiceUrl))
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("paymentServiceCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> walletServiceRoute() {
+        return GatewayRouterFunctions.route("wallet_service")
+                .route(RequestPredicates.path("/api/wallet/**"), HandlerFunctions.http(walletServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("walletServiceCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> walletServiceSwaggerRoute() {
+        return GatewayRouterFunctions.route("wallet_service_swagger")
+                .route(RequestPredicates.path("/aggregate/wallet-service/v3/api-docs"), HandlerFunctions.http(walletServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("walletServiceSwaggerCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
+                .filter(setPath("/api-docs"))
                 .build();
     }
 

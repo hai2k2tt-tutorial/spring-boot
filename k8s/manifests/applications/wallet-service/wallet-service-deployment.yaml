@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wallet-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wallet-service
+  template:
+    metadata:
+      labels:
+        app: wallet-service
+    spec:
+      containers:
+        - name: wallet-service
+          image: docker.io/hai2k2tt/wallet-service:2-arm64
+          ports:
+            - containerPort: 8088
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: wallet-service-config
+                  key: SPRING_DATASOURCE_URL
+            - name: LOKI_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: LOKI_URL
+            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+            - name: CUSTOMER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: CUSTOMER_SERVICE_URL
+            - name: SHOP_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: SHOP_SERVICE_URL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

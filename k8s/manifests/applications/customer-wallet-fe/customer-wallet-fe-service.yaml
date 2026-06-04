@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-wallet-fe
+spec:
+  selector:
+    app: customer-wallet-fe
+  ports:
+    - protocol: TCP
+      port: 3005
+      targetPort: 3005

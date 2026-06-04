@@ -1,15 +1,18 @@
 package com.techie.microservices.payment.service;
 
 import com.techie.microservices.payment.client.OrderClient;
+import com.techie.microservices.payment.client.WalletClient;
 import com.techie.microservices.payment.dto.OrderResponseDto;
 import com.techie.microservices.payment.dto.PaymentCreateRequestDto;
 import com.techie.microservices.payment.dto.PaymentProviderWebhookRequestDto;
 import com.techie.microservices.payment.dto.PaymentStatusUpdateRequestDto;
+import com.techie.microservices.payment.dto.WalletMoneyRequestDto;
 import com.techie.microservices.payment.mapper.PaymentHistoryMapper;
 import com.techie.microservices.payment.mapper.PaymentMapper;
 import com.techie.microservices.payment.model.Payment;
 import com.techie.microservices.payment.model.PaymentHistory;
 import com.techie.microservices.payment.model.PaymentHistoryType;
+import com.techie.microservices.payment.model.PaymentMethod;
 import com.techie.microservices.payment.model.PaymentStatus;
 import com.techie.microservices.payment.repository.PaymentHistoryRepository;
 import com.techie.microservices.payment.repository.PaymentRepository;
@@ -26,8 +29,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +41,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentHistoryRepository paymentHistoryRepository;
     private final OrderClient orderClient;
+    private final WalletClient walletClient;
     private final PaymentMapper paymentMapper;
     private final PaymentHistoryMapper paymentHistoryMapper;
     private final TokenIdentity tokenIdentity;
@@ -55,6 +61,11 @@ public class PaymentService {
         UUID customerId = tokenIdentity.currentUserId(authorization);
         Payment existingPayment = findExistingPayment(customerId, paymentCreateRequestDto.orderId(), idempotencyKey);
         if (existingPayment != null) {
+            if (existingPayment.getMethod() == PaymentMethod.BALANCE && existingPayment.getStatus() == PaymentStatus.PENDING) {
+                OrderResponseDto order = orderClient.getOrder(existingPayment.getOrderId().toString(), authorization);
+                settleBalancePayment(existingPayment, order, authorization);
+                return paymentMapper.toVo(existingPayment);
+            }
             return paymentMapper.toVo(existingPayment);
         }
 
@@ -65,11 +76,52 @@ public class PaymentService {
 
         Payment payment = paymentMapper.toEntity(paymentCreateRequestDto, customerId, order.totalAmount(), normalizeIdempotencyKey(idempotencyKey));
         paymentRepository.save(payment);
-        applyMockProviderSession(payment);
+        if (payment.getMethod() == PaymentMethod.BALANCE) {
+            settleBalancePayment(payment, order, authorization);
+        } else {
+            applyMockProviderSession(payment);
+        }
         paymentRepository.save(payment);
         paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
         log.info("Payment created successfully");
         return paymentMapper.toVo(payment);
+    }
+
+    private void settleBalancePayment(Payment payment, OrderResponseDto order, String authorization) {
+        if (payment.getStatus() == PaymentStatus.SUCCESS) {
+            return;
+        }
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only pending wallet payments can be settled");
+        }
+
+        String paymentRef = payment.getId().toString();
+        walletClient.debitCurrentCustomerWallet(
+                new WalletMoneyRequestDto(payment.getAmount(), "USD", paymentRef, "Order " + order.orderNumber()),
+                authorization
+        );
+
+        Map<UUID, java.math.BigDecimal> amountByShop = order.items().stream()
+                .collect(Collectors.groupingBy(
+                        OrderResponseDto.OrderItemResponseDto::shopId,
+                        Collectors.reducing(
+                                java.math.BigDecimal.ZERO,
+                                item -> item.price().multiply(java.math.BigDecimal.valueOf(item.quantity())),
+                                java.math.BigDecimal::add
+                        )
+                ));
+        amountByShop.forEach((shopId, amount) -> walletClient.creditShopWallet(
+                shopId,
+                new WalletMoneyRequestDto(amount, "USD", paymentRef + ":" + shopId, "Order " + order.orderNumber())
+        ));
+
+        orderClient.confirmPaid(payment.getOrderId().toString());
+        payment.setStatus(PaymentStatus.SUCCESS);
+        payment.setSessionStatus("COMPLETED");
+        payment.setPaymentUrl(null);
+        payment.setClientSecret(null);
+        payment.setProvider("WALLET");
+        payment.setProviderSessionId(null);
     }
 
     @Transactional

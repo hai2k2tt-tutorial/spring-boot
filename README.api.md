@@ -11,8 +11,9 @@ Use the API gateway at `http://localhost:9000` for normal client traffic. The ga
 | payment-service | `http://localhost:8085` | `/api/payments/**` | `/aggregate/payment-service/v3/api-docs` |
 | shop-service | `http://localhost:8086` | `/api/shops/**` | `/aggregate/shop-service/v3/api-docs` |
 | customer-service | `http://localhost:8087` | `/api/customers/**` | `/aggregate/customer-service/v3/api-docs` |
+| wallet-service | `http://localhost:8088` | `/api/wallet/**` | `/aggregate/wallet-service/v3/api-docs` |
 
-Gateway security permits Swagger/OpenAPI and Prometheus endpoints without authentication. Other API calls require JWT authentication through the gateway. Customer endpoints accept customer-issuer tokens or admin tokens with the `admin` realm role; shop endpoints accept shop-issuer tokens or admin tokens; all other API endpoints require an authenticated JWT.
+Gateway security permits Swagger/OpenAPI and Prometheus endpoints without authentication. Other API calls require JWT authentication through the gateway. Customer endpoints accept customer-issuer tokens or admin tokens with the `admin` realm role; shop endpoints accept shop-issuer tokens or admin tokens. Wallet customer endpoints use the customer realm token, wallet shop endpoints use the shop realm token, and internal shop credit calls are made by trusted backend services.
 
 ## Product Service
 
@@ -287,6 +288,64 @@ Response models:
 
 Payment history `type` values are `TOPUP`, `PURCHASE`, and `REFUND`.
 
+For `BALANCE` payments, payment-service calls wallet-service to debit the current customer wallet and credit each shop wallet. `CARD` and `MANUAL` keep using the mock payment provider flow and are finalized by webhook/status update.
+
+## Wallet Service
+
+Wallet service owns operational customer and shop wallet balances. Customer wallet routes require the customer SSO realm token. Shop wallet routes require the shop SSO realm token. Internal shop credits are used by payment-service when an order is paid from customer wallet balance.
+
+| Method | Path | Status | Params | Request body | Response | Access/notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| `GET` | `/api/wallet/customer/me` | `200 OK` | None | None | `WalletResponseVo` | - customer only; creates a zero-balance wallet if missing |
+| `GET` | `/api/wallet/customer/me/transactions` | `200 OK` | None | None | `WalletTransactionResponseVo[]` | - customer only; newest first |
+| `POST` | `/api/wallet/customer/me/deposits` | `200 OK` | None | `WalletMoneyRequestDto` | `WalletResponseVo` | - customer only; local wallet top-up simulator |
+| `POST` | `/api/wallet/customer/me/debits` | `200 OK` | None | `WalletMoneyRequestDto` | `WalletResponseVo` | - customer/internal; idempotent when `externalRef` is supplied |
+| `GET` | `/api/wallet/shop/me` | `200 OK` | None | None | `WalletResponseVo` | - shop only; creates a zero-balance wallet if missing |
+| `GET` | `/api/wallet/shop/me/transactions` | `200 OK` | None | None | `WalletTransactionResponseVo[]` | - shop only; newest first |
+| `POST` | `/api/wallet/shops/{shopId}/credits` | `200 OK` | `shopId` path `UUID` | `WalletMoneyRequestDto` | `WalletResponseVo` | - trusted backend/internal; idempotent when `externalRef` is supplied |
+
+`WalletMoneyRequestDto`
+
+```json
+{
+  "amount": 0,
+  "currency": "USD",
+  "externalRef": "string",
+  "description": "string"
+}
+```
+
+`WalletResponseVo`
+
+```json
+{
+  "id": "UUID",
+  "ownerType": "CUSTOMER | SHOP",
+  "ownerId": "UUID",
+  "balance": 0,
+  "currency": "USD",
+  "updatedAt": "Instant"
+}
+```
+
+`WalletTransactionResponseVo`
+
+```json
+{
+  "id": "UUID",
+  "walletId": "UUID",
+  "ownerType": "CUSTOMER | SHOP",
+  "ownerId": "UUID",
+  "type": "CREDIT | DEBIT",
+  "amount": 0,
+  "balanceAfter": 0,
+  "currency": "USD",
+  "externalRef": "string",
+  "description": "string",
+  "createdAt": "Instant"
+}
+```
+
 ## Customer Service
 
 | Method | Path | Status | Params | Request body | Response | Access/notes |
@@ -513,7 +572,7 @@ Failure cases:
 
 #### `POST /api/order/checkout`
 
-Success `201 Created`: creates/reuses an order, creates or recovers a pending payment, and returns `CheckoutResponseVo` with both `order` and `payment`.
+Success `201 Created`: creates/reuses an order, creates or recovers a payment, and returns `CheckoutResponseVo` with both `order` and `payment`. `CARD` and `MANUAL` create a pending mock-provider payment session. `BALANCE` pays from the customer wallet immediately, credits shop wallets by order item shop totals, marks payment `SUCCESS`, and confirms the order as paid.
 
 Failure cases:
 
@@ -553,7 +612,7 @@ Failure cases:
 
 #### `POST /api/payments`
 
-Success `201 Created`: creates a pending payment for the current customer order, initializes mock provider session fields, creates purchase history, and returns `PaymentResponseVo`. If a non-blank `Idempotency-Key` or existing pending payment matches, the existing payment is returned.
+Success `201 Created`: creates a payment for the current customer order and returns `PaymentResponseVo`. `CARD` and `MANUAL` initialize mock provider session fields and stay `PENDING`. `BALANCE` debits the customer wallet, credits the shop wallet or wallets, confirms the order as paid, and returns a `SUCCESS` payment. If a non-blank `Idempotency-Key` or existing pending payment matches, the existing payment is returned.
 
 Failure cases:
 
@@ -569,6 +628,46 @@ Failure cases:
 | `401 Unauthorized` | `Invalid bearer token` | Bearer token structure or payload is invalid. |
 | `403 Forbidden` | `Order does not belong to current customer` | Order exists but belongs to another customer. |
 | `404 Not Found` | Upstream message such as `Order not found` | Order lookup fails. |
+| `400 Bad Request` | `Wallet currency does not match request currency` | `BALANCE` payment request currency does not match the wallet currency. |
+| `409 Conflict` | `Insufficient wallet balance` | `BALANCE` payment exceeds the current customer wallet balance. |
+
+### Wallet Service Mutations
+
+#### `POST /api/wallet/customer/me/deposits`
+
+Success `200 OK`: credits the current customer wallet and records a `CREDIT` transaction.
+
+Failure cases:
+
+| Status | Message | When |
+| --- | --- | --- |
+| `400 Bad Request` | `Amount must be greater than zero` | Request body is missing, amount is missing, or amount is not positive. |
+| `400 Bad Request` | `Wallet currency does not match request currency` | A non-blank request currency does not match the wallet currency. |
+| `401 Unauthorized` | Token/auth messages | Customer token is missing or invalid. |
+
+#### `POST /api/wallet/customer/me/debits`
+
+Success `200 OK`: debits the current customer wallet and records a `DEBIT` transaction. If the same customer, transaction type, and `externalRef` already exist, the call returns the current wallet without applying the debit again.
+
+Failure cases:
+
+| Status | Message | When |
+| --- | --- | --- |
+| `400 Bad Request` | `Amount must be greater than zero` | Request body is missing, amount is missing, or amount is not positive. |
+| `400 Bad Request` | `Wallet currency does not match request currency` | A non-blank request currency does not match the wallet currency. |
+| `401 Unauthorized` | Token/auth messages | Customer token is missing or invalid. |
+| `409 Conflict` | `Insufficient wallet balance` | Debit would make the wallet balance negative. |
+
+#### `POST /api/wallet/shops/{shopId}/credits`
+
+Success `200 OK`: credits the target shop wallet and records a `CREDIT` transaction. If the same shop, transaction type, and `externalRef` already exist, the call returns the current wallet without applying the credit again.
+
+Failure cases:
+
+| Status | Message | When |
+| --- | --- | --- |
+| `400 Bad Request` | `Amount must be greater than zero` | Request body is missing, amount is missing, or amount is not positive. |
+| `400 Bad Request` | `Wallet currency does not match request currency` | A non-blank request currency does not match the wallet currency. |
 
 #### `POST /api/payments/webhooks/mock-provider`
 

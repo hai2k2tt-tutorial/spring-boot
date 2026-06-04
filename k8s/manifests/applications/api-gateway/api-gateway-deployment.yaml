@@ -88,6 +88,11 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: CUSTOMER_SERVICE_URL
+            - name: WALLET_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: WALLET_SERVICE_URL
           resources:
             requests:
               cpu: 100m

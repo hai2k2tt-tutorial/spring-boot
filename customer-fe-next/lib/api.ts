@@ -9,6 +9,9 @@ import {
   CategoryResponseVo,
   CheckoutCreateRequestDto,
   CustomerResponseVo,
+  CustomerWalletMoneyRequestDto,
+  CustomerWalletResponseVo,
+  CustomerWalletTransactionResponseVo,
   CustomerProfileUpdateRequestDto,
   CustomerStatusUpdateRequestDto,
   CustomerWalletUpdateRequestDto,
@@ -352,6 +355,35 @@ export async function syncCurrentCustomer(): Promise<CustomerResponseVo> {
 export async function fetchCurrentCustomer(): Promise<CustomerResponseVo> {
   try {
     const response = await api.get<CustomerResponseVo>("/customers/me");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentCustomerWallet(): Promise<CustomerWalletResponseVo> {
+  try {
+    const response = await api.get<CustomerWalletResponseVo>("/wallet/customer/me");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentCustomerWalletTransactions(): Promise<CustomerWalletTransactionResponseVo[]> {
+  try {
+    const response = await api.get<CustomerWalletTransactionResponseVo[]>("/wallet/customer/me/transactions");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function depositCurrentCustomerWallet(
+  deposit: CustomerWalletMoneyRequestDto
+): Promise<CustomerWalletResponseVo> {
+  try {
+    const response = await api.post<CustomerWalletResponseVo>("/wallet/customer/me/deposits", deposit);
     return response.data;
   } catch (error) {
     throw parseError(error);

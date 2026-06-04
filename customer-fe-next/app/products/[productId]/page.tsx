@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ImageIcon, LoaderCircle, ShoppingCart, Store } from "lucide-react";
+import { ArrowLeft, CreditCard, ImageIcon, LoaderCircle, QrCode, ShoppingCart, Store, Wallet } from "lucide-react";
 import { use, useMemo } from "react";
 import { FormProvider, Path, useForm, useWatch } from "react-hook-form";
 import { signIn, useSession } from "next-auth/react";
@@ -15,8 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
-import { createOrderCheckout, fetchAttributes, fetchProduct, fetchShopByProductShopId, fetchSkus } from "@/lib/api";
-import { AttributeResponseVo, AttributeValueResponseVo, SkuResponseVo } from "@/lib/types";
+import { createOrderCheckout, fetchAttributes, fetchCurrentCustomerWallet, fetchProduct, fetchShopByProductShopId, fetchSkus } from "@/lib/api";
+import { AttributeResponseVo, AttributeValueResponseVo, PaymentMethod, SkuResponseVo } from "@/lib/types";
 import { createUuid } from "@/lib/uuid";
 
 type ProductDetailPageProps = {
@@ -36,6 +36,7 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 const orderSchema = z.object({
   quantity: z.coerce.number().int().min(1, "Quantity must be greater than 0"),
   attributeValueIds: z.record(z.string(), z.string()),
+  paymentMethod: z.enum(["CARD", "MANUAL", "BALANCE"]),
 });
 
 type OrderFormInput = z.input<typeof orderSchema>;
@@ -88,6 +89,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     defaultValues: {
       quantity: "1",
       attributeValueIds: {},
+      paymentMethod: "CARD",
     },
   });
 
@@ -125,16 +127,40 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     retry: 1,
   });
 
+  const walletQuery = useQuery({
+    queryKey: ["customer-wallet"],
+    queryFn: fetchCurrentCustomerWallet,
+    enabled: status === "authenticated",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+
   const orderMutation = useMutation({
-    mutationFn: ({ skuCode, quantity, idempotencyKey }: { skuCode: string; quantity: number; idempotencyKey: string }) =>
-      createOrderCheckout({ items: [{ skuCode, quantity }] }, "CARD", idempotencyKey),
+    mutationFn: ({
+      skuCode,
+      quantity,
+      paymentMethod,
+      idempotencyKey,
+    }: {
+      skuCode: string;
+      quantity: number;
+      paymentMethod: PaymentMethod;
+      idempotencyKey: string;
+    }) => createOrderCheckout({ items: [{ skuCode, quantity }] }, paymentMethod, idempotencyKey),
     onSuccess: async (checkout) => {
       await Promise.allSettled([
         skusQuery.refetch(),
         queryClient.invalidateQueries({ queryKey: ["customer-orders"] }),
         queryClient.invalidateQueries({ queryKey: ["customer-payments"] }),
         queryClient.invalidateQueries({ queryKey: ["customer-products"] }),
+        queryClient.invalidateQueries({ queryKey: ["customer-wallet"] }),
+        queryClient.invalidateQueries({ queryKey: ["customer-wallet-transactions"] }),
       ]);
+
+      if (checkout.payment.method === "BALANCE") {
+        router.push(`/orders/${checkout.order.id}`);
+        return;
+      }
 
       if (checkout.paymentUrl) {
         window.location.assign(checkout.paymentUrl);
@@ -161,6 +187,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     control: form.control,
     name: "quantity",
   });
+  const paymentMethod = useWatch({
+    control: form.control,
+    name: "paymentMethod",
+  }) ?? "CARD";
   const quantity = Number(watchedQuantity || 0);
 
   const attributeValueLookup = useMemo(() => {
@@ -181,9 +211,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const stock = selectedSku?.quantity ?? 0;
   const unitPrice = selectedSku?.priceOverride ?? product?.price ?? 0;
   const orderTotal = Math.max(quantity, 0) * unitPrice;
+  const walletBalance = Number(walletQuery.data?.balance ?? 0);
+  const walletCurrency = walletQuery.data?.currency ?? "USD";
+  const walletInsufficient = paymentMethod === "BALANCE" && walletBalance < orderTotal;
   const loading = productQuery.isLoading || attributesQuery.isLoading || skusQuery.isLoading;
   const isError = productQuery.isError || attributesQuery.isError || skusQuery.isError;
-  const cannotOrder = !allAttributesSelected || !selectedSku || stock < quantity || quantity < 1 || orderMutation.isPending;
+  const cannotOrder = !allAttributesSelected || !selectedSku || stock < quantity || quantity < 1 || walletInsufficient || orderMutation.isPending;
   const shopName = shopQuery.data?.shopName ?? "Shop";
   const shopHref = shopQuery.data?.shopId
     ? `/shops/${shopQuery.data.shopId}`
@@ -233,7 +266,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       return;
     }
 
-    await orderMutation.mutateAsync({ skuCode: sku.skuCode, quantity: values.quantity, idempotencyKey: createUuid() });
+    await orderMutation.mutateAsync({
+      skuCode: sku.skuCode,
+      quantity: values.quantity,
+      paymentMethod: values.paymentMethod,
+      idempotencyKey: createUuid(),
+    });
   });
 
   return (
@@ -258,7 +296,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       </div>
 
       {status !== "authenticated" ? <Alert>Login is required before placing orders.</Alert> : null}
-      {orderMutation.isSuccess ? <Alert variant="success">Order created. Redirecting to payment...</Alert> : null}
+      {orderMutation.isSuccess ? <Alert variant="success">Order created. Finalizing checkout...</Alert> : null}
       {orderMutation.isError ? (
         <Alert variant="destructive">{getErrorMessage(orderMutation.error, "Order failed, please try again later.")}</Alert>
       ) : null}
@@ -406,6 +444,38 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   {!allAttributesSelected ? <p className="mt-4 text-sm text-slate-500">Choose all product options before checkout.</p> : null}
                   {allAttributesSelected && !selectedSku ? <p className="mt-4 text-sm text-red-600">This option combination is not available.</p> : null}
                   {selectedSku && stock < quantity ? <p className="mt-4 text-sm text-red-600">Requested quantity is higher than stock.</p> : null}
+                  <div className="mt-5 space-y-3">
+                    <div>
+                      <h3 className="font-semibold text-slate-950">Payment method</h3>
+                      <p className="mt-1 text-sm text-slate-500">Card and QR use the current mock payment simulator. Wallet pays immediately from your balance.</p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <PaymentMethodButton
+                        icon={CreditCard}
+                        label="Card"
+                        description="Mock card checkout"
+                        selected={paymentMethod === "CARD"}
+                        onClick={() => form.setValue("paymentMethod", "CARD", { shouldDirty: true })}
+                      />
+                      <PaymentMethodButton
+                        icon={QrCode}
+                        label="Scan QR"
+                        description="Mock QR checkout"
+                        selected={paymentMethod === "MANUAL"}
+                        onClick={() => form.setValue("paymentMethod", "MANUAL", { shouldDirty: true })}
+                      />
+                      <PaymentMethodButton
+                        icon={Wallet}
+                        label="My wallet"
+                        description={`${formatMoney(walletBalance)} ${walletCurrency}`}
+                        selected={paymentMethod === "BALANCE"}
+                        onClick={() => form.setValue("paymentMethod", "BALANCE", { shouldDirty: true })}
+                      />
+                    </div>
+                    {walletInsufficient ? (
+                      <p className="text-sm text-red-600">Your wallet balance is lower than the order total.</p>
+                    ) : null}
+                  </div>
                   <Button type="submit" className="mt-5 w-full bg-orange-600 text-white hover:bg-orange-700" disabled={cannotOrder}>
                     {orderMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
                     {status === "authenticated" ? "Buy now" : "Login to order"}
@@ -417,5 +487,35 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </section>
       ) : null}
     </main>
+  );
+}
+
+function PaymentMethodButton({
+  icon: Icon,
+  label,
+  description,
+  selected,
+  onClick,
+}: {
+  icon: typeof CreditCard;
+  label: string;
+  description: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        selected
+          ? "rounded-2xl border border-slate-950 bg-white p-3 text-left shadow-sm"
+          : "rounded-2xl border border-slate-200 bg-white p-3 text-left hover:border-slate-300"
+      }
+    >
+      <Icon className={selected ? "h-5 w-5 text-orange-600" : "h-5 w-5 text-slate-500"} />
+      <p className="mt-2 text-sm font-semibold text-slate-950">{label}</p>
+      <p className="mt-1 text-xs text-slate-500">{description}</p>
+    </button>
   );
 }

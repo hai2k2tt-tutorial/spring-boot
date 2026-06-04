@@ -55,3 +55,9 @@ data:
           - targets: [ 'customer-service.microservices.svc.cluster.local:8087' ]
             labels:
               application: 'Customer Service'
+      - job_name: 'wallet-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: [ 'wallet-service.microservices.svc.cluster.local:8088' ]
+            labels:
+              application: 'Wallet Service'

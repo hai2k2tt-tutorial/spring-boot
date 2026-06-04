@@ -17,6 +17,9 @@ dependencies:
 - name: payment-service
   repository: file://charts/payment-service
   version: 0.1.0
+- name: wallet-service
+  repository: file://charts/wallet-service
+  version: 0.1.0
 - name: shop-service
   repository: file://charts/shop-service
   version: 0.1.0
@@ -35,8 +38,14 @@ dependencies:
 - name: customer-fe-next
   repository: file://charts/customer-fe-next
   version: 0.1.0
+- name: customer-wallet-fe
+  repository: file://charts/customer-wallet-fe
+  version: 0.1.0
+- name: shop-wallet-fe
+  repository: file://charts/shop-wallet-fe
+  version: 0.1.0
 - name: customer-fe-angular
   repository: file://charts/customer-fe-angular
   version: 0.1.0
-digest: sha256:255ea1d9194d80e099cae3c2ad9b295f98ff81b9b8fe1b8622ee281e0c0d48e3
-generated: "2026-05-31T16:10:38.799865+07:00"
+digest: sha256:8dd81256d9e3ede47533ff8c0b9b8113b4f380aa5a362591b4af6d6a0f4d9bab
+generated: "2026-06-04T23:00:50.521442+07:00"

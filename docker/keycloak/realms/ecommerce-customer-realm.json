@@ -37,7 +37,17 @@
         "http://customer-fe-angular.local:8080",
         "http://customer-fe-angular.local:8080/*",
         "http://customer-fe-angular.haint.fyi",
-        "http://customer-fe-angular.haint.fyi/*"
+        "http://customer-fe-angular.haint.fyi/*",
+        "http://localhost:3006",
+        "http://localhost:3006/api/customer-wallet-fe/auth/callback/keycloak",
+        "http://customer-wallet-fe.local:8080",
+        "http://customer-wallet-fe.local:8080/*",
+        "http://customer-wallet-fe.local:8080/api/customer-wallet-fe/auth/callback/keycloak",
+        "http://customer-wallet-fe.haint.fyi",
+        "http://customer-wallet-fe.haint.fyi/*",
+        "http://customer-wallet-fe.haint.fyi/api/customer-wallet-fe/auth/callback/keycloak",
+        "http://localhost:3005",
+        "http://localhost:3005/api/customer-wallet-fe/auth/callback/keycloak"
       ],
       "webOrigins": [
         "*"

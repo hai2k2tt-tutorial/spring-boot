@@ -1,0 +1,39 @@
+{
+  "name": "customer-wallet-fe",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3005",
+    "build": "next build --webpack",
+    "start": "next start --port 3005",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.1.1",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@tanstack/react-query": "^5.100.14",
+    "axios": "^1.9.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.511.0",
+    "next": "latest",
+    "next-auth": "^5.0.0-beta.30",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-hook-form": "^7.57.0",
+    "tailwind-merge": "^3.3.0",
+    "zod": "^4.0.0",
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "^16.2.6",
+    "tailwindcss": "^4.1.8",
+    "typescript": "latest"
+  }
+}

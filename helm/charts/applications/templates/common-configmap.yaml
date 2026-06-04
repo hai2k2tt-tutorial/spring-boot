@@ -13,4 +13,5 @@ data:
   PAYMENT_SERVICE_URL: {{ .Values.commonConfig.paymentServiceUrl | quote }}
   SHOP_SERVICE_URL: {{ .Values.commonConfig.shopServiceUrl | quote }}
   CUSTOMER_SERVICE_URL: {{ .Values.commonConfig.customerServiceUrl | quote }}
+  WALLET_SERVICE_URL: {{ .Values.commonConfig.walletServiceUrl | quote }}
   SPRING_KAFKA_BOOTSTRAP_SERVERS: {{ .Values.commonConfig.springKafkaBootstrapServers | quote }}

@@ -32,7 +32,17 @@
         "http://shop-fe.haint.fyi",
         "http://shop-fe.haint.fyi/*",
         "http://shop-fe.haint.fyi/api/auth/callback/keycloak",
-        "http://shop-fe.haint.fyi/api/shop-fe/auth/callback/keycloak"
+        "http://shop-fe.haint.fyi/api/shop-fe/auth/callback/keycloak",
+        "http://localhost:3007",
+        "http://localhost:3007/api/shop-wallet-fe/auth/callback/keycloak",
+        "http://shop-wallet-fe.local:8080",
+        "http://shop-wallet-fe.local:8080/*",
+        "http://shop-wallet-fe.local:8080/api/shop-wallet-fe/auth/callback/keycloak",
+        "http://shop-wallet-fe.haint.fyi",
+        "http://shop-wallet-fe.haint.fyi/*",
+        "http://shop-wallet-fe.haint.fyi/api/shop-wallet-fe/auth/callback/keycloak",
+        "http://localhost:3006",
+        "http://localhost:3006/api/shop-wallet-fe/auth/callback/keycloak"
       ],
       "webOrigins": [
         "*"

@@ -1,3 +1,9 @@
+global:
+  workloadScheduling:
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+
 namespace: microservices
 
 gatewayApi:
@@ -13,6 +19,7 @@ commonConfig:
   paymentServiceUrl: http://payment-service.microservices.svc.cluster.local:8085
   shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
   customerServiceUrl: http://customer-service.microservices.svc.cluster.local:8087
+  walletServiceUrl: http://wallet-service.microservices.svc.cluster.local:8088
   springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
 
 apiGateway:
@@ -129,6 +136,23 @@ paymentService:
       memory: 1Gi
   config:
     datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/payment_service
+
+walletService:
+  enabled: true
+  image: docker.io/hai2k2tt/wallet-service:2-amd64
+  imagePullPolicy: Always
+  replicaCount: 1
+  service:
+    port: 8088
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  config:
+    datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/wallet_service
 
 shopService:
   enabled: true
@@ -262,6 +286,60 @@ customerFeNext:
     authScope: openid profile offline_access
     authCookiePrefix: customer-fe-next
     authBasePath: /api/customer-fe-next/auth
+    authSecret: replace-with-a-long-random-string
+
+customerWalletFe:
+  enabled: true
+  image: docker.io/hai2k2tt/customer-wallet-fe:2-amd64
+  imagePullPolicy: Always
+  replicaCount: 1
+  service:
+    port: 3005
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  config:
+    apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
+    nextPublicApiBaseUrl: http://api.haint.fyi/api
+    authUrl: http://customer-wallet-fe.haint.fyi
+    authIssuer: http://keycloak.haint.fyi/realms/ecommerce-customer
+    authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer
+    authClientId: customer-fe-client
+    authClientSecret: ""
+    authScope: openid profile offline_access
+    authCookiePrefix: customer-wallet-fe
+    authBasePath: /api/customer-wallet-fe/auth
+    authSecret: replace-with-a-long-random-string
+
+shopWalletFe:
+  enabled: true
+  image: docker.io/hai2k2tt/shop-wallet-fe:2-amd64
+  imagePullPolicy: Always
+  replicaCount: 1
+  service:
+    port: 3006
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  config:
+    apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
+    nextPublicApiBaseUrl: http://api.haint.fyi/api
+    authUrl: http://shop-wallet-fe.haint.fyi
+    authIssuer: http://keycloak.haint.fyi/realms/ecommerce-shop
+    authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop
+    authClientId: shop-fe-client
+    authClientSecret: ""
+    authScope: openid profile offline_access
+    authCookiePrefix: shop-wallet-fe
+    authBasePath: /api/shop-wallet-fe/auth
     authSecret: replace-with-a-long-random-string
 
 customerFeAngular:
