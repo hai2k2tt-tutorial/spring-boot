@@ -1,6 +1,12 @@
 import { Alert } from "@/components/ui/alert";
 
-export function DialogErrorAlert({ message, className = "sm:col-span-2" }: { message: string | null; className?: string }) {
+export function DialogErrorAlert({
+  message,
+  className = "sm:col-span-2",
+}: {
+  message?: string | null;
+  className?: string;
+}) {
   if (!message) return null;
 
   return (
