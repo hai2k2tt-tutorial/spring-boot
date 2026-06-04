@@ -5,6 +5,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { sendMockPaymentWebhook } from "@/lib/api";
+import { createUuid } from "@/lib/uuid";
 
 type MockProviderActionsProps = {
   paymentId?: string;
@@ -22,7 +23,7 @@ export function MockProviderActions({ paymentId, clientSecret }: MockProviderAct
           paymentId,
           clientSecret,
           status,
-          eventId: crypto.randomUUID(),
+          eventId: createUuid(),
         },
         mockProviderSecret,
       ),

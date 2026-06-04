@@ -17,6 +17,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { Label } from "@/components/ui/label";
 import { createOrderCheckout, fetchAttributes, fetchProduct, fetchShopByProductShopId, fetchSkus } from "@/lib/api";
 import { AttributeResponseVo, AttributeValueResponseVo, SkuResponseVo } from "@/lib/types";
+import { createUuid } from "@/lib/uuid";
 
 type ProductDetailPageProps = {
   params: Promise<{ productId: string }>;
@@ -232,7 +233,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
       return;
     }
 
-    await orderMutation.mutateAsync({ skuCode: sku.skuCode, quantity: values.quantity, idempotencyKey: crypto.randomUUID() });
+    await orderMutation.mutateAsync({ skuCode: sku.skuCode, quantity: values.quantity, idempotencyKey: createUuid() });
   });
 
   return (

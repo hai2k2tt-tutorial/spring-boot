@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getSession } from "next-auth/react";
 import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-token";
+import { createUuid } from "@/lib/uuid";
 import {
   AttributeRequestDto,
   AttributeResponseVo,
@@ -270,7 +271,7 @@ export async function createPayment(payment: PaymentCreateRequestDto): Promise<P
 export async function createOrderCheckout(
   order: OrderCreateRequestDto,
   method: PaymentCreateRequestDto["method"] = "CARD",
-  idempotencyKey: string = crypto.randomUUID()
+  idempotencyKey: string = createUuid()
 ): Promise<OrderCheckoutResponseVo> {
   try {
     const checkoutRequest: CheckoutCreateRequestDto = {
