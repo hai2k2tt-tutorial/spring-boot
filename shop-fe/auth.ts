@@ -9,11 +9,13 @@ const clientSecret = process.env.AUTH_CLIENT_SECRET;
 const scope = process.env.AUTH_SCOPE ?? "openid profile offline_access";
 export const authCookiePrefix = process.env.AUTH_COOKIE_PREFIX ?? "shop-fe";
 export const authBasePath = process.env.AUTH_BASE_PATH ?? "/api/shop-fe/auth";
+export const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN;
 const useSecureCookies = process.env.AUTH_URL?.startsWith("https://") ?? false;
 const authCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
   path: "/",
+  ...(authCookieDomain ? { domain: authCookieDomain } : {}),
   secure: useSecureCookies,
 };
 const authCookies = {
@@ -26,6 +28,7 @@ const authCookies = {
     options: {
       sameSite: "lax" as const,
       path: "/",
+      ...(authCookieDomain ? { domain: authCookieDomain } : {}),
       secure: useSecureCookies,
     },
   },

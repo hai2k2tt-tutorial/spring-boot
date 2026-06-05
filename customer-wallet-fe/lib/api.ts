@@ -5,6 +5,8 @@ import { WalletMoneyRequestDto, WalletResponseVo, WalletTransactionResponseVo } 
 
 const api = axios.create({ baseURL: "/api/gateway", headers: { "Content-Type": "application/json" } });
 type AuthRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+let currentCustomerSyncPromise: Promise<void> | null = null;
+
 function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) { config.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`; }
 async function resolveAccessToken(): Promise<string | undefined> {
   const storedToken = getAccessToken();
@@ -30,6 +32,18 @@ function parseError(error: unknown): Error {
   }
   return error instanceof Error ? error : new Error("Request failed");
 }
-export async function fetchWallet(): Promise<WalletResponseVo> { try { const response = await api.get<WalletResponseVo>("/wallet/customer/me"); return response.data; } catch (error) { throw parseError(error); } }
-export async function fetchWalletTransactions(): Promise<WalletTransactionResponseVo[]> { try { const response = await api.get<WalletTransactionResponseVo[]>("/wallet/customer/me/transactions"); return response.data; } catch (error) { throw parseError(error); } }
-export async function depositWallet(deposit: WalletMoneyRequestDto): Promise<WalletResponseVo> { try { const response = await api.post<WalletResponseVo>("/wallet/customer/me/deposits", deposit); return response.data; } catch (error) { throw parseError(error); } }
+export async function syncCurrentCustomer(): Promise<void> {
+  await api.post("/customers/me/sync");
+}
+
+async function ensureCurrentCustomerSynced(): Promise<void> {
+  currentCustomerSyncPromise ??= syncCurrentCustomer().catch((error) => {
+    currentCustomerSyncPromise = null;
+    throw error;
+  });
+  return currentCustomerSyncPromise;
+}
+
+export async function fetchWallet(): Promise<WalletResponseVo> { try { await ensureCurrentCustomerSynced(); const response = await api.get<WalletResponseVo>("/wallet/customer/me"); return response.data; } catch (error) { throw parseError(error); } }
+export async function fetchWalletTransactions(): Promise<WalletTransactionResponseVo[]> { try { await ensureCurrentCustomerSynced(); const response = await api.get<WalletTransactionResponseVo[]>("/wallet/customer/me/transactions"); return response.data; } catch (error) { throw parseError(error); } }
+export async function depositWallet(deposit: WalletMoneyRequestDto): Promise<WalletResponseVo> { try { await ensureCurrentCustomerSynced(); const response = await api.post<WalletResponseVo>("/wallet/customer/me/deposits", deposit); return response.data; } catch (error) { throw parseError(error); } }

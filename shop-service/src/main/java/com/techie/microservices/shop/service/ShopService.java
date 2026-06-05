@@ -43,14 +43,15 @@ public class ShopService {
         UUID authId = parseAuthId(claims.subject());
 
         return shopProfileRepository.findByAuthId(authId)
+                .or(() -> findShopByEmail(claims.email()))
                 .map(this::mapShop)
                 .orElseGet(() -> createShopFromClaims(authId, claims));
     }
 
     @Transactional(readOnly = true)
     public ShopResponseVo getCurrentShop(String authorization) {
-        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
-        ShopProfile shopProfile = shopProfileRepository.findByAuthId(authId)
+        TokenClaims claims = parseTokenClaims(authorization);
+        ShopProfile shopProfile = findCurrentShopProfile(claims)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop not found"));
         return mapShop(shopProfile);
     }
@@ -124,8 +125,8 @@ public class ShopService {
             String authorization,
             ShopProfileUpdateRequestDto shopProfileUpdateRequestDto
     ) {
-        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
-        ShopProfile shopProfile = shopProfileRepository.findByAuthId(authId)
+        TokenClaims claims = parseTokenClaims(authorization);
+        ShopProfile shopProfile = findCurrentShopProfile(claims)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop not found"));
         ShopAuth shopAuth = shopProfile.getAuth();
         ShopWallet shopWallet = shopWalletRepository.findById(shopProfile.getId())
@@ -134,6 +135,17 @@ public class ShopService {
         shopProfile.setUpdatedAt(Instant.now());
         shopProfileRepository.save(shopProfile);
         return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+    }
+
+    private java.util.Optional<ShopProfile> findCurrentShopProfile(TokenClaims claims) {
+        UUID authId = parseAuthId(claims.subject());
+        return shopProfileRepository.findByAuthId(authId)
+                .or(() -> findShopByEmail(claims.email()));
+    }
+
+    private java.util.Optional<ShopProfile> findShopByEmail(String email) {
+        return shopAuthRepository.findByEmail(email)
+                .flatMap(shopAuth -> shopProfileRepository.findByAuthId(shopAuth.getId()));
     }
 
     @Transactional(readOnly = true)

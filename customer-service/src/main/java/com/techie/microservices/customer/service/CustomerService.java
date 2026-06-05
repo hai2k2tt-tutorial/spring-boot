@@ -43,14 +43,15 @@ public class CustomerService {
         UUID authId = parseAuthId(claims.subject());
 
         return customerProfileRepository.findByAuthId(authId)
+                .or(() -> findCustomerByEmail(claims.email()))
                 .map(this::mapCustomer)
                 .orElseGet(() -> createCustomerFromClaims(authId, claims));
     }
 
     @Transactional(readOnly = true)
     public CustomerResponseVo getCurrentCustomer(String authorization) {
-        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
-        CustomerProfile customerProfile = customerProfileRepository.findByAuthId(authId)
+        TokenClaims claims = parseTokenClaims(authorization);
+        CustomerProfile customerProfile = findCurrentCustomerProfile(claims)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
         return mapCustomer(customerProfile);
     }
@@ -124,8 +125,8 @@ public class CustomerService {
             String authorization,
             CustomerProfileUpdateRequestDto customerProfileUpdateRequestDto
     ) {
-        UUID authId = parseAuthId(parseTokenClaims(authorization).subject());
-        CustomerProfile customerProfile = customerProfileRepository.findByAuthId(authId)
+        TokenClaims claims = parseTokenClaims(authorization);
+        CustomerProfile customerProfile = findCurrentCustomerProfile(claims)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
         CustomerAuth customerAuth = customerProfile.getAuth();
         CustomerWallet customerWallet = customerWalletRepository.findById(customerProfile.getId())
@@ -134,6 +135,17 @@ public class CustomerService {
         customerProfile.setUpdatedAt(Instant.now());
         customerProfileRepository.save(customerProfile);
         return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+    }
+
+    private java.util.Optional<CustomerProfile> findCurrentCustomerProfile(TokenClaims claims) {
+        UUID authId = parseAuthId(claims.subject());
+        return customerProfileRepository.findByAuthId(authId)
+                .or(() -> findCustomerByEmail(claims.email()));
+    }
+
+    private java.util.Optional<CustomerProfile> findCustomerByEmail(String email) {
+        return customerAuthRepository.findByEmail(email)
+                .flatMap(customerAuth -> customerProfileRepository.findByAuthId(customerAuth.getId()));
     }
 
     @Transactional(readOnly = true)

@@ -5,6 +5,8 @@ import { WalletResponseVo, WalletTransactionResponseVo } from "@/lib/types";
 
 const api = axios.create({ baseURL: "/api/gateway", headers: { "Content-Type": "application/json" } });
 type AuthRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+let currentShopSyncPromise: Promise<void> | null = null;
+
 function applyAuthorizationHeader(config: InternalAxiosRequestConfig, token: string) { config.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`; }
 async function resolveAccessToken(): Promise<string | undefined> {
   const storedToken = getAccessToken();
@@ -30,5 +32,17 @@ function parseError(error: unknown): Error {
   }
   return error instanceof Error ? error : new Error("Request failed");
 }
-export async function fetchWallet(): Promise<WalletResponseVo> { try { const response = await api.get<WalletResponseVo>("/wallet/shop/me"); return response.data; } catch (error) { throw parseError(error); } }
-export async function fetchWalletTransactions(): Promise<WalletTransactionResponseVo[]> { try { const response = await api.get<WalletTransactionResponseVo[]>("/wallet/shop/me/transactions"); return response.data; } catch (error) { throw parseError(error); } }
+export async function syncCurrentShop(): Promise<void> {
+  await api.post("/shops/me/sync");
+}
+
+async function ensureCurrentShopSynced(): Promise<void> {
+  currentShopSyncPromise ??= syncCurrentShop().catch((error) => {
+    currentShopSyncPromise = null;
+    throw error;
+  });
+  return currentShopSyncPromise;
+}
+
+export async function fetchWallet(): Promise<WalletResponseVo> { try { await ensureCurrentShopSynced(); const response = await api.get<WalletResponseVo>("/wallet/shop/me"); return response.data; } catch (error) { throw parseError(error); } }
+export async function fetchWalletTransactions(): Promise<WalletTransactionResponseVo[]> { try { await ensureCurrentShopSynced(); const response = await api.get<WalletTransactionResponseVo[]>("/wallet/shop/me/transactions"); return response.data; } catch (error) { throw parseError(error); } }

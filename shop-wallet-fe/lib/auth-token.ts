@@ -1,5 +1,5 @@
-const ACCESS_TOKEN_KEY = "customerAccessToken";
-const ACCESS_TOKEN_EXPIRES_KEY = "customerAccessTokenExpires";
+const ACCESS_TOKEN_KEY = "shopAccessToken";
+const ACCESS_TOKEN_EXPIRES_KEY = "shopAccessTokenExpires";
 const TOKEN_EXPIRY_BUFFER_MS = 60_000;
 
 export function getAccessToken(): string | null {

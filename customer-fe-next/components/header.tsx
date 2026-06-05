@@ -2,8 +2,14 @@
 
 import Link from "next/link";
 import { LogIn, LogOut, UserRound } from "lucide-react";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { clearAccessToken } from "@/lib/auth-token";
+
+function logout() {
+  clearAccessToken();
+  window.location.assign("/api/customer-fe-next/auth/keycloak-logout");
+}
 
 export function Header() {
   const { data: session, status } = useSession();
@@ -34,7 +40,7 @@ export function Header() {
           </nav>
           {username ? <span className="hidden text-sm text-slate-500 sm:inline">Hi {String(username)}</span> : null}
           {status === "loading" ? null : isAuthenticated ? (
-            <Button type="button" variant="outline" size="sm" onClick={() => void signOut()}>
+            <Button type="button" variant="outline" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4" />
               Logout
             </Button>

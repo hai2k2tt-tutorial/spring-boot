@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { authBasePath, authCookiePrefix, authIssuer } from "@/auth";
+import { authBasePath, authCookieDomain, authCookiePrefix, authIssuer } from "@/auth";
 
 const sessionCookieName = `${authCookiePrefix}.authjs.session-token`;
 
 function getAppBaseUrl(request: NextRequest): string {
-  return process.env.AUTH_URL ?? request.nextUrl.origin;
+  return (process.env.AUTH_URL ?? request.nextUrl.origin).replace(/\/$/, "");
 }
 
 function buildPostLogoutRedirectUri(request: NextRequest): string {
-  return new URL("/", getAppBaseUrl(request)).toString();
+  return getAppBaseUrl(request);
 }
 
 function buildKeycloakLogoutUrl(request: NextRequest, idToken?: string): string {
@@ -44,6 +44,7 @@ function expireAuthCookies(request: NextRequest, response: NextResponse): void {
         expires: new Date(0),
         maxAge: 0,
         path,
+        ...(authCookieDomain ? { domain: authCookieDomain } : {}),
       });
     }
   });

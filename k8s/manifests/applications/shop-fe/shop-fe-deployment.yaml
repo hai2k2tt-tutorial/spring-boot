@@ -38,6 +38,8 @@ spec:
               value: "openid profile offline_access"
             - name: AUTH_COOKIE_PREFIX
               value: "shop-fe"
+            - name: AUTH_COOKIE_DOMAIN
+              value: ".haint.fyi"
             - name: AUTH_BASE_PATH
               value: "/api/shop-fe/auth"
             - name: AUTH_SECRET
