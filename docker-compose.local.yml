@@ -490,9 +490,9 @@ services:
       AUTH_CLIENT_ID: customer-fe-client
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile offline_access
-      AUTH_COOKIE_PREFIX: customer-fe-next
+      AUTH_COOKIE_PREFIX: customer-sso
       AUTH_BASE_PATH: /api/customer-fe-next/auth
-      AUTH_SECRET: replace-with-a-long-random-customer-string
+      AUTH_SECRET: replace-with-a-long-random-customer-sso-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:
@@ -521,9 +521,9 @@ services:
       AUTH_CLIENT_ID: customer-fe-client
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile offline_access
-      AUTH_COOKIE_PREFIX: customer-wallet-fe
+      AUTH_COOKIE_PREFIX: customer-sso
       AUTH_BASE_PATH: /api/customer-wallet-fe/auth
-      AUTH_SECRET: replace-with-a-long-random-customer-wallet-string
+      AUTH_SECRET: replace-with-a-long-random-customer-sso-string
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:

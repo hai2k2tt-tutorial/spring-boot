@@ -7,13 +7,14 @@ const internalIssuer = process.env.AUTH_ISSUER_INTERNAL ?? authIssuer;
 const clientId = process.env.AUTH_CLIENT_ID;
 const clientSecret = process.env.AUTH_CLIENT_SECRET;
 const scope = process.env.AUTH_SCOPE ?? "openid profile offline_access";
-export const authCookiePrefix = process.env.AUTH_COOKIE_PREFIX ?? "customer-wallet-fe";
+export const authCookiePrefix = process.env.AUTH_COOKIE_PREFIX ?? "customer-sso";
 export const authBasePath = process.env.AUTH_BASE_PATH ?? "/api/customer-wallet-fe/auth";
+export const authCookieDomain = process.env.AUTH_COOKIE_DOMAIN;
 const useSecureCookies = process.env.AUTH_URL?.startsWith("https://") ?? false;
-const authCookieOptions = { httpOnly: true, sameSite: "lax" as const, path: "/", secure: useSecureCookies };
+const authCookieOptions = { httpOnly: true, sameSite: "lax" as const, path: "/", ...(authCookieDomain ? { domain: authCookieDomain } : {}), secure: useSecureCookies };
 const authCookies = {
   sessionToken: { name: `${authCookiePrefix}.authjs.session-token`, options: authCookieOptions },
-  callbackUrl: { name: `${authCookiePrefix}.authjs.callback-url`, options: { sameSite: "lax" as const, path: "/", secure: useSecureCookies } },
+  callbackUrl: { name: `${authCookiePrefix}.authjs.callback-url`, options: { sameSite: "lax" as const, path: "/", ...(authCookieDomain ? { domain: authCookieDomain } : {}), secure: useSecureCookies } },
   csrfToken: { name: `${authCookiePrefix}.authjs.csrf-token`, options: authCookieOptions },
   pkceCodeVerifier: { name: `${authCookiePrefix}.authjs.pkce.code_verifier`, options: { ...authCookieOptions, maxAge: 60 * 15 } },
   state: { name: `${authCookiePrefix}.authjs.state`, options: { ...authCookieOptions, maxAge: 60 * 15 } },

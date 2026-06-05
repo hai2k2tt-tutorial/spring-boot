@@ -53,6 +53,10 @@ spec:
               value: {{ .Values.config.authScope | quote }}
             - name: AUTH_COOKIE_PREFIX
               value: {{ .Values.config.authCookiePrefix | quote }}
+            {{- if .Values.config.authCookieDomain }}
+            - name: AUTH_COOKIE_DOMAIN
+              value: {{ .Values.config.authCookieDomain | quote }}
+            {{- end }}
             - name: AUTH_BASE_PATH
               value: {{ .Values.config.authBasePath | quote }}
             - name: AUTH_SECRET

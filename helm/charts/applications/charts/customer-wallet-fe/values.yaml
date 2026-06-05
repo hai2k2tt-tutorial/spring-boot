@@ -21,6 +21,7 @@ config:
   authClientId: customer-fe-client
   authClientSecret: ""
   authScope: openid profile offline_access
-  authCookiePrefix: customer-wallet-fe
+  authCookiePrefix: customer-sso
+  authCookieDomain: .haint.fyi
   authBasePath: /api/customer-wallet-fe/auth
   authSecret: replace-with-a-long-random-string

@@ -37,7 +37,9 @@ spec:
             - name: AUTH_SCOPE
               value: "openid profile offline_access"
             - name: AUTH_COOKIE_PREFIX
-              value: "customer-wallet-fe"
+              value: "customer-sso"
+            - name: AUTH_COOKIE_DOMAIN
+              value: ".haint.fyi"
             - name: AUTH_BASE_PATH
               value: "/api/customer-wallet-fe/auth"
             - name: AUTH_SECRET
