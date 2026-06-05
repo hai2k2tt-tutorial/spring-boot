@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Boxes, CreditCard, ShieldCheck, ShoppingBag, Store, UserRound } from "lucide-react";
+import { ArrowRight, Boxes, CreditCard, ShieldCheck, ShoppingBag, Store, UserRound, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 const adminUrl = process.env.NEXT_PUBLIC_ADMIN_FE_URL ?? "http://localhost:3002/admin";
 const shopUrl = process.env.NEXT_PUBLIC_SHOP_FE_URL ?? "http://localhost:3003/shop";
 const customerUrl = process.env.NEXT_PUBLIC_CUSTOMER_FE_URL ?? "http://localhost:3004/customer";
+const customerWalletUrl = process.env.NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL ?? "http://localhost:3006";
+const shopWalletUrl = process.env.NEXT_PUBLIC_SHOP_WALLET_FE_URL ?? "http://localhost:3007";
 
 const portals = [
   {
@@ -24,11 +26,25 @@ const portals = [
     cta: "Open customer",
   },
   {
+    title: "Customer Wallet",
+    description: "Open the customer wallet frontend for balance, deposits, and transaction history.",
+    href: customerWalletUrl,
+    icon: Wallet,
+    cta: "Open customer wallet",
+  },
+  {
     title: "Shop Portal",
     description: "Run seller workflows for products, SKUs, stock, orders, and payment tracking.",
     href: shopUrl,
     icon: Store,
     cta: "Open shop",
+  },
+  {
+    title: "Shop Wallet",
+    description: "Open the shop wallet frontend for shop balance and payout-related activity.",
+    href: shopWalletUrl,
+    icon: Wallet,
+    cta: "Open shop wallet",
   },
 ];
 
@@ -113,7 +129,7 @@ export default function HomePage() {
         <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
           <h2 className="text-2xl font-semibold text-slate-950">About the app</h2>
           <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
-            The ecommerce system is split into focused frontend services for admin, customer, and shop users. This
+            The ecommerce system is split into focused frontend services for admin, customer, shop, and wallet users. This
             landing service gives you one domain to publish, bookmark, or route through a load balancer while each
             workspace keeps its own authentication realm and deployment lifecycle.
           </p>
