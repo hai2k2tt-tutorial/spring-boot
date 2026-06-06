@@ -67,11 +67,11 @@ routes:
   - name: customer-wallet-fe-route
     hostname: customer-wallet-fe.haint.fyi
     backendRefName: customer-wallet-fe
-    backendRefPort: 3005
+    backendRefPort: 3006
   - name: shop-wallet-fe-route
     hostname: shop-wallet-fe.haint.fyi
     backendRefName: shop-wallet-fe
-    backendRefPort: 3006
+    backendRefPort: 3007
   - name: customer-fe-angular-route
     hostname: customer-fe-angular.haint.fyi
     backendRefName: customer-fe-angular

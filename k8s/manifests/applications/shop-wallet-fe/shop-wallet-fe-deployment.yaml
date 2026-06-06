@@ -16,7 +16,7 @@ spec:
         - name: shop-wallet-fe
           image: docker.io/hai2k2tt/shop-wallet-fe:2-arm64
           ports:
-            - containerPort: 3006
+            - containerPort: 3007
           env:
             - name: API_BASE_URL
               value: "http://api-gateway.microservices.svc.cluster.local:9000/api"

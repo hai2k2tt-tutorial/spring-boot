@@ -10,4 +10,4 @@ spec:
   rules:
     - backendRefs:
         - name: customer-wallet-fe
-          port: 3005
+          port: 3006

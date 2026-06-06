@@ -296,7 +296,7 @@ customerWalletFe:
   imagePullPolicy: Always
   replicaCount: 1
   service:
-    port: 3005
+    port: 3006
   resources:
     requests:
       cpu: 100m
@@ -324,7 +324,7 @@ shopWalletFe:
   imagePullPolicy: Always
   replicaCount: 1
   service:
-    port: 3006
+    port: 3007
   resources:
     requests:
       cpu: 100m

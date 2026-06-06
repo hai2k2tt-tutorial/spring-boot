@@ -4,7 +4,7 @@ image: docker.io/hai2k2tt/shop-wallet-fe:2-amd64
 imagePullPolicy: IfNotPresent
 replicaCount: 1
 service:
-  port: 3006
+  port: 3007
 resources:
   requests:
     cpu: 100m
