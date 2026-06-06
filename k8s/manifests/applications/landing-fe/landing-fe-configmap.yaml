@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: landing-fe-config
+data:
+  NEXT_PUBLIC_ADMIN_FE_URL: "http://admin-fe.haint.fyi"
+  NEXT_PUBLIC_SHOP_FE_URL: "http://shop-fe.haint.fyi"
+  NEXT_PUBLIC_CUSTOMER_FE_URL: "http://customer-fe-next.haint.fyi"
+  NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL: "http://customer-wallet-fe.haint.fyi"
+  NEXT_PUBLIC_SHOP_WALLET_FE_URL: "http://shop-wallet-fe.haint.fyi"
