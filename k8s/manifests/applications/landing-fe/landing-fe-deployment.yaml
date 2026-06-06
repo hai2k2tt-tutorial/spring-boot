@@ -19,11 +19,30 @@ spec:
             - containerPort: 3005
           env:
             - name: NEXT_PUBLIC_ADMIN_FE_URL
-              value: "http://admin-fe.haint.fyi/admin"
+              valueFrom:
+                configMapKeyRef:
+                  name: landing-fe-config
+                  key: NEXT_PUBLIC_ADMIN_FE_URL
             - name: NEXT_PUBLIC_SHOP_FE_URL
-              value: "http://shop-fe.haint.fyi/shop"
+              valueFrom:
+                configMapKeyRef:
+                  name: landing-fe-config
+                  key: NEXT_PUBLIC_SHOP_FE_URL
             - name: NEXT_PUBLIC_CUSTOMER_FE_URL
-              value: "http://customer-fe-next.haint.fyi/customer"
+              valueFrom:
+                configMapKeyRef:
+                  name: landing-fe-config
+                  key: NEXT_PUBLIC_CUSTOMER_FE_URL
+            - name: NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: landing-fe-config
+                  key: NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL
+            - name: NEXT_PUBLIC_SHOP_WALLET_FE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: landing-fe-config
+                  key: NEXT_PUBLIC_SHOP_WALLET_FE_URL
           resources:
             requests:
               cpu: 100m

@@ -403,9 +403,11 @@ services:
     ports:
       - "3005:3005"
     environment:
-      NEXT_PUBLIC_ADMIN_FE_URL: http://localhost:3002/admin
-      NEXT_PUBLIC_SHOP_FE_URL: http://localhost:3003/shop
-      NEXT_PUBLIC_CUSTOMER_FE_URL: http://localhost:3004/customer
+      NEXT_PUBLIC_ADMIN_FE_URL: ${NEXT_PUBLIC_ADMIN_FE_URL:-http://localhost:3002}
+      NEXT_PUBLIC_SHOP_FE_URL: ${NEXT_PUBLIC_SHOP_FE_URL:-http://localhost:3003}
+      NEXT_PUBLIC_CUSTOMER_FE_URL: ${NEXT_PUBLIC_CUSTOMER_FE_URL:-http://localhost:3004}
+      NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL: ${NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL:-http://localhost:3006}
+      NEXT_PUBLIC_SHOP_WALLET_FE_URL: ${NEXT_PUBLIC_SHOP_WALLET_FE_URL:-http://localhost:3007}
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:

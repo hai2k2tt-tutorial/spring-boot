@@ -10,6 +10,8 @@ if [ ! -d node_modules/.bin ] || [ ! -f node_modules/.package-lock.hash ] || [ "
   echo "$LOCK_HASH" > node_modules/.package-lock.hash
 fi
 
+rm -rf .next/dev .next/server .next/types .next/cache
+
 exec npm run dev -- --hostname 0.0.0.0
 EOF
 EXPOSE 3007

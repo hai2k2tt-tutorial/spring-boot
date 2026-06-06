@@ -19,6 +19,7 @@ Postgres service databases:
 - `customer_service`
 - `order_service`
 - `inventory_service`
+- `wallet_service`
 
 All application service databases use the shared `postgres` service. Keycloak still uses its own MySQL database.
 
@@ -61,6 +62,10 @@ sh order-service/scripts/db.sh update
 LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
 LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/inventory_service \
 sh inventory-service/scripts/db.sh update
+
+LIQUIBASE_USERNAME=postgres LIQUIBASE_PASSWORD=postgres \
+LIQUIBASE_URL=jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/wallet_service \
+sh wallet-service/scripts/db.sh update
 ```
 
 Check pending changes before updating by replacing `update` with `status`.
@@ -82,7 +87,7 @@ On the VPS, stop application pods first:
 
 ```bash
 kubectl scale deployment -n microservices \
-  product-service payment-service shop-service customer-service order-service inventory-service \
+  product-service payment-service shop-service customer-service order-service inventory-service wallet-service \
   --replicas=0
 ```
 
@@ -91,7 +96,7 @@ Reset service databases:
 ```bash
 POSTGRES_POD=$(kubectl get pod -n microservices -l app=postgres -o jsonpath='{.items[0].metadata.name}')
 
-for db in product_service payment_service shop_service customer_service order_service inventory_service; do
+for db in product_service payment_service shop_service customer_service order_service inventory_service wallet_service; do
   kubectl exec -n microservices "$POSTGRES_POD" -- psql -U postgres -d postgres -c \
     "DROP DATABASE IF EXISTS ${db} WITH (FORCE);"
   kubectl exec -n microservices "$POSTGRES_POD" -- psql -U postgres -d postgres -c \
@@ -103,7 +108,7 @@ Run the migrations from the VPS, then start the services:
 
 ```bash
 kubectl scale deployment -n microservices \
-  product-service payment-service shop-service customer-service order-service inventory-service \
+  product-service payment-service shop-service customer-service order-service inventory-service wallet-service \
   --replicas=1
 ```
 
@@ -113,4 +118,5 @@ Verify:
 kubectl get pods -n microservices
 kubectl logs -n microservices deploy/inventory-service --tail=120
 kubectl logs -n microservices deploy/order-service --tail=120
+kubectl logs -n microservices deploy/wallet-service --tail=120
 ```

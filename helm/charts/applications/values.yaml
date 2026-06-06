@@ -203,9 +203,11 @@ landingFe:
       cpu: 300m
       memory: 256Mi
   config:
-    adminFeUrl: http://admin-fe.haint.fyi/admin
-    shopFeUrl: http://shop-fe.haint.fyi/shop
-    customerFeUrl: http://customer-fe-next.haint.fyi/customer
+    adminFeUrl: http://admin-fe.haint.fyi
+    shopFeUrl: http://shop-fe.haint.fyi
+    customerFeUrl: http://customer-fe-next.haint.fyi
+    customerWalletFeUrl: http://customer-wallet-fe.haint.fyi
+    shopWalletFeUrl: http://shop-wallet-fe.haint.fyi
 
 adminFe:
   enabled: true

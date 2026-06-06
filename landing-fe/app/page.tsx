@@ -4,49 +4,15 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-const adminUrl = process.env.NEXT_PUBLIC_ADMIN_FE_URL ?? "http://localhost:3002/admin";
-const shopUrl = process.env.NEXT_PUBLIC_SHOP_FE_URL ?? "http://localhost:3003/shop";
-const customerUrl = process.env.NEXT_PUBLIC_CUSTOMER_FE_URL ?? "http://localhost:3004/customer";
-const customerWalletUrl = process.env.NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL ?? "http://localhost:3006";
-const shopWalletUrl = process.env.NEXT_PUBLIC_SHOP_WALLET_FE_URL ?? "http://localhost:3007";
+function requiredEnv(name: string) {
+  const value = process.env[name];
 
-const portals = [
-  {
-    title: "Admin Portal",
-    description: "Manage catalog data, attributes, inventory, payments, and platform operations.",
-    href: adminUrl,
-    icon: ShieldCheck,
-    cta: "Open admin",
-  },
-  {
-    title: "Customer Portal",
-    description: "Continue into customer account, order, and payment workflows.",
-    href: customerUrl,
-    icon: UserRound,
-    cta: "Open customer",
-  },
-  {
-    title: "Customer Wallet",
-    description: "Open the customer wallet frontend for balance, deposits, and transaction history.",
-    href: customerWalletUrl,
-    icon: Wallet,
-    cta: "Open customer wallet",
-  },
-  {
-    title: "Shop Portal",
-    description: "Run seller workflows for products, SKUs, stock, orders, and payment tracking.",
-    href: shopUrl,
-    icon: Store,
-    cta: "Open shop",
-  },
-  {
-    title: "Shop Wallet",
-    description: "Open the shop wallet frontend for shop balance and payout-related activity.",
-    href: shopWalletUrl,
-    icon: Wallet,
-    cta: "Open shop wallet",
-  },
-];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
 
 const capabilities = [
   { label: "Product catalog", icon: Boxes },
@@ -55,6 +21,50 @@ const capabilities = [
 ];
 
 export default function HomePage() {
+  const adminUrl = requiredEnv("NEXT_PUBLIC_ADMIN_FE_URL");
+  const shopUrl = requiredEnv("NEXT_PUBLIC_SHOP_FE_URL");
+  const customerUrl = requiredEnv("NEXT_PUBLIC_CUSTOMER_FE_URL");
+  const customerWalletUrl = requiredEnv("NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL");
+  const shopWalletUrl = requiredEnv("NEXT_PUBLIC_SHOP_WALLET_FE_URL");
+
+  const portals = [
+    {
+      title: "Admin Portal",
+      description: "Manage catalog data, attributes, inventory, payments, and platform operations.",
+      href: adminUrl,
+      icon: ShieldCheck,
+      cta: "Open admin",
+    },
+    {
+      title: "Customer Portal",
+      description: "Continue into customer account, order, and payment workflows.",
+      href: customerUrl,
+      icon: UserRound,
+      cta: "Open customer",
+    },
+    {
+      title: "Customer Wallet",
+      description: "Open the customer wallet frontend for balance, deposits, and transaction history.",
+      href: customerWalletUrl,
+      icon: Wallet,
+      cta: "Open customer wallet",
+    },
+    {
+      title: "Shop Portal",
+      description: "Run seller workflows for products, SKUs, stock, orders, and payment tracking.",
+      href: shopUrl,
+      icon: Store,
+      cta: "Open shop",
+    },
+    {
+      title: "Shop Wallet",
+      description: "Open the shop wallet frontend for shop balance and payout-related activity.",
+      href: shopWalletUrl,
+      icon: Wallet,
+      cta: "Open shop wallet",
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">

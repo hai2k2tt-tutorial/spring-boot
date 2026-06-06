@@ -34,11 +34,15 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             - name: NEXT_PUBLIC_ADMIN_FE_URL
-              value: {{ .Values.config.adminFeUrl | quote }}
+              value: {{ required "landing-fe config.adminFeUrl is required" .Values.config.adminFeUrl | quote }}
             - name: NEXT_PUBLIC_SHOP_FE_URL
-              value: {{ .Values.config.shopFeUrl | quote }}
+              value: {{ required "landing-fe config.shopFeUrl is required" .Values.config.shopFeUrl | quote }}
             - name: NEXT_PUBLIC_CUSTOMER_FE_URL
-              value: {{ .Values.config.customerFeUrl | quote }}
+              value: {{ required "landing-fe config.customerFeUrl is required" .Values.config.customerFeUrl | quote }}
+            - name: NEXT_PUBLIC_CUSTOMER_WALLET_FE_URL
+              value: {{ required "landing-fe config.customerWalletFeUrl is required" .Values.config.customerWalletFeUrl | quote }}
+            - name: NEXT_PUBLIC_SHOP_WALLET_FE_URL
+              value: {{ required "landing-fe config.shopWalletFeUrl is required" .Values.config.shopWalletFeUrl | quote }}
           ports:
             - containerPort: {{ .Values.service.port }}
           resources:
