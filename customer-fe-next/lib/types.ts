@@ -134,6 +134,7 @@ export interface OrderResponseVo {
 export interface OrderItemResponseVo {
   id: UUID;
   skuId: UUID;
+  skuCode?: string;
   productId: UUID;
   shopId: UUID;
   price: number;

@@ -11,15 +11,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { updateProduct } from "@/lib/api";
-import { OrderResponseVo } from "@/lib/types";
+import { CustomerResponseVo, OrderResponseVo, UUID } from "@/lib/types";
 
 function shopOrderTotal(order?: OrderResponseVo) {
   return order?.items?.reduce((total, item) => total + Number(item.price) * item.quantity, 0) ?? 0;
 }
 
+function customerDisplayName(customer?: CustomerResponseVo, customerId?: UUID) {
+  const fullName = [customer?.firstName, customer?.lastName].filter(Boolean).join(" ").trim();
+  if (fullName) return fullName;
+  if (customer?.email) return customer.email;
+  return customerId ? `Customer ${customerId.slice(0, 8)}` : "Customer";
+}
+
 export default function ShopDashboardPage() {
   const auth = useWorkspaceAuth("shop");
-  const { products, orders, payments, shopWallet } = auth.data;
+  const { products, orders, payments, shopWallet, customers } = auth.data;
+  const customersByOrderId = new Map<UUID, CustomerResponseVo>(
+    customers.flatMap((customer) => [
+      [customer.customerId, customer],
+      [customer.authId, customer],
+    ])
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -53,7 +66,10 @@ export default function ShopDashboardPage() {
 
       <ApiTable title="Orders" headers={["Order", "Customer", "Status", "Total", "Items", "Created", "Actions"]}>
         {orders.length === 0 ? <EmptyRow colSpan={7} label="No orders returned." /> : null}
-        {orders.map((order) => <TableRow key={order.id}><TableCell className="font-medium">{order.orderNumber}</TableCell><TableCell>{order.customerId}</TableCell><TableCell><Badge variant={order.status === "PAID" ? "secondary" : "outline"}>{order.status}</Badge></TableCell><TableCell>${shopOrderTotal(order)}</TableCell><TableCell>{order.items?.length ?? 0}</TableCell><TableCell className="text-slate-500">{new Date(order.createdAt).toLocaleString()}</TableCell><TableCell><Button size="sm" variant="outline" asChild><Link href={`/shop/orders/${order.id}`}>View</Link></Button></TableCell></TableRow>)}
+        {orders.map((order) => {
+          const customer = customersByOrderId.get(order.customerId);
+          return <TableRow key={order.id}><TableCell className="font-medium">{order.orderNumber}</TableCell><TableCell><Link href={`/shop/customers/${order.customerId}`} className="text-slate-700 underline-offset-2 hover:underline">{customerDisplayName(customer, order.customerId)}</Link></TableCell><TableCell><Badge variant={order.status === "PAID" ? "secondary" : "outline"}>{order.status}</Badge></TableCell><TableCell>${shopOrderTotal(order)}</TableCell><TableCell>{order.items?.length ?? 0}</TableCell><TableCell className="text-slate-500">{new Date(order.createdAt).toLocaleString()}</TableCell><TableCell><Button size="sm" variant="outline" asChild><Link href={`/shop/orders/${order.id}`}>View</Link></Button></TableCell></TableRow>;
+        })}
       </ApiTable>
 
       <ApiTable title="Payments" headers={["Payment", "Order", "Method", "Status", "Amount"]}>

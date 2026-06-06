@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { ApiDialogs } from "@/components/api-workspace/dialogs";
@@ -55,6 +55,7 @@ function ErrorRow({ colSpan, error, onRetry }: { colSpan: number; error: unknown
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
+  const queryClient = useQueryClient();
   const authQueryKey = status === "authenticated" ? (session?.user.email ?? "authenticated") : "anonymous";
   const [dialog, setDialog] = useState<DialogName>(null);
 
@@ -113,6 +114,7 @@ export default function AdminDashboardPage() {
     mutationFn: async (work: () => Promise<unknown>) => work(),
     onSuccess: async () => {
       await refetchWorkspace();
+      await queryClient.invalidateQueries({ queryKey: ["admin-category-options"] });
       setDialog(null);
     },
   });
@@ -238,4 +240,3 @@ export default function AdminDashboardPage() {
     </main>
   );
 }
-

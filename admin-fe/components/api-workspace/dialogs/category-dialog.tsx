@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 import { CategoryTreeField, InputField } from "@/components/forms";
@@ -24,6 +24,7 @@ export function CategoryDialog({ open, onClose, saving, submit }: FormDialogProp
     queryFn: () => fetchCategories(),
     enabled: open,
     staleTime: 30 * 1000,
+    refetchOnMount: "always",
     retry: 1,
   });
   const categoryTree = useMemo(
@@ -35,6 +36,12 @@ export function CategoryDialog({ open, onClose, saving, submit }: FormDialogProp
     : categoriesQuery.isError
       ? "Unable to load categories"
       : "No parent";
+
+  useEffect(() => {
+    if (!open) {
+      form.reset({ name: "", parentId: "" });
+    }
+  }, [form, open]);
 
   return (
     <Modal title="Create category" open={open} onClose={onClose}>

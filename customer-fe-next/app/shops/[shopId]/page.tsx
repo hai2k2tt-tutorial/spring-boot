@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, LoaderCircle, Mail, PackageSearch, Phone, Store, UserRound, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowRight, LoaderCircle, Mail, PackageSearch, Phone, Store, UserRound } from "lucide-react";
 import { use, useMemo } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +124,7 @@ export default function ShopDetailPage({ params }: ShopDetailPageProps) {
             </div>
           </div>
 
-          <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:p-6">
+          <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 lg:p-6">
             <Card className="rounded-2xl shadow-none">
               <CardHeader className="p-4 pb-2">
                 <CardDescription className="flex items-center gap-2">
@@ -150,15 +150,6 @@ export default function ShopDetailPage({ params }: ShopDetailPageProps) {
                   Owner
                 </CardDescription>
                 <CardTitle className="text-base">{shop.ownerName}</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card className="rounded-2xl shadow-none">
-              <CardHeader className="p-4 pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Wallet
-                </CardDescription>
-                <CardTitle className="text-base">{formatMoney(shop.balance, shop.currency)}</CardTitle>
               </CardHeader>
             </Card>
           </div>

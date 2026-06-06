@@ -36,6 +36,7 @@ public class OrderMapper {
         return OrderItem.builder()
                 .order(order)
                 .skuId(itemRequestDto.skuId().toString())
+                .skuCode(itemRequestDto.skuCode())
                 .productId(itemRequestDto.productId().toString())
                 .shopId(itemRequestDto.shopId().toString())
                 .price(itemRequestDto.price())
@@ -60,6 +61,7 @@ public class OrderMapper {
         return new OrderItemResponseVo(
                 UUID.fromString(orderItem.getId()),
                 UUID.fromString(orderItem.getSkuId()),
+                orderItem.getSkuCode(),
                 UUID.fromString(orderItem.getProductId()),
                 UUID.fromString(orderItem.getShopId()),
                 orderItem.getPrice(),

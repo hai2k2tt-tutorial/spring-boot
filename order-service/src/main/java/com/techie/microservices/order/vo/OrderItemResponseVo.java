@@ -6,6 +6,7 @@ import java.util.UUID;
 public record OrderItemResponseVo(
         UUID id,
         UUID skuId,
+        String skuCode,
         UUID productId,
         UUID shopId,
         BigDecimal price,

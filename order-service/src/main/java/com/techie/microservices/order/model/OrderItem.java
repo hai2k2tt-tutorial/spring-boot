@@ -34,6 +34,9 @@ public class OrderItem {
     @Column(nullable = false, length = 36)
     private String skuId;
 
+    @Column(length = 255)
+    private String skuCode;
+
     @Column(nullable = false, length = 36)
     private String productId;
 

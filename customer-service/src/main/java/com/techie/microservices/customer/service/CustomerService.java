@@ -158,6 +158,7 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public CustomerResponseVo getCustomer(UUID customerId) {
         CustomerProfile customerProfile = customerProfileRepository.findById(customerId)
+                .or(() -> customerProfileRepository.findByAuthId(customerId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
         return mapCustomer(customerProfile);
     }

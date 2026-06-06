@@ -2,6 +2,7 @@ package com.techie.microservices.payment.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techie.microservices.payment.repository.CustomerProfileLookupRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,14 +15,17 @@ import java.util.UUID;
 @Component
 public class TokenIdentity {
     private final ObjectMapper objectMapper;
+    private final CustomerProfileLookupRepository customerProfileLookupRepository;
 
-    public TokenIdentity(ObjectMapper objectMapper) {
+    public TokenIdentity(ObjectMapper objectMapper, CustomerProfileLookupRepository customerProfileLookupRepository) {
         this.objectMapper = objectMapper;
+        this.customerProfileLookupRepository = customerProfileLookupRepository;
     }
 
     public UUID currentUserId(String authorization) {
         Map<String, Object> claims = parseClaims(authorization);
-        return parseUuid(requiredClaim(claims, "sub", "user_id"));
+        UUID authId = parseUuid(requiredClaim(claims, "sub", "user_id"));
+        return customerProfileLookupRepository.resolveCustomerId(authId);
     }
 
     private Map<String, Object> parseClaims(String authorization) {

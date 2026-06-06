@@ -49,7 +49,7 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
   const [dialog, setDialog] = useState<DialogName>(null);
   const authQueryKey = status === "authenticated" ? (session?.user.email ?? "authenticated") : "anonymous";
   const loadShops = mode === "admin" || mode === "shop";
-  const loadCustomers = mode === "admin" || mode === "customer";
+  const loadCustomers = mode === "admin" || mode === "shop" || mode === "customer";
 
   const productsQuery = useQuery({
     queryKey: ["api-workspace-products", mode, authQueryKey],

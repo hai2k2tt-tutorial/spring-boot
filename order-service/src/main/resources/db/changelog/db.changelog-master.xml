@@ -7,4 +7,5 @@
 
     <include file="changes/001-create-order-tables.xml" relativeToChangelogFile="true"/>
     <include file="changes/002-add-checkout-idempotency-and-pending-payment-status.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-add-order-item-sku-code.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

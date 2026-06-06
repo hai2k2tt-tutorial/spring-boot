@@ -18,18 +18,23 @@ type AttributeDialogProps = FormDialogProps & {
   defaultProductId?: string;
 };
 
-const ATTRIBUTE_DEFAULTS = { productId: "", code: "", name: "", values: [{ value: "" }] };
+type AttributeFormInput = z.input<typeof attributeSchema>;
+
+function getAttributeDefaults(defaultProductId?: string): AttributeFormInput {
+  return { productId: defaultProductId ?? "", code: "", name: "", values: [{ value: "" }] };
+}
 
 export function AttributeDialog({ open, onClose, saving, submit, defaultProductId }: AttributeDialogProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<z.input<typeof attributeSchema>, undefined, z.output<typeof attributeSchema>>({
     resolver: zodResolver(attributeSchema),
-    defaultValues: ATTRIBUTE_DEFAULTS,
+    defaultValues: getAttributeDefaults(defaultProductId),
   });
   const valuesFieldArray = useFieldArray({
     control: form.control,
     name: "values",
   });
+  const { reset } = form;
   const usesDetailProduct = Boolean(defaultProductId);
 
   const productsQuery = useQuery({
@@ -56,10 +61,14 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
         ? "Select product"
         : "No products available";
 
+  function resetAttributeForm() {
+    reset(getAttributeDefaults(defaultProductId));
+  }
+
   useEffect(() => {
     if (!open) return;
-    form.reset({ ...ATTRIBUTE_DEFAULTS, productId: defaultProductId ?? "" });
-  }, [defaultProductId, form, open]);
+    reset(getAttributeDefaults(defaultProductId));
+  }, [defaultProductId, open, reset]);
 
   async function handleSubmit(values: z.output<typeof attributeSchema>) {
     const attributeValues = values.values
@@ -69,6 +78,7 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
     setServerError(null);
     try {
       await submit(() => createAttribute({ ...values, values: attributeValues }));
+      resetAttributeForm();
     } catch (error) {
       setServerError(getErrorMessage(error, "Unable to create attribute"));
     }
@@ -76,6 +86,7 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
 
   function handleClose() {
     setServerError(null);
+    resetAttributeForm();
     onClose();
   }
 

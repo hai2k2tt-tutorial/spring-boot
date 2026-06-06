@@ -224,7 +224,7 @@ Response models:
 
 `OrderResponseVo`: `id`, `orderNumber`, `customerId`, `status`, `totalAmount`, `items`, `createdAt`, `updatedAt`
 
-`OrderItemResponseVo`: `id`, `skuId`, `productId`, `shopId`, `price`, `quantity`
+`OrderItemResponseVo`: `id`, `skuId`, `skuCode`, `productId`, `shopId`, `price`, `quantity`
 
 `CheckoutCreateRequestDto`
 

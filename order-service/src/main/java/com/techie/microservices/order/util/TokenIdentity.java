@@ -2,6 +2,7 @@ package com.techie.microservices.order.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techie.microservices.order.repository.CustomerProfileLookupRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,13 +15,16 @@ import java.util.UUID;
 @Component
 public class TokenIdentity {
     private final ObjectMapper objectMapper;
+    private final CustomerProfileLookupRepository customerProfileLookupRepository;
 
-    public TokenIdentity(ObjectMapper objectMapper) {
+    public TokenIdentity(ObjectMapper objectMapper, CustomerProfileLookupRepository customerProfileLookupRepository) {
         this.objectMapper = objectMapper;
+        this.customerProfileLookupRepository = customerProfileLookupRepository;
     }
 
     public CurrentCustomer currentCustomer(String authorization) {
         Map<String, Object> claims = parseClaims(authorization);
+        UUID authId = parseUuid(requiredClaim(claims, "sub", "user_id"));
         String email = requiredClaim(claims, "email");
         String preferredName = stringClaim(claims, "preferred_username");
         String firstName = stringClaim(claims, "given_name");
@@ -33,7 +37,7 @@ public class TokenIdentity {
             lastName = "-";
         }
 
-        return new CurrentCustomer(parseUuid(requiredClaim(claims, "sub", "user_id")), email, firstName, lastName);
+        return new CurrentCustomer(customerProfileLookupRepository.resolveCustomerId(authId), email, firstName, lastName);
     }
 
     private Map<String, Object> parseClaims(String authorization) {

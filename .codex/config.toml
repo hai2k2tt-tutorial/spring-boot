@@ -1,0 +1,44 @@
+# Project-scoped Codex MCP servers for docker-compose.local.yml.
+# Start Postgres first: docker compose -f docker-compose.local.yml up -d postgres
+
+[mcp_servers.postgres_product]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:5433/product_service"]
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.postgres_order]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:5433/order_service"]
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.postgres_inventory]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:5433/inventory_service"]
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.postgres_payment]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:5433/payment_service"]
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.postgres_shop]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:5433/shop_service"]
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.postgres_customer]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:5433/customer_service"]
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.postgres_wallet]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@127.0.0.1:5433/wallet_service"]
+enabled = true
+startup_timeout_sec = 30

@@ -2,7 +2,7 @@ export type UUID = string;
 export type Instant = string;
 
 export type ProductStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
-export type OrderStatus = "PENDING" | "PAID" | "CANCELED";
+export type OrderStatus = "PENDING_PAYMENT" | "PENDING" | "PAID" | "CANCELED";
 export type PaymentMethod = "BALANCE" | "CARD" | "MANUAL";
 export type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED";
 export type PaymentHistoryType = "TOPUP" | "PURCHASE" | "REFUND";
@@ -106,6 +106,7 @@ export interface OrderResponseVo {
 export interface OrderItemResponseVo {
   id: UUID;
   skuId: UUID;
+  skuCode?: string;
   productId: UUID;
   shopId: UUID;
   price: number;
