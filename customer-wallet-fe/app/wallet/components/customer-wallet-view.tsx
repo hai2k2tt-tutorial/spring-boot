@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownLeft, ArrowUpRight, LoaderCircle, RefreshCw, WalletCards } from "lucide-react";
 import { signIn, useSession } from "next-auth/react";
-import { useEffect, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 import { InputField } from "@/components/forms";
@@ -38,7 +37,6 @@ function TransactionRow({ transaction }: { transaction: WalletTransactionRespons
 
 export function CustomerWalletView() {
   const { status } = useSession();
-  const signInStartedRef = useRef(false);
   const queryClient = useQueryClient();
   const form = useForm<TopUpFormValues>({ resolver: zodResolver(topUpSchema), defaultValues: { amount: "50" } });
   const walletQuery = useQuery({ queryKey: ["customer-wallet"], queryFn: fetchWallet, enabled: status === "authenticated", staleTime: 30 * 1000, retry: 1 });
@@ -47,13 +45,6 @@ export function CustomerWalletView() {
     mutationFn: (values: TopUpFormValues) => depositWallet({ amount: Number(values.amount), currency: walletQuery.data?.currency ?? "USD", externalRef: createUuid(), description: "Customer wallet top up" }),
     onSuccess: async (wallet) => { queryClient.setQueryData(["customer-wallet"], wallet); await queryClient.invalidateQueries({ queryKey: ["customer-wallet-transactions"] }); form.reset({ amount: "50" }); },
   });
-  useEffect(() => {
-    if (status !== "unauthenticated" || signInStartedRef.current) return;
-
-    signInStartedRef.current = true;
-    void signIn("keycloak", { callbackUrl: "/" });
-  }, [status]);
-
   async function refreshWallet() { await Promise.allSettled([walletQuery.refetch(), transactionsQuery.refetch()]); }
   const wallet = walletQuery.data;
   const transactions = transactionsQuery.data ?? [];
