@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownLeft, ArrowUpRight, LoaderCircle, RefreshCw, WalletCards } from "lucide-react";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 import { InputField } from "@/components/forms";
@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { depositWallet, fetchWallet, fetchWalletTransactions } from "@/lib/api";
 import { WalletTransactionResponseVo } from "@/lib/types";
 import { createUuid } from "@/lib/uuid";
+import { beginCrossAppLogin } from "@/lib/cross-app-sso";
 
 const topUpSchema = z.object({ amount: z.coerce.number().positive("Amount must be greater than zero") });
 type TopUpFormValues = z.input<typeof topUpSchema>;
@@ -50,7 +51,7 @@ export function CustomerWalletView() {
   const transactions = transactionsQuery.data ?? [];
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 p-6 text-white shadow-sm"><Badge variant="outline" className="border-white/20 bg-white/10 text-white">CUSTOMER WALLET</Badge><h1 className="mt-4 text-4xl font-semibold tracking-tight">My wallet</h1><p className="mt-2 max-w-2xl text-sm text-slate-300">Login with the same customer SSO used by Customer FE, then pay products from this balance.</p>{status === "unauthenticated" ? <Button type="button" className="mt-5 bg-white text-slate-950 hover:bg-slate-100" onClick={() => void signIn("keycloak")}>Login with customer SSO</Button> : null}</section>
+      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 p-6 text-white shadow-sm"><Badge variant="outline" className="border-white/20 bg-white/10 text-white">CUSTOMER WALLET</Badge><h1 className="mt-4 text-4xl font-semibold tracking-tight">My wallet</h1><p className="mt-2 max-w-2xl text-sm text-slate-300">Login with the same customer SSO used by Customer FE, then pay products from this balance.</p>{status === "unauthenticated" ? <Button type="button" className="mt-5 bg-white text-slate-950 hover:bg-slate-100" onClick={() => beginCrossAppLogin("customer")}>Login with customer SSO</Button> : null}</section>
       {status === "loading" ? <Alert>Loading session...</Alert> : null}
       {walletQuery.isError ? <Alert variant="destructive">{walletQuery.error instanceof Error ? walletQuery.error.message : "Unable to load wallet"}</Alert> : null}
       {transactionsQuery.isError ? <Alert variant="destructive">{transactionsQuery.error instanceof Error ? transactionsQuery.error.message : "Unable to load wallet history"}</Alert> : null}

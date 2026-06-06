@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { z } from "zod";
 import { createProduct, fetchCategories } from "@/lib/api";
@@ -14,6 +14,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CategoryTreeField, InputField, ProductImageDropzoneField, SelectField, TextareaField } from "@/components/forms";
+import { beginCrossAppLogin } from "@/lib/cross-app-sso";
 
 const productSchema = z.object({
   categoryId: z.string().trim().uuid("Use a valid category UUID"),
@@ -70,7 +71,7 @@ export function AddProductForm() {
 
   const submit = form.handleSubmit(async (values) => {
     if (status !== "authenticated") {
-      await signIn("keycloak");
+      beginCrossAppLogin("shop");
       return;
     }
 

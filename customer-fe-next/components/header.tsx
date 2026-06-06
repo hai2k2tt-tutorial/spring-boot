@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { LogIn, LogOut, UserRound } from "lucide-react";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { clearAccessToken } from "@/lib/auth-token";
+import { beginCrossAppLogin, markCrossAppLogout } from "@/lib/cross-app-sso";
 
 function logout() {
+  markCrossAppLogout("customer");
   clearAccessToken();
   window.location.assign("/api/customer-fe-next/auth/keycloak-logout");
 }
@@ -48,7 +50,7 @@ export function Header() {
               Logout
             </Button>
           ) : (
-            <Button type="button" variant="outline" size="sm" onClick={() => void signIn("keycloak")}>
+            <Button type="button" variant="outline" size="sm" onClick={() => beginCrossAppLogin("customer")}>
               <LogIn className="h-4 w-4" />
               Login
             </Button>

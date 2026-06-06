@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CreditCard, ImageIcon, LoaderCircle, QrCode, ShoppingCart, Store, Wallet } from "lucide-react";
 import { use, useMemo } from "react";
 import { FormProvider, Path, useForm, useWatch } from "react-hook-form";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { z } from "zod";
 import { InputField } from "@/components/forms";
 import { Alert } from "@/components/ui/alert";
@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { createOrderCheckout, fetchAttributes, fetchCurrentCustomerWallet, fetchProduct, fetchShopByProductShopId, fetchSkus } from "@/lib/api";
 import { AttributeResponseVo, AttributeValueResponseVo, PaymentMethod, SkuResponseVo } from "@/lib/types";
 import { createUuid } from "@/lib/uuid";
+import { beginCrossAppLogin } from "@/lib/cross-app-sso";
 
 type ProductDetailPageProps = {
   params: Promise<{ productId: string }>;
@@ -262,7 +263,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     }
 
     if (status !== "authenticated") {
-      await signIn("keycloak");
+      beginCrossAppLogin("customer");
       return;
     }
 

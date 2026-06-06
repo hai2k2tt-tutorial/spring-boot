@@ -2,13 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDownLeft, LoaderCircle, RefreshCw, Store } from "lucide-react";
-import { signIn, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchWallet, fetchWalletTransactions } from "@/lib/api";
 import { WalletTransactionResponseVo } from "@/lib/types";
+import { beginCrossAppLogin } from "@/lib/cross-app-sso";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 function formatMoney(value: number | string | undefined) { const amount = Number(value ?? 0); return currencyFormatter.format(Number.isFinite(amount) ? amount : 0); }
@@ -36,7 +37,7 @@ export function ShopWalletView() {
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-sm"><Badge variant="outline" className="border-white/20 bg-white/10 text-white">SHOP WALLET</Badge><h1 className="mt-4 text-4xl font-semibold tracking-tight">Shop wallet</h1><p className="mt-2 max-w-2xl text-sm text-slate-300">Login with the same shop SSO used by Shop FE. Money from customer wallet purchases is credited here.</p>{status === "unauthenticated" ? <Button type="button" className="mt-5 bg-white text-slate-950 hover:bg-slate-100" onClick={() => void signIn("keycloak")}>Login with shop SSO</Button> : null}</section>
+      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-sm"><Badge variant="outline" className="border-white/20 bg-white/10 text-white">SHOP WALLET</Badge><h1 className="mt-4 text-4xl font-semibold tracking-tight">Shop wallet</h1><p className="mt-2 max-w-2xl text-sm text-slate-300">Login with the same shop SSO used by Shop FE. Money from customer wallet purchases is credited here.</p>{status === "unauthenticated" ? <Button type="button" className="mt-5 bg-white text-slate-950 hover:bg-slate-100" onClick={() => beginCrossAppLogin("shop")}>Login with shop SSO</Button> : null}</section>
       {status === "loading" ? <Alert>Loading session...</Alert> : null}
       {walletQuery.isError ? <Alert variant="destructive">{walletQuery.error instanceof Error ? walletQuery.error.message : "Unable to load wallet"}</Alert> : null}
       {transactionsQuery.isError ? <Alert variant="destructive">{transactionsQuery.error instanceof Error ? transactionsQuery.error.message : "Unable to load wallet history"}</Alert> : null}
