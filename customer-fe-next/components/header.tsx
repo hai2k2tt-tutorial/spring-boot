@@ -14,7 +14,10 @@ function logout() {
 export function Header() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
-  const username = session?.user?.name ?? session?.user?.email;
+  const username =
+    session?.user?.preferred_username ??
+    session?.user?.name ??
+    session?.user?.email;
   const customerLinks = isAuthenticated
     ? [
         { href: "/dashboard", label: "Products" },

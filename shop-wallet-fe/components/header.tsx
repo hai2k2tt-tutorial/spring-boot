@@ -14,7 +14,10 @@ function logout() {
 export function Header() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
-  const username = session?.user?.name ?? session?.user?.email;
+  const username =
+    session?.user?.preferred_username ??
+    session?.user?.name ??
+    session?.user?.email;
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
