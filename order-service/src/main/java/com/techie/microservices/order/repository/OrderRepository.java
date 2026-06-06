@@ -12,6 +12,7 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, String> {
     List<Order> findAllByCustomerId(String customerId);
+    List<Order> findAllByIdIn(List<String> ids);
     Optional<Order> findByCustomerIdAndIdempotencyKey(String customerId, String idempotencyKey);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

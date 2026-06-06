@@ -101,19 +101,7 @@ public class PaymentService {
                 authorization
         );
 
-        Map<UUID, java.math.BigDecimal> amountByShop = order.items().stream()
-                .collect(Collectors.groupingBy(
-                        OrderResponseDto.OrderItemResponseDto::shopId,
-                        Collectors.reducing(
-                                java.math.BigDecimal.ZERO,
-                                item -> item.price().multiply(java.math.BigDecimal.valueOf(item.quantity())),
-                                java.math.BigDecimal::add
-                        )
-                ));
-        amountByShop.forEach((shopId, amount) -> walletClient.creditShopWallet(
-                shopId,
-                new WalletMoneyRequestDto(amount, "USD", paymentRef + ":" + shopId, "Order " + order.orderNumber())
-        ));
+        creditShopWallets(payment, order);
 
         orderClient.confirmPaid(payment.getOrderId().toString());
         payment.setStatus(PaymentStatus.SUCCESS);
@@ -135,6 +123,8 @@ public class PaymentService {
         paymentRepository.save(payment);
         paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
         if (previousStatus != PaymentStatus.SUCCESS && newStatus == PaymentStatus.SUCCESS) {
+            OrderResponseDto order = orderClient.getOrderForInternalSettlement(payment.getOrderId().toString());
+            creditShopWallets(payment, order);
             orderClient.confirmPaid(payment.getOrderId().toString());
         } else if (newStatus == PaymentStatus.FAILED) {
             orderClient.cancelPayment(payment.getOrderId().toString());
@@ -168,6 +158,8 @@ public class PaymentService {
         paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
 
         if (newStatus == PaymentStatus.SUCCESS) {
+            OrderResponseDto order = orderClient.getOrderForInternalSettlement(payment.getOrderId().toString());
+            creditShopWallets(payment, order);
             orderClient.confirmPaid(payment.getOrderId().toString());
         } else {
             orderClient.cancelPayment(payment.getOrderId().toString());
@@ -180,6 +172,19 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public List<PaymentResponseVo> getPayments(UUID customerId, UUID orderId) {
         return findPayments(customerId, orderId).stream()
+                .map(paymentMapper::toVo)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponseVo> getCurrentShopPayments(String authorization) {
+        List<UUID> orderIds = orderClient.getCurrentShopOrders(authorization).stream()
+                .map(OrderResponseDto::id)
+                .toList();
+        if (orderIds.isEmpty()) {
+            return List.of();
+        }
+        return paymentRepository.findAllByOrderIdIn(orderIds).stream()
                 .map(paymentMapper::toVo)
                 .toList();
     }
@@ -216,6 +221,23 @@ public class PaymentService {
             }
         }
         return paymentRepository.findFirstByCustomerIdAndOrderIdAndStatusOrderByCreatedAtDesc(customerId, orderId, PaymentStatus.PENDING).orElse(null);
+    }
+
+    private void creditShopWallets(Payment payment, OrderResponseDto order) {
+        String paymentRef = payment.getId().toString();
+        Map<UUID, java.math.BigDecimal> amountByShop = order.items().stream()
+                .collect(Collectors.groupingBy(
+                        OrderResponseDto.OrderItemResponseDto::shopId,
+                        Collectors.reducing(
+                                java.math.BigDecimal.ZERO,
+                                item -> item.price().multiply(java.math.BigDecimal.valueOf(item.quantity())),
+                                java.math.BigDecimal::add
+                        )
+                ));
+        amountByShop.forEach((shopId, amount) -> walletClient.creditShopWallet(
+                shopId,
+                new WalletMoneyRequestDto(amount, "USD", paymentRef + ":" + shopId, "Order " + order.orderNumber())
+        ));
     }
 
     private Payment findWebhookPayment(PaymentProviderWebhookRequestDto request) {

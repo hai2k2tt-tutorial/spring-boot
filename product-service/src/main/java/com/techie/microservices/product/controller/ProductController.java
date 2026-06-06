@@ -1,10 +1,10 @@
 package com.techie.microservices.product.controller;
 
+import com.techie.microservices.product.client.ShopClient;
 import com.techie.microservices.product.dto.ProductImagePresignRequestDto;
 import com.techie.microservices.product.dto.ProductRequestDto;
 import com.techie.microservices.product.service.ProductImageStorageService;
 import com.techie.microservices.product.service.ProductService;
-import com.techie.microservices.product.util.TokenIdentity;
 import com.techie.microservices.product.vo.ProductImagePresignResponseVo;
 import com.techie.microservices.product.vo.ProductResponseVo;
 import io.minio.GetObjectResponse;
@@ -26,7 +26,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final ProductImageStorageService productImageStorageService;
-    private final TokenIdentity tokenIdentity;
+    private final ShopClient shopClient;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -41,6 +41,12 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @GetMapping("/me")
+    @ResponseStatus(HttpStatus.OK)
+    public List<ProductResponseVo> getCurrentShopProducts(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return productService.getCurrentShopProducts(authorization);
+    }
+
     @GetMapping("/{productId}")
     @ResponseStatus(HttpStatus.OK)
     public ProductResponseVo getProduct(@PathVariable UUID productId) {
@@ -51,7 +57,7 @@ public class ProductController {
     @ResponseStatus(HttpStatus.CREATED)
     public ProductImagePresignResponseVo createProductImageUploadUrl(@RequestBody ProductImagePresignRequestDto request,
                                                                      @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
-        UUID shopId = tokenIdentity.currentUserId(authorization);
+        UUID shopId = shopClient.getCurrentShop(authorization).shopId();
         return productImageStorageService.createPresignedUpload(shopId, request);
     }
 

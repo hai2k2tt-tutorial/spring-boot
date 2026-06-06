@@ -11,7 +11,7 @@ import { Modal } from "@/components/api-workspace/primitives";
 import { skuSchema } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
-import { createSku, fetchAttributes, fetchProducts, fetchSkus } from "@/lib/api";
+import { createSku, fetchAttributes, fetchCurrentShopProducts, fetchSkus } from "@/lib/api";
 import { AttributeResponseVo, SkuResponseVo } from "@/lib/types";
 import { DialogErrorAlert, getErrorMessage } from "./error-alert";
 import { FormDialogProps } from "./types";
@@ -35,7 +35,7 @@ export function SkuDialog({ open, onClose, saving, submit, defaultProductId }: S
   const usesDetailProduct = Boolean(defaultProductId);
   const productsQuery = useQuery({
     queryKey: ["shop-product-options"],
-    queryFn: () => fetchProducts(),
+    queryFn: () => fetchCurrentShopProducts(),
     enabled: open && !usesDetailProduct,
     staleTime: 30 * 1000,
     retry: 1,

@@ -47,11 +47,30 @@ public class OrderController {
         return orderService.getOrders(customerId);
     }
 
+    @GetMapping("/shop/me")
+    @ResponseStatus(HttpStatus.OK)
+    public List<OrderResponseVo> getCurrentShopOrders(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return orderService.getCurrentShopOrders(authorization);
+    }
+
+    @GetMapping("/shop/me/{orderId}")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderResponseVo getCurrentShopOrder(@PathVariable UUID orderId,
+                                               @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return orderService.getCurrentShopOrder(orderId, authorization);
+    }
+
     @GetMapping("/{orderId}")
     @ResponseStatus(HttpStatus.OK)
     public OrderResponseVo getOrder(@PathVariable UUID orderId,
                                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return orderService.getOrder(orderId, authorization);
+    }
+
+    @GetMapping("/{orderId}/internal-settlement")
+    @ResponseStatus(HttpStatus.OK)
+    public OrderResponseVo getOrderForInternalSettlement(@PathVariable UUID orderId) {
+        return orderService.getOrderForInternalSettlement(orderId);
     }
 
     @PostMapping("/{orderId}/confirm-paid")

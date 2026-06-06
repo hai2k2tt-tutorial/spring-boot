@@ -2,6 +2,7 @@ package com.techie.microservices.order.service;
 
 import com.techie.microservices.order.client.InventoryClient;
 import com.techie.microservices.order.client.ProductClient;
+import com.techie.microservices.order.client.ShopClient;
 import com.techie.microservices.order.dto.InventoryReleaseRequestDto;
 import com.techie.microservices.order.dto.InventoryReserveRequestDto;
 import com.techie.microservices.order.dto.OrderCreateRequestDto;
@@ -41,6 +42,7 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final InventoryClient inventoryClient;
     private final ProductClient productClient;
+    private final ShopClient shopClient;
     private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
     private final OrderMapper orderMapper;
     private final TokenIdentity tokenIdentity;
@@ -129,6 +131,20 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrderResponseVo> getCurrentShopOrders(String authorization) {
+        UUID shopId = shopClient.getCurrentShop(authorization).shopId();
+        List<String> orderIds = orderItemRepository.findDistinctOrderIdsByShopId(shopId.toString());
+        if (orderIds.isEmpty()) {
+            return List.of();
+        }
+        return orderRepository.findAllByIdIn(orderIds).stream()
+                .map(order -> orderMapper.toVo(order, orderItemRepository.findAllByShopId(shopId.toString()).stream()
+                        .filter(item -> item.getOrder().getId().equals(order.getId()))
+                        .toList()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public OrderResponseVo getOrder(UUID orderId, String authorization) {
         UUID customerId = tokenIdentity.currentCustomer(authorization).id();
         Order order = orderRepository.findById(orderId.toString())
@@ -136,6 +152,26 @@ public class OrderService {
         if (!customerId.toString().equals(order.getCustomerId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to current customer");
         }
+        return orderMapper.toVo(order, orderItemRepository.findAllByOrderId(order.getId()));
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponseVo getCurrentShopOrder(UUID orderId, String authorization) {
+        UUID shopId = shopClient.getCurrentShop(authorization).shopId();
+        Order order = orderRepository.findById(orderId.toString())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        if (!orderItemRepository.existsByOrderIdAndShopId(order.getId(), shopId.toString())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not contain current shop items");
+        }
+        return orderMapper.toVo(order, orderItemRepository.findAllByOrderId(order.getId()).stream()
+                .filter(item -> item.getShopId().equals(shopId.toString()))
+                .toList());
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponseVo getOrderForInternalSettlement(UUID orderId) {
+        Order order = orderRepository.findById(orderId.toString())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
         return orderMapper.toVo(order, orderItemRepository.findAllByOrderId(order.getId()));
     }
 

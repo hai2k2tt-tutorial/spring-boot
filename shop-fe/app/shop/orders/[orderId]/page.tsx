@@ -10,7 +10,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { fetchOrder, fetchPayments } from "@/lib/api";
+import { fetchCurrentShopOrder, fetchPayments } from "@/lib/api";
 import { OrderItemResponseVo } from "@/lib/types";
 
 type Feedback = { kind: "success" | "error"; message: string } | null;
@@ -23,6 +23,10 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function shopOrderTotal(order?: { items?: OrderItemResponseVo[] }) {
+  return order?.items?.reduce((total, item) => total + Number(item.price) * item.quantity, 0) ?? 0;
+}
+
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { orderId } = use(params);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -33,7 +37,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
   const orderQuery = useQuery({
     queryKey: ["shop-order", orderId],
-    queryFn: () => fetchOrder(orderId),
+    queryFn: () => fetchCurrentShopOrder(orderId),
     enabled: !!orderId,
     staleTime: 30 * 1000,
     retry: 1,
@@ -111,8 +115,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               <div>{order.customerId}</div>
             </div>
             <div>
-              <span className="font-medium text-slate-950">Total</span>
-              <div>${order.totalAmount}</div>
+              <span className="font-medium text-slate-950">Shop item total</span>
+              <div>${shopOrderTotal(order)}</div>
             </div>
             <div>
               <span className="font-medium text-slate-950">Created</span>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { LoaderCircle, PackageSearch } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { fetchProducts } from "@/lib/api";
+import { fetchCurrentShopProducts } from "@/lib/api";
 import { Product } from "@/lib/types";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,7 @@ export function ProductList() {
   const { status } = useSession();
   const productsQuery = useQuery({
     queryKey: ["products"],
-    queryFn: () => fetchProducts(),
+    queryFn: () => fetchCurrentShopProducts(),
     staleTime: 30 * 1000,
     retry: 1,
   });

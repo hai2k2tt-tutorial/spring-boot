@@ -59,6 +59,12 @@ public class PaymentController {
         return paymentService.getPayments(customerId, orderId);
     }
 
+    @GetMapping("/shop/me")
+    @ResponseStatus(HttpStatus.OK)
+    public List<PaymentResponseVo> getCurrentShopPayments(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return paymentService.getCurrentShopPayments(authorization);
+    }
+
     @GetMapping("/{paymentId}/history")
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentHistoryResponseVo> getPaymentHistory(@PathVariable UUID paymentId) {

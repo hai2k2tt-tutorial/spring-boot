@@ -1,9 +1,6 @@
-package com.techie.microservices.order.config;
+package com.techie.microservices.product.config;
 
-import com.techie.microservices.order.client.InventoryClient;
-import com.techie.microservices.order.client.PaymentClient;
-import com.techie.microservices.order.client.ProductClient;
-import com.techie.microservices.order.client.ShopClient;
+import com.techie.microservices.product.client.ShopClient;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,50 +18,20 @@ import java.time.Duration;
 @Configuration
 @RequiredArgsConstructor
 public class RestClientConfig {
-
-    @Value("${inventory.service.url}")
-    private String inventoryServiceUrl;
-
-    @Value("${product.service.url}")
-    private String productServiceUrl;
-
-    @Value("${payment.service.url}")
-    private String paymentServiceUrl;
-
     @Value("${shop.service.url}")
     private String shopServiceUrl;
-
     private final ObservationRegistry observationRegistry;
 
     @Bean
-    public InventoryClient inventoryClient() {
-        return createClient(InventoryClient.class, inventoryServiceUrl);
-    }
-
-    @Bean
-    public ProductClient productClient() {
-        return createClient(ProductClient.class, productServiceUrl);
-    }
-
-    @Bean
-    public PaymentClient paymentClient() {
-        return createClient(PaymentClient.class, paymentServiceUrl);
-    }
-
-    @Bean
     public ShopClient shopClient() {
-        return createClient(ShopClient.class, shopServiceUrl);
-    }
-
-    private <T> T createClient(Class<T> clientType, String baseUrl) {
         RestClient restClient = RestClient.builder()
-                .baseUrl(baseUrl)
+                .baseUrl(shopServiceUrl)
                 .requestFactory(getClientRequestFactory())
                 .observationRegistry(observationRegistry)
                 .build();
         RestClientAdapter restClientAdapter = RestClientAdapter.create(restClient);
         HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory.builderFor(restClientAdapter).build();
-        return httpServiceProxyFactory.createClient(clientType);
+        return httpServiceProxyFactory.createClient(ShopClient.class);
     }
 
     private ClientHttpRequestFactory getClientRequestFactory() {

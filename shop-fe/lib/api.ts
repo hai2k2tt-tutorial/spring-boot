@@ -20,6 +20,7 @@ import {
   ProductImagePresignResponseVo,
   ProductRequestDto,
   ProductResponseVo,
+  ShopWalletResponseVo,
   ShopResponseVo,
   ShopProfileUpdateRequestDto,
   ShopStatusUpdateRequestDto,
@@ -137,6 +138,15 @@ function normalizeProductImageUrl<T extends { imageUrl?: string }>(product: T): 
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const response = await api.get<Product[]>("/product");
+    return response.data.map(normalizeProductImageUrl);
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentShopProducts(): Promise<Product[]> {
+  try {
+    const response = await api.get<Product[]>("/product/me");
     return response.data.map(normalizeProductImageUrl);
   } catch (error) {
     throw parseError(error);
@@ -281,9 +291,27 @@ export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]>
   }
 }
 
+export async function fetchCurrentShopOrders(): Promise<OrderResponseVo[]> {
+  try {
+    const response = await api.get<OrderResponseVo[]>("/order/shop/me");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
 export async function fetchOrder(orderId: UUID): Promise<OrderResponseVo> {
   try {
     const response = await api.get<OrderResponseVo>(`/order/${orderId}`);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentShopOrder(orderId: UUID): Promise<OrderResponseVo> {
+  try {
+    const response = await api.get<OrderResponseVo>(`/order/shop/me/${orderId}`);
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -316,6 +344,15 @@ export async function fetchPayments(filters?: { customerId?: UUID; orderId?: UUI
     const response = await api.get<PaymentResponseVo[]>("/payments", {
       params: filters,
     });
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentShopPayments(): Promise<PaymentResponseVo[]> {
+  try {
+    const response = await api.get<PaymentResponseVo[]>("/payments/shop/me");
     return response.data;
   } catch (error) {
     throw parseError(error);
@@ -415,6 +452,15 @@ export async function syncCurrentShop(): Promise<ShopResponseVo> {
 export async function fetchCurrentShop(): Promise<ShopResponseVo> {
   try {
     const response = await api.get<ShopResponseVo>("/shops/me");
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentShopWallet(): Promise<ShopWalletResponseVo> {
+  try {
+    const response = await api.get<ShopWalletResponseVo>("/wallet/shop/me");
     return response.data;
   } catch (error) {
     throw parseError(error);

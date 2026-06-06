@@ -10,7 +10,7 @@ import { InputField, SelectField } from "@/components/forms";
 import { Modal } from "@/components/api-workspace/primitives";
 import { attributeSchema } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
-import { createAttribute, fetchProducts } from "@/lib/api";
+import { createAttribute, fetchCurrentShopProducts } from "@/lib/api";
 import { DialogErrorAlert, getErrorMessage } from "./error-alert";
 import { FormDialogProps } from "./types";
 
@@ -34,7 +34,7 @@ export function AttributeDialog({ open, onClose, saving, submit, defaultProductI
 
   const productsQuery = useQuery({
     queryKey: ["shop-product-options"],
-    queryFn: () => fetchProducts(),
+    queryFn: () => fetchCurrentShopProducts(),
     enabled: open && !usesDetailProduct,
     staleTime: 30 * 1000,
     retry: 1,

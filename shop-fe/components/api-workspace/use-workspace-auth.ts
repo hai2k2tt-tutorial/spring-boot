@@ -6,6 +6,10 @@ import { useState } from "react";
 import { DialogName } from "@/components/api-workspace/dialogs";
 import {
   fetchCategories,
+  fetchCurrentShopOrders,
+  fetchCurrentShopPayments,
+  fetchCurrentShopProducts,
+  fetchCurrentShopWallet,
   fetchCustomers,
   fetchOrders,
   fetchPayments,
@@ -18,6 +22,7 @@ import {
   OrderResponseVo,
   PaymentResponseVo,
   ProductResponseVo,
+  ShopWalletResponseVo,
   ShopResponseVo,
 } from "@/lib/types";
 
@@ -30,6 +35,7 @@ export type WorkspaceData = {
   customers: CustomerResponseVo[];
   orders: OrderResponseVo[];
   payments: PaymentResponseVo[];
+  shopWallet?: ShopWalletResponseVo;
 };
 
 export type WorkspaceFeedback = { kind: "success" | "error"; message: string } | null;
@@ -47,7 +53,7 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
 
   const productsQuery = useQuery({
     queryKey: ["api-workspace-products", mode, authQueryKey],
-    queryFn: () => fetchProducts(),
+    queryFn: () => (mode === "shop" ? fetchCurrentShopProducts() : fetchProducts()),
     enabled: status !== "loading",
     staleTime: 30 * 1000,
     retry: 1,
@@ -75,15 +81,22 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
   });
   const ordersQuery = useQuery({
     queryKey: ["api-workspace-orders", mode, authQueryKey],
-    queryFn: () => fetchOrders(),
+    queryFn: () => (mode === "shop" ? fetchCurrentShopOrders() : fetchOrders()),
     enabled: status !== "loading",
     staleTime: 30 * 1000,
     retry: 1,
   });
   const paymentsQuery = useQuery({
     queryKey: ["api-workspace-payments", mode, authQueryKey],
-    queryFn: () => fetchPayments(),
+    queryFn: () => (mode === "shop" ? fetchCurrentShopPayments() : fetchPayments()),
     enabled: status !== "loading",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+  const shopWalletQuery = useQuery({
+    queryKey: ["shop-wallet", mode, authQueryKey],
+    queryFn: fetchCurrentShopWallet,
+    enabled: status !== "loading" && mode === "shop",
     staleTime: 30 * 1000,
     retry: 1,
   });
@@ -111,6 +124,7 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
       customersQuery.refetch(),
       ordersQuery.refetch(),
       paymentsQuery.refetch(),
+      shopWalletQuery.refetch(),
     ]);
   }
 
@@ -121,6 +135,7 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
     customers: customersQuery.data ?? [],
     orders: ordersQuery.data ?? [],
     payments: paymentsQuery.data ?? [],
+    shopWallet: shopWalletQuery.data,
   };
   const queryError =
     productsQuery.error ||
@@ -128,7 +143,8 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
     shopsQuery.error ||
     customersQuery.error ||
     ordersQuery.error ||
-    paymentsQuery.error;
+    paymentsQuery.error ||
+    shopWalletQuery.error;
   const mutationError = workspaceMutation.error;
   const feedback: WorkspaceFeedback = mutationError
     ? { kind: "error", message: getErrorMessage(mutationError, "API request failed") }
@@ -145,21 +161,24 @@ export function useWorkspaceAuth(mode: WorkspaceMode) {
     shopsQuery.isLoading ||
     customersQuery.isLoading ||
     ordersQuery.isLoading ||
-    paymentsQuery.isLoading;
+    paymentsQuery.isLoading ||
+    shopWalletQuery.isLoading;
   const fetching =
     productsQuery.isFetching ||
     categoriesQuery.isFetching ||
     shopsQuery.isFetching ||
     customersQuery.isFetching ||
     ordersQuery.isFetching ||
-    paymentsQuery.isFetching;
+    paymentsQuery.isFetching ||
+    shopWalletQuery.isFetching;
   const isError =
     productsQuery.isError ||
     categoriesQuery.isError ||
     shopsQuery.isError ||
     customersQuery.isError ||
     ordersQuery.isError ||
-    paymentsQuery.isError;
+    paymentsQuery.isError ||
+    shopWalletQuery.isError;
 
   return {
     data,

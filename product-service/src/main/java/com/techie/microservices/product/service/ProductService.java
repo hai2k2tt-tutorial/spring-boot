@@ -1,12 +1,12 @@
 package com.techie.microservices.product.service;
 
+import com.techie.microservices.product.client.ShopClient;
 import com.techie.microservices.product.dto.ProductRequestDto;
 import com.techie.microservices.product.mapper.ProductMapper;
 import com.techie.microservices.product.model.Category;
 import com.techie.microservices.product.model.Product;
 import com.techie.microservices.product.repository.CategoryRepository;
 import com.techie.microservices.product.repository.ProductRepository;
-import com.techie.microservices.product.util.TokenIdentity;
 import com.techie.microservices.product.vo.ProductResponseVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +25,14 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
-    private final TokenIdentity tokenIdentity;
+    private final ShopClient shopClient;
 
     @Transactional
     public ProductResponseVo createProduct(ProductRequestDto productRequestDto, String authorization) {
         if (productRequestDto == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product request is required");
         }
-        UUID shopId = tokenIdentity.currentUserId(authorization);
+        UUID shopId = shopClient.getCurrentShop(authorization).shopId();
         Category category = categoryRepository.findById(productRequestDto.categoryId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
 
@@ -45,6 +45,15 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductResponseVo> getAllProducts() {
         return productRepository.findAll()
+                .stream()
+                .map(productMapper::toVo)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponseVo> getCurrentShopProducts(String authorization) {
+        UUID shopId = shopClient.getCurrentShop(authorization).shopId();
+        return productRepository.findByShopId(shopId)
                 .stream()
                 .map(productMapper::toVo)
                 .toList();
@@ -66,7 +75,7 @@ public class ProductService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product id is required");
         }
 
-        UUID shopId = tokenIdentity.currentUserId(authorization);
+        UUID shopId = shopClient.getCurrentShop(authorization).shopId();
         Product product = productRepository.findById(productRequestDto.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
         if (!product.getShopId().equals(shopId)) {

@@ -225,3 +225,13 @@ export interface ShopResponseVo {
   profileUpdatedAt: Instant;
   walletUpdatedAt: Instant;
 }
+
+export interface ShopWalletResponseVo {
+  id?: UUID;
+  ownerType?: "CUSTOMER" | "SHOP" | string;
+  ownerId?: UUID;
+  shopId?: UUID;
+  balance: number;
+  currency: string;
+  updatedAt: Instant;
+}

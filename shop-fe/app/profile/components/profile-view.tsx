@@ -12,7 +12,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchCurrentShop, updateCurrentShopProfile } from "@/lib/api";
+import { fetchCurrentShop, fetchCurrentShopWallet, updateCurrentShopProfile } from "@/lib/api";
 import { ShopResponseVo } from "@/lib/types";
 
 const shopProfileSchema = z.object({
@@ -35,6 +35,11 @@ function formatDate(value?: string) {
   return value ? new Date(value).toLocaleString() : "-";
 }
 
+function formatBalance(balance?: number, currency?: string) {
+  const amount = Number(balance ?? 0);
+  return `${Number.isFinite(amount) ? amount : 0} ${currency ?? "USD"}`;
+}
+
 export function ProfileView() {
   const { status } = useSession();
   const queryClient = useQueryClient();
@@ -46,6 +51,14 @@ export function ProfileView() {
   const profileQuery = useQuery({
     queryKey: ["shop-profile"],
     queryFn: fetchCurrentShop,
+    enabled: status === "authenticated",
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
+
+  const walletQuery = useQuery({
+    queryKey: ["shop-wallet"],
+    queryFn: fetchCurrentShopWallet,
     enabled: status === "authenticated",
     staleTime: 30 * 1000,
     retry: 1,
@@ -78,6 +91,7 @@ export function ProfileView() {
   const profile = profileQuery.data;
   const isLoading = status === "loading" || profileQuery.isLoading;
   const isSaving = updateMutation.isPending;
+  const wallet = walletQuery.data;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -95,8 +109,8 @@ export function ProfileView() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => void profileQuery.refetch()}
-            disabled={status !== "authenticated" || profileQuery.isFetching}
+            onClick={() => void Promise.allSettled([profileQuery.refetch(), walletQuery.refetch()])}
+            disabled={status !== "authenticated" || profileQuery.isFetching || walletQuery.isFetching}
           >
             Refresh
           </Button>
@@ -109,6 +123,11 @@ export function ProfileView() {
       {profileQuery.isError ? (
         <Alert variant="destructive">
           {profileQuery.error instanceof Error ? profileQuery.error.message : "Unable to load profile"}
+        </Alert>
+      ) : null}
+      {walletQuery.isError ? (
+        <Alert variant="destructive">
+          {walletQuery.error instanceof Error ? walletQuery.error.message : "Unable to load wallet"}
         </Alert>
       ) : null}
       {updateMutation.isSuccess ? <Alert variant="success">Profile updated.</Alert> : null}
@@ -161,9 +180,12 @@ export function ProfileView() {
           <CardContent className="space-y-4 text-sm">
             <Detail label="Email" value={profile?.email} />
             <Detail label="Status" value={profile?.status} />
-            <Detail label="Wallet" value={profile ? `${profile.balance} ${profile.currency}` : undefined} />
+            <Detail
+              label="Wallet"
+              value={wallet || profile ? formatBalance(wallet?.balance ?? profile?.balance, wallet?.currency ?? profile?.currency) : undefined}
+            />
             <Detail label="Shop ID" value={profile?.shopId} />
-            <Detail label="Updated" value={formatDate(profile?.profileUpdatedAt)} />
+            <Detail label="Updated" value={formatDate(wallet?.updatedAt ?? profile?.walletUpdatedAt ?? profile?.profileUpdatedAt)} />
           </CardContent>
         </Card>
       </div>
