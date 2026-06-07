@@ -65,6 +65,16 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: INVENTORY_SERVICE_URL
+            - name: PAYMENT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: PAYMENT_SERVICE_URL
+            - name: SHOP_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: SHOP_SERVICE_URL
             - name: SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL
               valueFrom:
                 configMapKeyRef:
