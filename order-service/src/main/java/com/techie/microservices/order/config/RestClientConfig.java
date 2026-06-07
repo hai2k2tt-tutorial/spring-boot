@@ -21,6 +21,9 @@ import java.time.Duration;
 @Configuration
 @RequiredArgsConstructor
 public class RestClientConfig {
+    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration PAYMENT_READ_TIMEOUT = Duration.ofSeconds(15);
 
     @Value("${inventory.service.url}")
     private String inventoryServiceUrl;
@@ -48,7 +51,7 @@ public class RestClientConfig {
 
     @Bean
     public PaymentClient paymentClient() {
-        return createClient(PaymentClient.class, paymentServiceUrl);
+        return createClient(PaymentClient.class, paymentServiceUrl, PAYMENT_READ_TIMEOUT);
     }
 
     @Bean
@@ -57,9 +60,13 @@ public class RestClientConfig {
     }
 
     private <T> T createClient(Class<T> clientType, String baseUrl) {
+        return createClient(clientType, baseUrl, DEFAULT_READ_TIMEOUT);
+    }
+
+    private <T> T createClient(Class<T> clientType, String baseUrl, Duration readTimeout) {
         RestClient restClient = RestClient.builder()
                 .baseUrl(baseUrl)
-                .requestFactory(getClientRequestFactory())
+                .requestFactory(getClientRequestFactory(readTimeout))
                 .observationRegistry(observationRegistry)
                 .build();
         RestClientAdapter restClientAdapter = RestClientAdapter.create(restClient);
@@ -67,10 +74,10 @@ public class RestClientConfig {
         return httpServiceProxyFactory.createClient(clientType);
     }
 
-    private ClientHttpRequestFactory getClientRequestFactory() {
+    private ClientHttpRequestFactory getClientRequestFactory(Duration readTimeout) {
         ClientHttpRequestFactorySettings clientHttpRequestFactorySettings = ClientHttpRequestFactorySettings.defaults()
-                .withConnectTimeout(Duration.ofSeconds(3))
-                .withReadTimeout(Duration.ofSeconds(3));
+                .withConnectTimeout(DEFAULT_CONNECT_TIMEOUT)
+                .withReadTimeout(readTimeout);
         return ClientHttpRequestFactoryBuilder.simple().build(clientHttpRequestFactorySettings);
     }
 }
