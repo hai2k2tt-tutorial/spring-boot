@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { syncCurrentCustomer } from "@/lib/api";
 import { clearAccessToken, setAccessToken } from "@/lib/auth-token";
 import {
+  cleanupLegacySharedAuthCookies,
   hasCrossAppLogin,
   hasCrossAppLogout,
   markCrossAppLogin,
@@ -16,6 +17,10 @@ export function AuthSync() {
   const { data: session, status } = useSession();
   const syncedTokenRef = useRef<string | null>(null);
   const autoLoginStartedRef = useRef(false);
+
+  useEffect(() => {
+    cleanupLegacySharedAuthCookies();
+  }, []);
 
   useEffect(() => {
     if (status === "authenticated" && session.accessToken) {
@@ -79,7 +84,6 @@ export function AuthSync() {
 
     return () => window.clearInterval(intervalId);
   }, [status]);
-
 
   return null;
 }

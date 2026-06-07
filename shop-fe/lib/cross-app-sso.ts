@@ -7,6 +7,15 @@ export type SsoRealm = "customer" | "shop";
 const ACTIVE_COOKIE_MAX_AGE_SECONDS = 5 * 60;
 const PENDING_COOKIE_MAX_AGE_SECONDS = 10 * 60;
 const LOGOUT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24;
+const LEGACY_SHARED_AUTH_COOKIE_PREFIXES = ["customer-sso", "shop-fe"] as const;
+const LEGACY_SHARED_AUTH_COOKIE_NAMES = [
+  "session-token",
+  "callback-url",
+  "csrf-token",
+  "pkce.code_verifier",
+  "state",
+  "nonce",
+] as const;
 
 function cookieName(realm: SsoRealm): string {
   return `portal-sso.${realm}`;
@@ -26,6 +35,19 @@ function writeCookie(name: string, value: string, maxAgeSeconds: number): void {
     "SameSite=Lax",
     domain ? `Domain=${domain}` : "",
   ].filter(Boolean).join("; ");
+}
+
+function deleteSharedDomainCookie(name: string): void {
+  const domain = sharedCookieDomain();
+  if (!domain) return;
+
+  document.cookie = [
+    `${name}=`,
+    "Path=/",
+    "Max-Age=0",
+    "SameSite=Lax",
+    `Domain=${domain}`,
+  ].join("; ");
 }
 
 function readCookie(name: string): string | undefined {
@@ -60,6 +82,20 @@ export function hasCrossAppLogin(realm: SsoRealm): boolean {
 
 export function hasCrossAppLogout(realm: SsoRealm): boolean {
   return readMarker(realm)?.startsWith("logout:") ?? false;
+}
+
+export function cleanupLegacySharedAuthCookies(): void {
+  for (const prefix of LEGACY_SHARED_AUTH_COOKIE_PREFIXES) {
+    for (const name of LEGACY_SHARED_AUTH_COOKIE_NAMES) {
+      deleteSharedDomainCookie(`${prefix}.authjs.${name}`);
+      deleteSharedDomainCookie(`__Secure-${prefix}.authjs.${name}`);
+    }
+
+    for (let index = 0; index < 10; index += 1) {
+      deleteSharedDomainCookie(`${prefix}.authjs.session-token.${index}`);
+      deleteSharedDomainCookie(`__Secure-${prefix}.authjs.session-token.${index}`);
+    }
+  }
 }
 
 export function beginCrossAppLogin(realm: SsoRealm): void {
