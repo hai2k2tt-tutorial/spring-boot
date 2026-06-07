@@ -98,6 +98,33 @@ data:
             "microprofile-jwt"
           ]
         }
+      ],
+      "users": [
+        {
+          "username": "admin",
+          "enabled": true,
+          "emailVerified": true,
+          "firstName": "Admin",
+          "lastName": "Admin",
+          "email": "admin@local.test",
+          "credentials": [
+            {
+              "type": "password",
+              "value": "admin",
+              "temporary": false
+            }
+          ],
+          "realmRoles": [
+            "admin"
+          ],
+          "clientRoles": {},
+          "groups": [],
+          "attributes": {
+            "id": [
+              "admin"
+            ]
+          }
+        }
       ]
     }
   ecommerce-customer-realm.json: |-
