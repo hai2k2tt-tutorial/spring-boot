@@ -79,15 +79,19 @@ jobs:
               frontend_apps=""
               all_backend=false
               all_frontend=false
+              chart_deploy=false
 
               while IFS= read -r path; do
                 case "$path" in
                   pom.xml|.mvn/*|mvnw|mvnw.cmd|docker/spring-boot/Dockerfile)
                     all_backend=true
                     ;;
-                  .github/workflows/deploy-vps.yml|scripts/docker-build-v2.sh|helm/*|helm/**)
+                  scripts/docker-build-v2.sh)
                     all_backend=true
                     all_frontend=true
+                    ;;
+                  .github/workflows/deploy-vps.yml|helm/*|helm/**)
+                    chart_deploy=true
                     ;;
                   api-gateway/*)
                     backend_modules="$(append_unique "$backend_modules" "api-gateway")"
@@ -148,7 +152,11 @@ jobs:
                 frontend_apps="$DEFAULT_FRONTEND_APPS"
               fi
 
-              if [ -z "$backend_modules" ] && [ -z "$frontend_apps" ]; then
+              if [ -z "$backend_modules" ] && [ -z "$frontend_apps" ] && [ "$chart_deploy" = "true" ]; then
+                backend_modules="__NONE__"
+                frontend_apps="__NONE__"
+                deploy_mode="chart"
+              elif [ -z "$backend_modules" ] && [ -z "$frontend_apps" ]; then
                 backend_modules="__NONE__"
                 frontend_apps="__NONE__"
                 deploy_mode="none"
@@ -185,7 +193,7 @@ jobs:
           echo "Deploy mode: $deploy_mode"
 
       - name: Set up Java
-        if: steps.scope.outputs.deploy_mode != 'none'
+        if: steps.scope.outputs.deploy_mode == 'all' || steps.scope.outputs.deploy_mode == 'selected'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -193,11 +201,11 @@ jobs:
           cache: maven
 
       - name: Set up Docker Buildx
-        if: steps.scope.outputs.deploy_mode != 'none'
+        if: steps.scope.outputs.deploy_mode == 'all' || steps.scope.outputs.deploy_mode == 'selected'
         uses: docker/setup-buildx-action@v3
 
       - name: Build and push images
-        if: steps.scope.outputs.deploy_mode != 'none'
+        if: steps.scope.outputs.deploy_mode == 'all' || steps.scope.outputs.deploy_mode == 'selected'
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -245,11 +253,20 @@ jobs:
           set -euo pipefail
           VPS_PORT="${VPS_PORT:-22}"
 
-          ssh -i ~/.ssh/vps_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+          ssh -i ~/.ssh/vps_key \
+            -p "$VPS_PORT" \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=20 \
+            "$VPS_USER@$VPS_HOST" \
             "DEPLOY_IMAGE_TAG='$DEPLOY_IMAGE_TAG' DOCKER_USERNAME='$DOCKER_USERNAME' DEPLOY_SHA='$GITHUB_SHA' DEPLOY_REF='$GITHUB_REF_NAME' REPO_DIR='$VPS_REPO_DIR' DEPLOY_MODE='$DEPLOY_MODE' BACKEND_MODULES='$BACKEND_MODULES' FRONTEND_APPS='$FRONTEND_APPS' bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd "$REPO_DIR"
+          if [ -n "$(git status --short)" ]; then
+            echo "Stashing local VPS working-tree changes before checkout"
+            git stash push --include-untracked -m "github-actions predeploy ${DEPLOY_SHA}"
+          fi
+
           git fetch --depth=1 origin "$DEPLOY_REF"
           git checkout --detach "$DEPLOY_SHA"
 
@@ -299,6 +316,19 @@ jobs:
             helm_args="$helm_args --set-string applications.${value_key}.image=${IMAGE_PREFIX}/${deploy}:${DEPLOY_IMAGE_TAG}"
             helm_args="$helm_args --set-string applications.${value_key}.imagePullPolicy=Always"
           done
+
+          helm upgrade --install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+            --version v1.20.2 \
+            --namespace cert-manager \
+            --create-namespace \
+            --set crds.enabled=true \
+            --set config.enableGatewayAPI=true \
+            --set webhook.hostNetwork=true \
+            --set webhook.securePort=10260
+
+          kubectl wait --timeout=300s -n cert-manager deployment/cert-manager --for=condition=Available
+          kubectl wait --timeout=300s -n cert-manager deployment/cert-manager-webhook --for=condition=Available
+          kubectl wait --timeout=300s -n cert-manager deployment/cert-manager-cainjector --for=condition=Available
 
           helm dependency build helm/charts/applications
           helm dependency build helm/charts/infrastructure
