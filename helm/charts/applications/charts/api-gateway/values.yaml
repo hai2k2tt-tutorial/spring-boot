@@ -13,9 +13,9 @@ resources:
     cpu: 500m
     memory: 1Gi
 config:
-  customerIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-customer
+  customerIssuerUri: https://keycloak.haint.fyi/realms/ecommerce-customer
   customerJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer/protocol/openid-connect/certs
-  shopIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-shop
+  shopIssuerUri: https://keycloak.haint.fyi/realms/ecommerce-shop
   shopJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop/protocol/openid-connect/certs
-  adminIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-admin
+  adminIssuerUri: https://keycloak.haint.fyi/realms/ecommerce-admin
   adminJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin/protocol/openid-connect/certs

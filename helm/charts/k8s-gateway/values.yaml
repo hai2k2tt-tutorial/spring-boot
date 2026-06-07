@@ -7,6 +7,36 @@ gateway:
     - name: http
       port: 80
       protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: haint-fyi-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+
+certManager:
+  enabled: true
+  clusterIssuer:
+    create: true
+    name: letsencrypt-prod
+    email: admin@haint.fyi
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRefName: letsencrypt-prod-account-key
+  certificate:
+    create: true
+    name: haint-fyi-tls
+    secretName: haint-fyi-tls
+    issuerRef:
+      name: letsencrypt-prod
+      kind: ClusterIssuer
+    dnsNames: []
 routes:
   - name: api-route
     hostname: api.haint.fyi

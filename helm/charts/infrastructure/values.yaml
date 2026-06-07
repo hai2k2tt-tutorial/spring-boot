@@ -149,26 +149,26 @@ keycloak:
   adminPassword: admin
   hostname: keycloak.haint.fyi
   redirectUris:
-    - http://admin-fe.haint.fyi
-    - http://admin-fe.haint.fyi/*
-    - http://admin-fe.haint.fyi/api/auth/callback/keycloak
-    - http://admin-fe.haint.fyi/api/admin-fe/auth/callback/keycloak
-    - http://shop-fe.haint.fyi
-    - http://shop-fe.haint.fyi/*
-    - http://shop-fe.haint.fyi/api/auth/callback/keycloak
-    - http://shop-fe.haint.fyi/api/shop-fe/auth/callback/keycloak
-    - http://customer-fe-next.haint.fyi
-    - http://customer-fe-next.haint.fyi/*
-    - http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
-    - http://customer-fe-next.haint.fyi/api/customer-fe-next/auth/callback/keycloak
-    - http://customer-wallet-fe.haint.fyi
-    - http://customer-wallet-fe.haint.fyi/*
-    - http://customer-wallet-fe.haint.fyi/api/customer-wallet-fe/auth/callback/keycloak
-    - http://shop-wallet-fe.haint.fyi
-    - http://shop-wallet-fe.haint.fyi/*
-    - http://shop-wallet-fe.haint.fyi/api/shop-wallet-fe/auth/callback/keycloak
-    - http://customer-fe-angular.haint.fyi
-    - http://customer-fe-angular.haint.fyi/*
+    - https://admin-fe.haint.fyi
+    - https://admin-fe.haint.fyi/*
+    - https://admin-fe.haint.fyi/api/auth/callback/keycloak
+    - https://admin-fe.haint.fyi/api/admin-fe/auth/callback/keycloak
+    - https://shop-fe.haint.fyi
+    - https://shop-fe.haint.fyi/*
+    - https://shop-fe.haint.fyi/api/auth/callback/keycloak
+    - https://shop-fe.haint.fyi/api/shop-fe/auth/callback/keycloak
+    - https://customer-fe-next.haint.fyi
+    - https://customer-fe-next.haint.fyi/*
+    - https://customer-fe-next.haint.fyi/api/auth/callback/keycloak
+    - https://customer-fe-next.haint.fyi/api/customer-fe-next/auth/callback/keycloak
+    - https://customer-wallet-fe.haint.fyi
+    - https://customer-wallet-fe.haint.fyi/*
+    - https://customer-wallet-fe.haint.fyi/api/customer-wallet-fe/auth/callback/keycloak
+    - https://shop-wallet-fe.haint.fyi
+    - https://shop-wallet-fe.haint.fyi/*
+    - https://shop-wallet-fe.haint.fyi/api/shop-wallet-fe/auth/callback/keycloak
+    - https://customer-fe-angular.haint.fyi
+    - https://customer-fe-angular.haint.fyi/*
   db:
     vendor: MYSQL
     host: keycloak-mysql

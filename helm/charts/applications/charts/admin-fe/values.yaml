@@ -14,9 +14,9 @@ resources:
     memory: 256Mi
 config:
   apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
-  nextPublicApiBaseUrl: http://api.haint.fyi/api
-  authUrl: http://admin-fe.haint.fyi
-  authIssuer: http://keycloak.haint.fyi/realms/ecommerce-admin
+  nextPublicApiBaseUrl: https://api.haint.fyi/api
+  authUrl: https://admin-fe.haint.fyi
+  authIssuer: https://keycloak.haint.fyi/realms/ecommerce-admin
   authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin
   authClientId: admin-fe-client
   authClientSecret: ""

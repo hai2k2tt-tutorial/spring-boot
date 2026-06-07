@@ -13,8 +13,8 @@ resources:
     cpu: 300m
     memory: 256Mi
 config:
-  adminFeUrl: http://admin-fe.haint.fyi
-  shopFeUrl: http://shop-fe.haint.fyi
-  customerFeUrl: http://customer-fe-next.haint.fyi
-  customerWalletFeUrl: http://customer-wallet-fe.haint.fyi
-  shopWalletFeUrl: http://shop-wallet-fe.haint.fyi
+  adminFeUrl: https://admin-fe.haint.fyi
+  shopFeUrl: https://shop-fe.haint.fyi
+  customerFeUrl: https://customer-fe-next.haint.fyi
+  customerWalletFeUrl: https://customer-wallet-fe.haint.fyi
+  shopWalletFeUrl: https://shop-wallet-fe.haint.fyi

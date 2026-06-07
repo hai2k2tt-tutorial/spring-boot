@@ -37,11 +37,11 @@ apiGateway:
       cpu: 500m
       memory: 1Gi
   config:
-    customerIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-customer
+    customerIssuerUri: https://keycloak.haint.fyi/realms/ecommerce-customer
     customerJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer/protocol/openid-connect/certs
-    shopIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-shop
+    shopIssuerUri: https://keycloak.haint.fyi/realms/ecommerce-shop
     shopJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop/protocol/openid-connect/certs
-    adminIssuerUri: http://keycloak.haint.fyi/realms/ecommerce-admin
+    adminIssuerUri: https://keycloak.haint.fyi/realms/ecommerce-admin
     adminJwkSetUri: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin/protocol/openid-connect/certs
 
 productService:
@@ -61,7 +61,7 @@ productService:
   config:
     datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/product_service
     minioEndpoint: http://minio.microservices.svc.cluster.local:9000
-    minioPublicEndpoint: http://minio.haint.fyi
+    minioPublicEndpoint: https://minio.haint.fyi
     minioSecretName: minio-secrets
     minioProductImagesBucket: product-images
     minioProductImagesPublicPath: /api/product/images
@@ -203,11 +203,11 @@ landingFe:
       cpu: 300m
       memory: 256Mi
   config:
-    adminFeUrl: http://admin-fe.haint.fyi
-    shopFeUrl: http://shop-fe.haint.fyi
-    customerFeUrl: http://customer-fe-next.haint.fyi
-    customerWalletFeUrl: http://customer-wallet-fe.haint.fyi
-    shopWalletFeUrl: http://shop-wallet-fe.haint.fyi
+    adminFeUrl: https://admin-fe.haint.fyi
+    shopFeUrl: https://shop-fe.haint.fyi
+    customerFeUrl: https://customer-fe-next.haint.fyi
+    customerWalletFeUrl: https://customer-wallet-fe.haint.fyi
+    shopWalletFeUrl: https://shop-wallet-fe.haint.fyi
 
 adminFe:
   enabled: true
@@ -225,9 +225,9 @@ adminFe:
       memory: 256Mi
   config:
     apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
-    nextPublicApiBaseUrl: http://api.haint.fyi/api
-    authUrl: http://admin-fe.haint.fyi
-    authIssuer: http://keycloak.haint.fyi/realms/ecommerce-admin
+    nextPublicApiBaseUrl: https://api.haint.fyi/api
+    authUrl: https://admin-fe.haint.fyi
+    authIssuer: https://keycloak.haint.fyi/realms/ecommerce-admin
     authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-admin
     authClientId: admin-fe-client
     authClientSecret: ""
@@ -252,9 +252,9 @@ shopFe:
       memory: 256Mi
   config:
     apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
-    nextPublicApiBaseUrl: http://api.haint.fyi/api
-    authUrl: http://shop-fe.haint.fyi
-    authIssuer: http://keycloak.haint.fyi/realms/ecommerce-shop
+    nextPublicApiBaseUrl: https://api.haint.fyi/api
+    authUrl: https://shop-fe.haint.fyi
+    authIssuer: https://keycloak.haint.fyi/realms/ecommerce-shop
     authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop
     authClientId: shop-fe-client
     authClientSecret: ""
@@ -280,9 +280,9 @@ customerFeNext:
       memory: 256Mi
   config:
     apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
-    nextPublicApiBaseUrl: http://api.haint.fyi/api
-    authUrl: http://customer-fe-next.haint.fyi
-    authIssuer: http://keycloak.haint.fyi/realms/ecommerce-customer
+    nextPublicApiBaseUrl: https://api.haint.fyi/api
+    authUrl: https://customer-fe-next.haint.fyi
+    authIssuer: https://keycloak.haint.fyi/realms/ecommerce-customer
     authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer
     authClientId: customer-fe-client
     authClientSecret: ""
@@ -308,9 +308,9 @@ customerWalletFe:
       memory: 256Mi
   config:
     apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
-    nextPublicApiBaseUrl: http://api.haint.fyi/api
-    authUrl: http://customer-wallet-fe.haint.fyi
-    authIssuer: http://keycloak.haint.fyi/realms/ecommerce-customer
+    nextPublicApiBaseUrl: https://api.haint.fyi/api
+    authUrl: https://customer-wallet-fe.haint.fyi
+    authIssuer: https://keycloak.haint.fyi/realms/ecommerce-customer
     authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-customer
     authClientId: customer-fe-client
     authClientSecret: ""
@@ -336,9 +336,9 @@ shopWalletFe:
       memory: 256Mi
   config:
     apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
-    nextPublicApiBaseUrl: http://api.haint.fyi/api
-    authUrl: http://shop-wallet-fe.haint.fyi
-    authIssuer: http://keycloak.haint.fyi/realms/ecommerce-shop
+    nextPublicApiBaseUrl: https://api.haint.fyi/api
+    authUrl: https://shop-wallet-fe.haint.fyi
+    authIssuer: https://keycloak.haint.fyi/realms/ecommerce-shop
     authIssuerInternal: http://keycloak.microservices.svc.cluster.local:8080/realms/ecommerce-shop
     authClientId: shop-fe-client
     authClientSecret: ""
