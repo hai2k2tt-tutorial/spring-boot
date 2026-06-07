@@ -464,6 +464,9 @@ applications:
         memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/order_service
+      customerDatasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
+      customerDatasourceUsername: postgres
+      customerDatasourcePassword: postgres
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   inventoryService:
     enabled: true
@@ -515,6 +518,9 @@ applications:
         memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/payment_service
+      customerDatasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
+      customerDatasourceUsername: postgres
+      customerDatasourcePassword: postgres
   shopService:
     enabled: true
     image: docker.io/hai2k2tt/shop-service:2-amd64

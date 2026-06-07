@@ -14,4 +14,7 @@ resources:
     memory: 1Gi
 config:
   datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/order_service
+  customerDatasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
+  customerDatasourceUsername: postgres
+  customerDatasourcePassword: postgres
   schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081

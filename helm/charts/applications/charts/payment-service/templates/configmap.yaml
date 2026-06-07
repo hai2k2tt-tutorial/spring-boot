@@ -6,4 +6,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 data:
   SPRING_DATASOURCE_URL: {{ .Values.config.datasourceUrl | quote }}
+  CUSTOMER_DATASOURCE_URL: {{ .Values.config.customerDatasourceUrl | quote }}
+  CUSTOMER_DATASOURCE_USERNAME: {{ .Values.config.customerDatasourceUsername | quote }}
+  CUSTOMER_DATASOURCE_PASSWORD: {{ .Values.config.customerDatasourcePassword | quote }}
 {{- end }}

@@ -14,3 +14,6 @@ resources:
     memory: 1Gi
 config:
   datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/payment_service
+  customerDatasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
+  customerDatasourceUsername: postgres
+  customerDatasourcePassword: postgres

@@ -45,6 +45,21 @@ spec:
                 configMapKeyRef:
                   name: order-service-config
                   key: SPRING_DATASOURCE_URL
+            - name: CUSTOMER_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: order-service-config
+                  key: CUSTOMER_DATASOURCE_URL
+            - name: CUSTOMER_DATASOURCE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: order-service-config
+                  key: CUSTOMER_DATASOURCE_USERNAME
+            - name: CUSTOMER_DATASOURCE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: order-service-config
+                  key: CUSTOMER_DATASOURCE_PASSWORD
             - name: LOKI_URL
               valueFrom:
                 configMapKeyRef:
