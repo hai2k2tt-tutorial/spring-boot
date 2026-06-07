@@ -4,7 +4,9 @@ import { signIn, signOut } from "next-auth/react";
 
 export type SsoRealm = "customer" | "shop";
 
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24;
+const ACTIVE_COOKIE_MAX_AGE_SECONDS = 5 * 60;
+const PENDING_COOKIE_MAX_AGE_SECONDS = 10 * 60;
+const LOGOUT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24;
 
 function cookieName(realm: SsoRealm): string {
   return `portal-sso.${realm}`;
@@ -41,11 +43,15 @@ function readMarker(realm: SsoRealm): string | undefined {
 }
 
 export function markCrossAppLogin(realm: SsoRealm): void {
-  writeCookie(cookieName(realm), `active:${Date.now()}`, COOKIE_MAX_AGE_SECONDS);
+  writeCookie(cookieName(realm), `active:${Date.now()}`, ACTIVE_COOKIE_MAX_AGE_SECONDS);
 }
 
 export function markCrossAppLogout(realm: SsoRealm): void {
-  writeCookie(cookieName(realm), `logout:${Date.now()}`, COOKIE_MAX_AGE_SECONDS);
+  writeCookie(cookieName(realm), `logout:${Date.now()}`, LOGOUT_COOKIE_MAX_AGE_SECONDS);
+}
+
+export function markCrossAppLoginPending(realm: SsoRealm): void {
+  writeCookie(cookieName(realm), `pending:${Date.now()}`, PENDING_COOKIE_MAX_AGE_SECONDS);
 }
 
 export function hasCrossAppLogin(realm: SsoRealm): boolean {
@@ -57,7 +63,9 @@ export function hasCrossAppLogout(realm: SsoRealm): boolean {
 }
 
 export function beginCrossAppLogin(realm: SsoRealm): void {
-  markCrossAppLogin(realm);
+  // Do not mark active until Auth.js has a real local session.
+  // Otherwise sibling apps may attempt prompt=none while this app is still on the Keycloak login form.
+  markCrossAppLoginPending(realm);
   void signIn("keycloak");
 }
 

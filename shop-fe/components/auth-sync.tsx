@@ -67,7 +67,10 @@ export function AuthSync() {
     if (status !== "authenticated") return;
 
     const intervalId = window.setInterval(() => {
-      if (!hasCrossAppLogout("shop")) return;
+      if (!hasCrossAppLogout("shop")) {
+        markCrossAppLogin("shop");
+        return;
+      }
 
       syncedTokenRef.current = null;
       clearAccessToken();
