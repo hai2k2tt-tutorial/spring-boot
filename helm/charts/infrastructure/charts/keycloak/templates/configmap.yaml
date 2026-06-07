@@ -21,6 +21,7 @@ data:
       "sslRequired": "none",
       "registrationAllowed": false,
       "loginWithEmailAllowed": true,
+      "accessTokenLifespan": 3600,
       "roles": {
         "realm": [
           {
@@ -134,6 +135,7 @@ data:
       "sslRequired": "none",
       "registrationAllowed": true,
       "loginWithEmailAllowed": true,
+      "accessTokenLifespan": 3600,
       "roles": {
         "realm": [
           {
@@ -235,6 +237,7 @@ data:
       "sslRequired": "none",
       "registrationAllowed": true,
       "loginWithEmailAllowed": true,
+      "accessTokenLifespan": 3600,
       "roles": {
         "realm": [
           {
