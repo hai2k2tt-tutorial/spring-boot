@@ -41,13 +41,8 @@ export default function HomePage() {
       href: customerUrl,
       icon: UserRound,
       cta: "Open customer",
-    },
-    {
-      title: "Customer Wallet",
-      description: "Open the customer wallet frontend for balance, deposits, and transaction history.",
-      href: customerWalletUrl,
-      icon: Wallet,
-      cta: "Open customer wallet",
+      walletHref: customerWalletUrl,
+      walletCta: "Open customer wallet",
     },
     {
       title: "Shop Portal",
@@ -55,13 +50,8 @@ export default function HomePage() {
       href: shopUrl,
       icon: Store,
       cta: "Open shop",
-    },
-    {
-      title: "Shop Wallet",
-      description: "Open the shop wallet frontend for shop balance and payout-related activity.",
-      href: shopWalletUrl,
-      icon: Wallet,
-      cta: "Open shop wallet",
+      walletHref: shopWalletUrl,
+      walletCta: "Open shop wallet",
     },
   ];
 
@@ -122,12 +112,28 @@ export default function HomePage() {
                       <p className="mt-1 text-sm leading-6 text-slate-600">{portal.description}</p>
                     </div>
                   </div>
-                  <Button asChild className="w-full sm:w-auto">
-                    <Link href={portal.href}>
-                      {portal.cta}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-56">
+                    <div className="grid gap-2">
+                      <Button asChild className="w-full">
+                        <Link href={portal.href}>
+                          {portal.cta}
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      {portal.walletHref ? (
+                        <Button asChild variant="outline" className="w-full">
+                          <Link href={portal.walletHref}>
+                            <Wallet className="h-4 w-4" />
+                            {portal.walletCta}
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                    <p className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                      SSO guide: open the portal first to sign in, then use the wallet button to continue with the same
+                      session.
+                    </p>
+                  </div>
                 </div>
               </article>
             );

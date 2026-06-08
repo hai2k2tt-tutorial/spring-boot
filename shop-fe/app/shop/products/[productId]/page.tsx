@@ -103,18 +103,6 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
             <p className="mt-1 text-sm text-slate-600">Manage attributes, SKUs, and inventory checks for this product.</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => void Promise.all([productQuery.refetch(), attributesQuery.refetch(), skusQuery.refetch()])}>
-            Refresh
-          </Button>
-          <Button onClick={() => setDialog("sku")}>
-            <Plus className="h-4 w-4" />
-            SKU
-          </Button>
-          <Button variant="secondary" onClick={() => setDialog("attribute")}>
-            Attribute
-          </Button>
-        </div>
       </div>
 
       {feedback ? (
@@ -163,7 +151,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
       ) : null}
 
-      <ApiTable title="Attributes" headers={["Code", "Name", "Values", "Updated"]}>
+      <ApiTable
+        title="Attributes"
+        action={
+          <Button size="sm" variant="secondary" onClick={() => setDialog("attribute")}>
+            <Plus className="h-4 w-4" />
+            Create attribute
+          </Button>
+        }
+        headers={["Code", "Name", "Values", "Updated"]}
+      >
         {attributesQuery.data?.length ? null : <EmptyRow colSpan={4} label="No attributes returned." />}
         {attributesQuery.data?.map((attribute) => (
           <TableRow key={attribute.id}>
@@ -179,7 +176,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         ))}
       </ApiTable>
 
-      <ApiTable title="SKUs" headers={["SKU", "Price override", "Quantity", "Created", "Actions"]}>
+      <ApiTable
+        title="SKUs"
+        action={
+          <Button size="sm" onClick={() => setDialog("sku")}>
+            <Plus className="h-4 w-4" />
+            Create SKU
+          </Button>
+        }
+        headers={["SKU", "Price override", "Quantity", "Created", "Actions"]}
+      >
         {skusQuery.data?.length ? null : <EmptyRow colSpan={5} label="No SKUs returned." />}
         {skusQuery.data?.map((sku) => (
           <TableRow key={sku.id}>

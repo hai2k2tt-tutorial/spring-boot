@@ -1,6 +1,5 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { ApiDialogs } from "@/components/api-workspace/dialogs";
 import Link from "next/link";
 import { ApiTable, EmptyRow } from "@/components/api-workspace/primitives";
@@ -38,7 +37,7 @@ export default function ShopDashboardPage() {
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div><Badge variant="outline">SHOP API UI</Badge><h1 className="mt-3 text-3xl font-semibold text-slate-950">Shop workspace</h1><p className="mt-1 max-w-3xl text-sm text-slate-600">Shop-token workspace for catalog, orders, and payments.</p></div>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={auth.loadData} disabled={auth.fetching}>Refresh</Button><Button onClick={() => auth.setDialog("product")}><Plus className="h-4 w-4" />Product</Button></div>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={auth.loadData} disabled={auth.fetching}>Refresh</Button></div>
       </div>
       {auth.feedback ? <Alert variant={auth.feedback.kind === "error" ? "destructive" : "success"}>{auth.feedback.message}</Alert> : null}
       {auth.loading ? <p className="text-sm text-slate-500">Loading shop data...</p> : null}
