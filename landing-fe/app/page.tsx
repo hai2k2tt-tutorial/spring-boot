@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Boxes, CreditCard, ShieldCheck, ShoppingBag, Store, UserRound, Wallet } from "lucide-react";
+import { ArrowRight, Package, ShieldCheck, ShoppingBag, Store, UserRound, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +15,9 @@ function requiredEnv(name: string) {
 }
 
 const capabilities = [
-  { label: "Product catalog", icon: Boxes },
-  { label: "Order lifecycle", icon: ShoppingBag },
-  { label: "Payment tracking", icon: CreditCard },
+  { label: "Add funds in wallet", icon: Wallet },
+  { label: "Browse & buy products", icon: ShoppingBag },
+  { label: "Create product, SKU & orders", icon: Package },
 ];
 
 export default function HomePage() {
@@ -129,10 +129,17 @@ export default function HomePage() {
                         </Button>
                       ) : null}
                     </div>
-                    <p className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
-                      SSO guide: open the portal first to sign in, then use the wallet button to continue with the same
-                      session.
-                    </p>
+                    {portal.walletHref ? (
+                      <p className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                        SSO guide: open the portal first to sign in, then use the wallet button to continue with the same
+                        session.
+                      </p>
+                    ) : (
+                      <p className="rounded-md bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+                        Default Keycloak credentials: <code className="rounded bg-slate-200 px-1 py-px text-slate-950">admin</code>{" "}
+                        / <code className="rounded bg-slate-200 px-1 py-px text-slate-950">admin</code>
+                      </p>
+                    )}
                   </div>
                 </div>
               </article>
@@ -143,12 +150,72 @@ export default function HomePage() {
 
       <section className="border-t border-slate-200 bg-white">
         <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-          <h2 className="text-2xl font-semibold text-slate-950">About the app</h2>
-          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
-            The ecommerce system is split into focused frontend services for admin, customer, shop, and wallet users. This
-            landing service gives you one domain to publish, bookmark, or route through a load balancer while each
-            workspace keeps its own authentication realm and deployment lifecycle.
-          </p>
+          <h2 className="text-2xl font-semibold text-slate-950">Main Features</h2>
+
+          {/* Wallet */}
+          <div className="mt-8">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <Wallet className="h-4 w-4 text-slate-600" />
+              Add funds in wallet
+            </h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {[
+                { step: "Open wallet", detail: "Click Open customer wallet or Open shop wallet from the portal card above." },
+                { step: "Sign in with Keycloak", detail: "Use the same SSO session from the Customer or Shop portal." },
+                { step: "Check balance & transfer", detail: "View your current balance and add funds from the wallet dashboard." },
+              ].map((item, i) => (
+                <div key={item.step} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Step {i + 1}</p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">{item.step}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Customer flow */}
+          <div className="mt-10">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <ShoppingBag className="h-4 w-4 text-slate-600" />
+              Buy product flow &mdash; for user
+            </h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-4">
+              {[
+                { step: "Browse catalog", detail: "Open the Customer Portal and browse available products across shops." },
+                { step: "Select product", detail: "Click a product to see details, price, SKU attributes, and shop info." },
+                { step: "Place order", detail: "Add to cart and confirm the order from the checkout page." },
+                { step: "Track order", detail: "View order status and payment confirmation in your order history." },
+              ].map((item, i) => (
+                <div key={item.step} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Step {i + 1}</p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">{item.step}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Shop flow */}
+          <div className="mt-10">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <Package className="h-4 w-4 text-slate-600" />
+              Create product, attribute, SKU &amp; check orders &mdash; for shop
+            </h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-4">
+              {[
+                { step: "Create product", detail: "Open the Shop Portal, navigate to Add Product, and fill in name, price, and description." },
+                { step: "Add attributes", detail: "Define product attributes (size, color, material) so customers can pick variants." },
+                { step: "Configure SKUs", detail: "Create SKUs tied to attribute combinations with stock quantity and pricing." },
+                { step: "Check orders", detail: "View incoming orders, verify payment status, and manage order fulfillment." },
+              ].map((item, i) => (
+                <div key={item.step} className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Step {i + 1}</p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">{item.step}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">{item.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </main>
