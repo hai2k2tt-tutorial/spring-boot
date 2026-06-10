@@ -1,0 +1,110 @@
+spring:
+  application:
+    name: api-gateway
+
+server:
+  port: 9000
+
+app:
+  security:
+    customer-issuer-uri: http://localhost:8181/realms/ecommerce-customer
+    shop-issuer-uri: http://localhost:8181/realms/ecommerce-shop
+    admin-issuer-uri: http://localhost:8181/realms/ecommerce-admin
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Product Service
+        url: /aggregate/product-service/v3/api-docs
+      - name: Order Service
+        url: /aggregate/order-service/v3/api-docs
+      - name: Inventory Service
+        url: /aggregate/inventory-service/v3/api-docs
+      - name: Payment Service
+        url: /aggregate/payment-service/v3/api-docs
+      - name: Shop Service
+        url: /aggregate/shop-service/v3/api-docs
+      - name: Customer Service
+        url: /aggregate/customer-service/v3/api-docs
+      - name: Wallet Service
+        url: /aggregate/wallet-service/v3/api-docs
+  api-docs:
+    path: /api-docs
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+  observations:
+    key-values:
+      application: api-gateway
+  tracing:
+    sampling:
+      probability: 1.0
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        minimum-number-of-calls: 5
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 3s
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 2s
+
+loki:
+  url: http://localhost:3100/loki/api/v1/push
+
+product:
+  service:
+    url: http://localhost:8080
+
+order:
+  service:
+    url: http://localhost:8081
+
+inventory:
+  service:
+    url: http://localhost:8082
+
+payment:
+  service:
+    url: http://localhost:8085
+
+shop:
+  service:
+    url: http://localhost:8086
+
+customer:
+  service:
+    url: http://localhost:8087
+
+wallet:
+  service:
+    url: http://localhost:8088
