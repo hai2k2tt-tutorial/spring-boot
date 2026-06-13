@@ -29,6 +29,10 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/minio"
     condition: minio.enabled
+  - name: redis
+    version: 0.1.0
+    repository: "file://charts/redis"
+    condition: redis.enabled
   - name: observability
     version: 0.1.0
     repository: "file://charts/observability"

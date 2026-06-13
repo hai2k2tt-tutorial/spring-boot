@@ -4,8 +4,17 @@ import { authBasePath, authCookieDomain, authCookiePrefix, authIssuer } from "@/
 
 const sessionCookieName = `${authCookiePrefix}.authjs.session-token`;
 
+const apiBaseUrl =
+  process.env.API_BASE_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "http://localhost:9000/api";
+
 function getAppBaseUrl(request: NextRequest): string {
   return (process.env.AUTH_URL ?? request.nextUrl.origin).replace(/\/$/, "");
+}
+
+function getApiBaseUrl(): string {
+  return apiBaseUrl.replace(/\/$/, "");
 }
 
 function buildPostLogoutRedirectUri(request: NextRequest): string {
@@ -27,6 +36,24 @@ function buildKeycloakLogoutUrl(request: NextRequest, idToken?: string): string 
   }
 
   return logoutUrl.toString();
+}
+
+async function blackListAccessToken(accessToken?: string): Promise<void> {
+  if (!accessToken) {
+    return;
+  }
+
+  try {
+    await fetch(`${getApiBaseUrl()}/auth/logout`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.error("Failed to blacklist access token", error);
+  }
 }
 
 function expireAuthCookies(request: NextRequest, response: NextResponse): void {
@@ -56,7 +83,12 @@ export async function GET(request: NextRequest) {
     secret: process.env.AUTH_SECRET,
     cookieName: sessionCookieName,
   });
+
+  const accessToken = typeof token?.accessToken === "string" ? token.accessToken : undefined;
   const idToken = typeof token?.idToken === "string" ? token.idToken : undefined;
+
+  await blackListAccessToken(accessToken);
+
   const response = NextResponse.redirect(buildKeycloakLogoutUrl(request, idToken));
   expireAuthCookies(request, response);
   return response;

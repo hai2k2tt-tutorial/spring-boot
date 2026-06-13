@@ -374,6 +374,8 @@ services:
         condition: service_started
       wallet-service:
         condition: service_started
+      redis:
+        condition: service_healthy
     ports:
       - "9000:9000"
     environment:
@@ -392,6 +394,8 @@ services:
       SHOP_SERVICE_URL: http://shop-service:8086
       CUSTOMER_SERVICE_URL: http://customer-service:8087
       WALLET_SERVICE_URL: http://wallet-service:8088
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -566,6 +570,19 @@ services:
       - shop-wallet-fe-node-modules:/app/node_modules
       - shop-wallet-fe-next-cache:/app/.next
       - frontend-npm-cache:/root/.npm
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: [ "redis-server", "--appendonly", "yes" ]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres-data:
@@ -586,3 +603,4 @@ volumes:
   customer-wallet-fe-next-cache:
   shop-wallet-fe-node-modules:
   shop-wallet-fe-next-cache:
+  redis-data:

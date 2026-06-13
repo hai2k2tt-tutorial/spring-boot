@@ -282,6 +282,7 @@ services:
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 
+
   api-gateway:
     image: docker.io/hai2k2tt/api-gateway:2-arm64
     depends_on:
@@ -299,6 +300,8 @@ services:
         condition: service_started
       customer-service:
         condition: service_started
+      redis:
+        condition: service_healthy
     ports:
       - "9000:9000"
     environment:
@@ -316,7 +319,8 @@ services:
       PAYMENT_SERVICE_URL: http://payment-service:8085
       SHOP_SERVICE_URL: http://shop-service:8086
       CUSTOMER_SERVICE_URL: http://customer-service:8087
-
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
   landing-fe:
     build:
       context: ./landing-fe
@@ -396,9 +400,22 @@ services:
       AUTH_CLIENT_SECRET: ""
       AUTH_SCOPE: openid profile offline_access
       AUTH_SECRET: replace-with-a-long-random-string
-
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: [ "redis-server", "--appendonly", "yes" ]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 volumes:
   postgres-data:
   keycloak-mysql-data:
   grafana-data:
   minio-data:
+  redis-data:

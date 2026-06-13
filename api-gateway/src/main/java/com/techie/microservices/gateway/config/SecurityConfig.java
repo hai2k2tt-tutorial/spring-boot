@@ -1,36 +1,30 @@
 package com.techie.microservices.gateway.config;
 
-import jakarta.servlet.http.HttpServletRequest;
 import com.nimbusds.jwt.SignedJWT;
+import com.techie.microservices.gateway.security.JwtBlackListValidator;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authorization.AuthorizationDecision;
-import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.text.ParseException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 @Configuration
 public class SecurityConfig {
@@ -56,6 +50,12 @@ public class SecurityConfig {
 
     @Value("${app.security.admin-jwk-set-uri:${app.security.admin-issuer-uri}/protocol/openid-connect/certs}")
     private String adminJwkSetUri;
+
+    private final JwtBlackListValidator jwtBlacklistValidator;
+
+    public SecurityConfig(JwtBlackListValidator jwtBlacklistValidator) {
+        this.jwtBlacklistValidator = jwtBlacklistValidator;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
@@ -94,7 +94,10 @@ public class SecurityConfig {
 
     private ProviderManager authenticationManager(String issuerUri, String jwkSetUri) {
         NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
-        jwtDecoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuerUri));
+        jwtDecoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(issuerUri),
+                jwtBlacklistValidator
+        ));
         JwtAuthenticationProvider authenticationProvider = new JwtAuthenticationProvider(jwtDecoder);
         return new ProviderManager(authenticationProvider);
     }
@@ -119,64 +122,6 @@ public class SecurityConfig {
 
     private OAuth2AuthenticationException invalidToken(String description) {
         return new OAuth2AuthenticationException(new OAuth2Error("invalid_token", description, null));
-    }
-
-    private AuthorizationManager<RequestAuthorizationContext> hasIssuerOrAdmin(String expectedIssuer) {
-        return (Supplier<Authentication> authentication, RequestAuthorizationContext context) -> {
-            JwtAuthenticationToken jwtAuthenticationToken = getJwtAuthenticationToken(authentication.get());
-
-            if (jwtAuthenticationToken == null) {
-                return new AuthorizationDecision(false);
-            }
-
-            boolean isExpectedIssuer = hasAnyIssuer(jwtAuthenticationToken, expectedIssuer);
-            boolean isAdmin = hasAnyIssuer(jwtAuthenticationToken, adminIssuerUri)
-                    && hasRealmRole(jwtAuthenticationToken, "admin");
-
-            return new AuthorizationDecision(isExpectedIssuer || isAdmin);
-        };
-    }
-
-    private AuthorizationManager<RequestAuthorizationContext> hasAdminIssuerAndRole() {
-        return (Supplier<Authentication> authentication, RequestAuthorizationContext context) -> {
-            JwtAuthenticationToken jwtAuthenticationToken = getJwtAuthenticationToken(authentication.get());
-
-            return new AuthorizationDecision(jwtAuthenticationToken != null
-                    && hasAnyIssuer(jwtAuthenticationToken, adminIssuerUri)
-                    && hasRealmRole(jwtAuthenticationToken, "admin"));
-        };
-    }
-
-    private JwtAuthenticationToken getJwtAuthenticationToken(Authentication authentication) {
-        if (!(authentication instanceof JwtAuthenticationToken jwtAuthenticationToken)
-                || !authentication.isAuthenticated()
-                || jwtAuthenticationToken.getToken().getIssuer() == null) {
-            return null;
-        }
-
-        return jwtAuthenticationToken;
-    }
-
-    private boolean hasAnyIssuer(JwtAuthenticationToken jwtAuthenticationToken, String... expectedIssuers) {
-        String tokenIssuer = jwtAuthenticationToken.getToken().getIssuer().toString();
-
-        for (String expectedIssuer : expectedIssuers) {
-            if (expectedIssuer.equals(tokenIssuer)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean hasRealmRole(JwtAuthenticationToken jwtAuthenticationToken, String expectedRole) {
-        Map<String, Object> realmAccess = jwtAuthenticationToken.getToken().getClaimAsMap("realm_access");
-
-        if (realmAccess == null || !(realmAccess.get("roles") instanceof Collection<?> roles)) {
-            return false;
-        }
-
-        return roles.contains(expectedRole);
     }
 
     @Bean

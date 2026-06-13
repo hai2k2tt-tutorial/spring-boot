@@ -17,8 +17,11 @@ dependencies:
 - name: minio
   repository: file://charts/minio
   version: 0.1.0
+- name: redis
+  repository: file://charts/redis
+  version: 0.1.0
 - name: observability
   repository: file://charts/observability
   version: 0.1.0
-digest: sha256:9d2fd155ebae693a93ebcd0df5ffbd59591615eadd8ac918694c5fad458b51e2
-generated: "2026-06-02T17:48:19.050105+07:00"
+digest: sha256:2a4786bfddb90489a909837ee082fc55aa5d6824baaeb2f94e89c5cb205b75c7
+generated: "2026-06-13T16:00:02.475963+07:00"

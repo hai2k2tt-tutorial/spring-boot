@@ -20,6 +20,8 @@ commonConfig:
   shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
   customerServiceUrl: http://customer-service.microservices.svc.cluster.local:8087
   walletServiceUrl: http://wallet-service.microservices.svc.cluster.local:8088
+  springDataRedisHost: redis.microservices.svc.cluster.local
+  springDataRedisPort: "6379"
   springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
 
 apiGateway:

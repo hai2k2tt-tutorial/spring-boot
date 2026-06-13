@@ -1,5 +1,11 @@
 namespace: microservices
 
+global:
+  workloadScheduling:
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+
 mongodb:
   enabled: false
   fullnameOverride: mongodb
@@ -214,6 +220,20 @@ mailhog:
     limits:
       cpu: 200m
       memory: 128Mi
+
+redis:
+  enabled: true
+  image: redis:7.4-alpine
+  replicaCount: 1
+  service:
+    port: 6379
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
 observability:
   enabled: true

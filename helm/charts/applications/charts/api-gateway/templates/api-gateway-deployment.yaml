@@ -110,6 +110,16 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: WALLET_SERVICE_URL
+            - name: SPRING_DATA_REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: SPRING_DATA_REDIS_HOST
+            - name: SPRING_DATA_REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: SPRING_DATA_REDIS_PORT
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}
