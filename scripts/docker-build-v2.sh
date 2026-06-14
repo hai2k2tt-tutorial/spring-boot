@@ -308,7 +308,7 @@ create_manifest() {
 }
 
 for module in $BACKEND_MODULES; do
-  mvn -Pdocker-build -DskipTests -pl "$module" package
+  mvn -Pdocker-build -DskipTests -pl "$module" clean package
 
   image_base="docker.io/$DOCKER_USERNAME/$module"
   image_sources=""
