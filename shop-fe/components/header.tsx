@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LogIn, LogOut, Store } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { ShopNotificationMenu } from "@/components/shop-notification-menu";
 import { clearAccessToken } from "@/lib/auth-token";
 import { beginCrossAppLogin, markCrossAppLogout } from "@/lib/cross-app-sso";
 
@@ -42,6 +43,7 @@ export function Header() {
               </Button>
             ))}
           </nav>
+          {isAuthenticated ? <ShopNotificationMenu /> : null}
           {username ? <span className="hidden text-sm text-slate-500 sm:inline">Hi {String(username)}</span> : null}
           {status === "loading" ? null : isAuthenticated ? (
             <Button type="button" variant="outline" size="sm" onClick={logout}>

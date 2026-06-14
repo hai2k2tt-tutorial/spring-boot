@@ -20,6 +20,7 @@ import {
   ProductImagePresignResponseVo,
   ProductRequestDto,
   ProductResponseVo,
+  ShopNotificationResponseVo,
   ShopWalletResponseVo,
   ShopResponseVo,
   ShopProfileUpdateRequestDto,
@@ -521,6 +522,15 @@ export async function fetchShops(): Promise<ShopResponseVo[]> {
 export async function fetchShop(shopId: UUID): Promise<ShopResponseVo> {
   try {
     const response = await api.get<ShopResponseVo>(`/shops/${shopId}`);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
+export async function fetchCurrentShopNotifications(): Promise<ShopNotificationResponseVo[]> {
+  try {
+    const response = await api.get<ShopNotificationResponseVo[]>("/notifications/shop/me");
     return response.data;
   } catch (error) {
     throw parseError(error);

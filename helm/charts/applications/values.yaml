@@ -20,6 +20,7 @@ commonConfig:
   shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
   customerServiceUrl: http://customer-service.microservices.svc.cluster.local:8087
   walletServiceUrl: http://wallet-service.microservices.svc.cluster.local:8088
+  notificationServiceUrl: http://notification-service.microservices.svc.cluster.local:8083
   springDataRedisHost: redis.microservices.svc.cluster.local
   springDataRedisPort: "6379"
   springKafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
@@ -121,9 +122,14 @@ notificationService:
       cpu: 500m
       memory: 1Gi
   config:
+    datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/notification_service
+    datasourceUsername: postgres
+    datasourcePassword: postgres
     schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
     mailHost: mailhog.microservices.svc.cluster.local
     mailPort: "1025"
+    shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
+    shopNotificationTopic: shop-notifications
 
 paymentService:
   enabled: true

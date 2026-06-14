@@ -236,3 +236,15 @@ export interface ShopWalletResponseVo {
   currency: string;
   updatedAt: Instant;
 }
+
+export interface ShopNotificationResponseVo {
+  id: UUID;
+  shopId: UUID;
+  type: string;
+  title: string;
+  content: string;
+  linkUrl?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: Instant;
+  readAt?: Instant;
+}

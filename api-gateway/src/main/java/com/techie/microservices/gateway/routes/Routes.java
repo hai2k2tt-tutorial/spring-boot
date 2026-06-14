@@ -40,6 +40,9 @@ public class Routes {
     @Value("${customer.service.url}")
     private String customerServiceUrl;
 
+    @Value("${notification.service.url}")
+    private String notificationServiceUrl;
+
     @Bean
     public RouterFunction<ServerResponse> productServiceRoute() {
         return GatewayRouterFunctions.route("product_service")
@@ -174,6 +177,15 @@ public class Routes {
                 .filter(CircuitBreakerFilterFunctions.circuitBreaker("customerServiceSwaggerCircuitBreaker",
                         URI.create("forward:/fallbackRoute")))
                 .filter(setPath("/api-docs"))
+                .build();
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> notificationServiceRoute() {
+        return GatewayRouterFunctions.route("notification_service")
+                .route(RequestPredicates.path("/api/notifications/**"), HandlerFunctions.http(notificationServiceUrl))
+                .filter(CircuitBreakerFilterFunctions.circuitBreaker("notificationServiceCircuitBreaker",
+                        URI.create("forward:/fallbackRoute")))
                 .build();
     }
 

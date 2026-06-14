@@ -47,6 +47,9 @@ public class OrderEventPublisher {
         putIfNotBlank(body, "email", firstNonBlank(event.email(), contact.get("email")));
         putIfNotBlank(body, "firstName", firstNonBlank(event.firstName(), contact.get("firstName")));
         putIfNotBlank(body, "lastName", firstNonBlank(event.lastName(), contact.get("lastName")));
+        if (event.shopIds() != null && !event.shopIds().isEmpty()) {
+            body.put("shopIds", String.join(",", event.shopIds()));
+        }
 
         redisTemplate.opsForStream().add(ORDER_EVENTS_STREAM, body);
     }

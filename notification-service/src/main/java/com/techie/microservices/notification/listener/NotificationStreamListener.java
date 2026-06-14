@@ -2,6 +2,7 @@ package com.techie.microservices.notification.listener;
 
 import com.techie.microservices.notification.config.RedisStreamConfig;
 import com.techie.microservices.notification.service.NotificationService;
+import com.techie.microservices.notification.service.OrderPaidShopNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -18,6 +19,7 @@ public class NotificationStreamListener implements StreamListener<String, MapRec
 
     private final NotificationService notificationService;
     private final StringRedisTemplate redisTemplate;
+    private final OrderPaidShopNotificationService orderPaidShopNotificationService;
 
     @Override
     public void onMessage(MapRecord<String, String, String> message) {
@@ -33,7 +35,14 @@ public class NotificationStreamListener implements StreamListener<String, MapRec
 
             switch (eventType) {
                 case "ORDER_PLACED" -> notificationService.sendOrderPlacedEmail(body);
-                case "ORDER_PAID" -> notificationService.sendOrderPaidEmail(body);
+                case "ORDER_PAID" -> {
+                    orderPaidShopNotificationService.createFromOrderPaidEvent(body);
+                    try {
+                        notificationService.sendOrderPaidEmail(body);
+                    } catch (RuntimeException ex) {
+                        log.error("Failed to send ORDER_PAID email for Redis Stream message {}", message.getId(), ex);
+                    }
+                }
                 default -> log.warn("Unknown event type {}", eventType);
             }
 

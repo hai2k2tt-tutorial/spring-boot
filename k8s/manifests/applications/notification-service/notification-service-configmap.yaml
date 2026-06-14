@@ -3,6 +3,11 @@ kind: ConfigMap
 metadata:
   name: notification-service-config
 data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/notification_service"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "postgres"
   SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: "http://schema-registry.microservices.svc.cluster.local:8081"
   SPRING_MAIL_HOST: "mailhog.microservices.svc.cluster.local"
   SPRING_MAIL_PORT: "1025"
+  SHOP_SERVICE_URL: "http://shop-service.microservices.svc.cluster.local:8086"
+  APP_NOTIFICATIONS_SHOP_TOPIC: "shop-notifications"

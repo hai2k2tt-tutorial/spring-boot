@@ -1,5 +1,7 @@
 package com.techie.microservices.order.event;
 
+import java.util.List;
+
 public record OrderPaidEvent(
         String orderId,
         String orderNumber,
@@ -8,6 +10,7 @@ public record OrderPaidEvent(
         String paidAt,
         String email,
         String firstName,
-        String lastName
+        String lastName,
+        List<String> shopIds
 ) {
 }

@@ -14,6 +14,7 @@ data:
   SHOP_SERVICE_URL: {{ .Values.commonConfig.shopServiceUrl | quote }}
   CUSTOMER_SERVICE_URL: {{ .Values.commonConfig.customerServiceUrl | quote }}
   WALLET_SERVICE_URL: {{ .Values.commonConfig.walletServiceUrl | quote }}
+  NOTIFICATION_SERVICE_URL: {{ .Values.commonConfig.notificationServiceUrl | quote }}
   SPRING_DATA_REDIS_HOST: {{ .Values.commonConfig.springDataRedisHost | quote }}
   SPRING_DATA_REDIS_PORT: {{ .Values.commonConfig.springDataRedisPort | quote }}
   SPRING_KAFKA_BOOTSTRAP_SERVERS: {{ .Values.commonConfig.springKafkaBootstrapServers | quote }}

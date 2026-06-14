@@ -13,6 +13,7 @@ data:
   SHOP_SERVICE_URL: "http://shop-service.microservices.svc.cluster.local:8086"
   CUSTOMER_SERVICE_URL: "http://customer-service.microservices.svc.cluster.local:8087"
   WALLET_SERVICE_URL: "http://wallet-service.microservices.svc.cluster.local:8088"
+  NOTIFICATION_SERVICE_URL: "http://notification-service.microservices.svc.cluster.local:8083"
   SPRING_DATA_REDIS_HOST: "redis.microservices.svc.cluster.local"
   SPRING_DATA_REDIS_PORT: "6379"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "broker.microservices.svc.cluster.local:29092"

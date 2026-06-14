@@ -18,6 +18,21 @@ spec:
           ports:
             - containerPort: 8083
           env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_DATASOURCE_URL
+                  name: notification-service-config
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_DATASOURCE_USERNAME
+                  name: notification-service-config
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  key: SPRING_DATASOURCE_PASSWORD
+                  name: notification-service-config
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
               valueFrom:
                 configMapKeyRef:
@@ -47,6 +62,16 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   key: SPRING_MAIL_PORT
+                  name: notification-service-config
+            - name: SHOP_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: SHOP_SERVICE_URL
+                  name: notification-service-config
+            - name: APP_NOTIFICATIONS_SHOP_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  key: APP_NOTIFICATIONS_SHOP_TOPIC
                   name: notification-service-config
             - name: LOKI_URL
               valueFrom:

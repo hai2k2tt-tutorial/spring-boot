@@ -112,3 +112,7 @@ customer:
 wallet:
   service:
     url: http://localhost:8088
+
+notification:
+  service:
+    url: http://localhost:8083

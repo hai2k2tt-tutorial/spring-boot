@@ -194,6 +194,11 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Canceled order cannot be confirmed as paid");
         }
 
+        List<String> shopIds = orderItems.stream()
+                .map(OrderItem::getShopId)
+                .distinct()
+                .toList();
+
         order.setStatus(OrderStatus.PAID);
         orderRepository.save(order);
         orderEventPublisher.publishOrderPaid(new OrderPaidEvent(
@@ -204,7 +209,8 @@ public class OrderService {
                 Instant.now().toString(),
                 null,
                 null,
-                null
+                null,
+                shopIds
         ));
         log.info("Order {} confirmed as paid", orderId);
         return orderMapper.toVo(order, orderItems);

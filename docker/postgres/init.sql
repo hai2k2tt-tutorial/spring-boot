@@ -5,3 +5,4 @@ CREATE DATABASE payment_service;
 CREATE DATABASE shop_service;
 CREATE DATABASE customer_service;
 CREATE DATABASE wallet_service;
+CREATE DATABASE notification_service;

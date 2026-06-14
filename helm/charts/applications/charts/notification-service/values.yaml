@@ -13,6 +13,11 @@ resources:
     cpu: 500m
     memory: 1Gi
 config:
+  datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/notification_service
+  datasourceUsername: postgres
+  datasourcePassword: postgres
   schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
   mailHost: mailhog.microservices.svc.cluster.local
   mailPort: "1025"
+  shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
+  shopNotificationTopic: shop-notifications

@@ -245,15 +245,28 @@ services:
       context: .
       dockerfile: notification-service/Dockerfile.local
     depends_on:
+      postgres:
+        condition: service_healthy
       broker:
         condition: service_started
       schema-registry:
         condition: service_started
       mailhog:
         condition: service_started
+      redis:
+        condition: service_healthy
+      shop-service:
+        condition: service_started
     ports:
       - "8083:8083"
     environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SHOP_SERVICE_URL: http://shop-service:8086
+      APP_NOTIFICATIONS_SHOP_TOPIC: shop-notifications
       SPRING_MAIL_HOST: mailhog
       SPRING_MAIL_PORT: 1025
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
@@ -374,6 +387,8 @@ services:
         condition: service_started
       wallet-service:
         condition: service_started
+      notification-service:
+        condition: service_started
       redis:
         condition: service_healthy
     ports:
@@ -394,6 +409,7 @@ services:
       SHOP_SERVICE_URL: http://shop-service:8086
       CUSTOMER_SERVICE_URL: http://customer-service:8087
       WALLET_SERVICE_URL: http://wallet-service:8088
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
     volumes:

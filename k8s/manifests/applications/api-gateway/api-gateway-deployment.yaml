@@ -93,6 +93,11 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: WALLET_SERVICE_URL
+            - name: NOTIFICATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: NOTIFICATION_SERVICE_URL
             - name: SPRING_DATA_REDIS_HOST
               valueFrom:
                 configMapKeyRef:

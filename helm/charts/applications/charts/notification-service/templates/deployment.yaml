@@ -35,6 +35,21 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
           env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: notification-service-config
+                  key: SPRING_DATASOURCE_URL
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: notification-service-config
+                  key: SPRING_DATASOURCE_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: notification-service-config
+                  key: SPRING_DATASOURCE_PASSWORD
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
               valueFrom:
                 configMapKeyRef:
@@ -65,6 +80,16 @@ spec:
                 configMapKeyRef:
                   name: notification-service-config
                   key: SPRING_MAIL_PORT
+            - name: SHOP_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: notification-service-config
+                  key: SHOP_SERVICE_URL
+            - name: APP_NOTIFICATIONS_SHOP_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: notification-service-config
+                  key: APP_NOTIFICATIONS_SHOP_TOPIC
             - name: LOKI_URL
               valueFrom:
                 configMapKeyRef:
