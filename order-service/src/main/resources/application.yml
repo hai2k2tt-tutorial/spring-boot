@@ -22,6 +22,16 @@ spring:
         schema:
           registry:
             url: http://127.0.0.1:8085
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
+app:
+  streams:
+    order-events: order-events
+    notification-group: notification-service
 
 server:
   port: 8081

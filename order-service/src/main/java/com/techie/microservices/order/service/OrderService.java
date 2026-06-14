@@ -9,6 +9,8 @@ import com.techie.microservices.order.dto.OrderCreateRequestDto;
 import com.techie.microservices.order.dto.ProductResponseDto;
 import com.techie.microservices.order.dto.ResolvedOrderItemDto;
 import com.techie.microservices.order.dto.SkuResponseDto;
+import com.techie.microservices.order.event.OrderEventPublisher;
+import com.techie.microservices.order.event.OrderPaidEvent;
 import com.techie.microservices.order.event.OrderPlacedEvent;
 import com.techie.microservices.order.mapper.OrderMapper;
 import com.techie.microservices.order.model.Order;
@@ -21,7 +23,6 @@ import com.techie.microservices.order.vo.OrderResponseVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,7 +45,7 @@ public class OrderService {
     private final InventoryClient inventoryClient;
     private final ProductClient productClient;
     private final ShopClient shopClient;
-    private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
+    private final OrderEventPublisher orderEventPublisher;
     private final OrderMapper orderMapper;
     private final TokenIdentity tokenIdentity;
     private final PlatformTransactionManager transactionManager;
@@ -97,14 +99,18 @@ public class OrderService {
                 .map(orderItemRepository::save)
                 .toList();
 
-        OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent();
-        orderPlacedEvent.setOrderNumber(savedOrder.getOrderNumber());
-        orderPlacedEvent.setEmail(currentCustomer.email());
-        orderPlacedEvent.setFirstName(currentCustomer.firstName());
-        orderPlacedEvent.setLastName(currentCustomer.lastName());
-        log.info("Start - Sending OrderPlacedEvent {} to Kafka topic order-placed", orderPlacedEvent);
-        kafkaTemplate.send("order-placed", orderPlacedEvent);
-        log.info("End - Sending OrderPlacedEvent {} to Kafka topic order-placed", orderPlacedEvent);
+        OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent(
+                savedOrder.getId(),
+                savedOrder.getOrderNumber(),
+                String.valueOf(currentCustomer.id()),
+                currentCustomer.email(),
+                currentCustomer.firstName(),
+                currentCustomer.lastName()
+        );
+
+        log.info("Start - Publishing OrderPlacedEvent {} to Redis stream order-events", orderPlacedEvent);
+        orderEventPublisher.publishOrderPlaced(orderPlacedEvent);
+        log.info("End - Publishing OrderPlacedEvent {} to Redis stream order-events", orderPlacedEvent);
         return orderMapper.toVo(savedOrder, orderItems);
     }
 
@@ -190,6 +196,16 @@ public class OrderService {
 
         order.setStatus(OrderStatus.PAID);
         orderRepository.save(order);
+        orderEventPublisher.publishOrderPaid(new OrderPaidEvent(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getCustomerId(),
+                null,
+                Instant.now().toString(),
+                null,
+                null,
+                null
+        ));
         log.info("Order {} confirmed as paid", orderId);
         return orderMapper.toVo(order, orderItems);
     }

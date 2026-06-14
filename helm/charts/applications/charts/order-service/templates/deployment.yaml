@@ -40,6 +40,16 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+            - name: SPRING_DATA_REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: SPRING_DATA_REDIS_HOST
+            - name: SPRING_DATA_REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-config
+                  key: SPRING_DATA_REDIS_PORT
             - name: SPRING_DATASOURCE_URL
               valueFrom:
                 configMapKeyRef:
