@@ -201,7 +201,7 @@ Response models:
 | Method | Path | Status | Params | Request body | Response | Access/notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `POST` | `/api/order` | `201 Created` | None | `OrderCreateRequestDto` | `OrderResponseVo` | - customer only
-| `POST` | `/api/order/checkout` | `201 Created` | None | `CheckoutCreateRequestDto` | `CheckoutResponseVo` | - customer only; creates/reuses an order and creates/recovers a pending payment
+| `POST` | `/api/order/checkout` | `201 Created` | None | `CheckoutCreateRequestDto` | `CheckoutResponseVo` | - customer only; creates/reuses a `PENDING_PAYMENT` order without creating a payment
 | `POST` | `/api/order/{orderId}/confirm-paid` | `200 OK` | `orderId` path `UUID` | None | `OrderResponseVo` | - payment-service/internal callback; marks pending order as paid
 | `POST` | `/api/order/{orderId}/cancel-payment` | `200 OK` | `orderId` path `UUID` | None | `OrderResponseVo` | - payment-service/internal callback; cancels pending order and releases reserved stock
 | `GET` | `/api/order` | `200 OK` | Optional `customerId` query `UUID` | None | `OrderResponseVo[]` | - customer (only own orders) + shop (only orders containing their products) + admin (all orders)
@@ -240,13 +240,13 @@ Response models:
 }
 ```
 
-`CheckoutResponseVo`: `order`, `payment`
+`CheckoutResponseVo`: `order`
 
 ## Payment Service
 
 | Method | Path | Status | Params | Request body | Response | Access/notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| `POST` | `/api/payments` | `201 Created` | None | `PaymentCreateRequestDto` | `PaymentResponseVo` | - customer only
+| `POST` | `/api/payments` | `201 Created` | None | `PaymentCreateRequestDto` | `PaymentResponseVo` | - customer only; creates/reuses payment for a pending order
 | `POST` | `/api/payments/webhooks/mock-provider` | `200 OK` | Optional `X-Mock-Provider-Secret` header | `PaymentProviderWebhookRequestDto` | `PaymentResponseVo` | - mock payment provider callback
 | `PATCH` | `/api/payments/{paymentId}/status` | `200 OK` | `paymentId` path `UUID` | `PaymentStatusUpdateRequestDto` | `PaymentResponseVo` | - customer only (only own payments) + admin (all payments) + shop (only payments for their orders)
 | `GET` | `/api/payments` | `200 OK` | Optional `customerId` query `UUID`, optional `orderId` query `UUID` | None | `PaymentResponseVo[]` | - customer (only own payments) + shop (only payments for their orders) + admin (all payments)
@@ -572,7 +572,7 @@ Failure cases:
 
 #### `POST /api/order/checkout`
 
-Success `201 Created`: creates/reuses an order, creates or recovers a payment, and returns `CheckoutResponseVo` with both `order` and `payment`. `CARD` and `MANUAL` create a pending mock-provider payment session. `BALANCE` pays from the customer wallet immediately, credits shop wallets by order item shop totals, marks payment `SUCCESS`, and confirms the order as paid.
+Success `201 Created`: creates/reuses a `PENDING_PAYMENT` order and returns `CheckoutResponseVo` with `order`. It does not create a payment, provider session, wallet debit, or shop wallet credit. The customer payment page should later call `POST /api/payments` when the customer clicks Pay.
 
 Failure cases:
 
@@ -580,10 +580,9 @@ Failure cases:
 | --- | --- | --- |
 | `400 Bad Request` | `At least one checkout item is required` | `items` is missing or empty. |
 | `400 Bad Request` | Order validation messages | Item validation fails in the order creation flow. |
-| `400 Bad Request` | Payment validation messages | Payment creation fails validation, such as invalid payment method. |
 | `401 Unauthorized` | Token/auth messages | Customer token is missing or invalid. |
-| `404 Not Found` | Upstream lookup messages | SKU, product, order, or payment lookup fails. |
-| `409 Conflict` | Upstream inventory/order/payment messages | Inventory reservation or payment/order state transition conflicts. |
+| `404 Not Found` | Upstream lookup messages | SKU or product lookup fails. |
+| `409 Conflict` | Upstream inventory/order messages | Inventory reservation or order state transition conflicts. |
 
 #### `POST /api/order/{orderId}/confirm-paid`
 
@@ -629,6 +628,8 @@ Failure cases:
 | `403 Forbidden` | `Order does not belong to current customer` | Order exists but belongs to another customer. |
 | `404 Not Found` | Upstream message such as `Order not found` | Order lookup fails. |
 | `400 Bad Request` | `Wallet currency does not match request currency` | `BALANCE` payment request currency does not match the wallet currency. |
+| `409 Conflict` | `Paid order cannot create another payment` | The order is already `PAID`. |
+| `409 Conflict` | `Canceled order cannot create a payment` | The order is already `CANCELED`. |
 | `409 Conflict` | `Insufficient wallet balance` | `BALANCE` payment exceeds the current customer wallet balance. |
 
 ### Wallet Service Mutations

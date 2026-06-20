@@ -1,448 +1,42 @@
-# Payment Feature: Backend-Owned Checkout and Payment Confirmation Flow
+# Payment Feature: Split Order Creation and Payment Flow
 
-This document describes the backend-owned synchronous checkout flow, the follow-up payment confirmation flow driven by provider webhooks, and the immediate customer-wallet payment path.
+This document describes the current split checkout flow in this repository.
 
-The frontend should not be responsible for creating the payment after creating the order. Instead, the frontend calls one checkout endpoint, and the backend owns the sequence:
+The customer creates an order first. The order reserves inventory and stays
+`PENDING_PAYMENT`. No payment row, provider session, wallet debit, or shop
+wallet credit is created during order creation.
+
+Payment starts later from the customer payment page. When the customer clicks
+Pay, the frontend calls payment-service to create or reuse the payment. Wallet
+settlement and provider finalization remain backend-owned.
+
+## High-Level Flow
 
 ```text
-create order -> commit order -> reserve inventory -> create payment -> return order + payment to FE
-  CARD/MANUAL -> provider webhook -> confirm payment -> confirm order paid or cancel -> release inventory on failure
-  BALANCE -> debit customer wallet -> credit shop wallets -> confirm order paid immediately
+Customer clicks Buy now
+        ↓
+FE -> POST /api/order/checkout
+        ↓
+order-service reserves inventory and saves order PENDING_PAYMENT
+        ↓
+FE navigates to /payments/checkout?orderId=...&method=...
+        ↓
+Customer clicks Pay
+        ↓
+FE -> POST /api/payments
+        ↓
+payment-service creates/reuses payment and completes the selected payment path
 ```
-
-## Goal
-
-Keep order creation reliable even when payment provider calls are slow or fail, while avoiding trust in the frontend to call the payment API.
 
 Core rule:
 
 ```text
-Order creation must commit before payment session creation is attempted.
+Do not create the payment inside the order creation request.
 ```
 
-Do not call the payment service inside the order database transaction.
-
-## Recommended User Flow
-
-```text
-Customer clicks Create order and pay
-        ↓
-Customer FE calls POST /api/order/checkout
-        ↓
-Checkout backend validates request/authentication
-        ↓
-Checkout backend calls Order service to create order
-        ↓
-Order service validates request
-        ↓
-Order service calls Inventory service to resolve SKU, SKU price, and reserve stock
-        ↓
-Order service calls Product service to resolve product detail
-        ↓
-Order service creates order with status PENDING_PAYMENT
-        ↓
-Order transaction commits
-        ↓
-Order service returns order detail to checkout backend
-        ↓
-Checkout backend calls Payment service to create payment
-        ↓
-Payment service verifies order ownership
-        ↓
-If method is CARD or MANUAL:
-        ↓
-Payment service creates or reuses payment with status PENDING
-        ↓
-Payment service creates external/mock payment provider session
-        ↓
-Payment service returns paymentUrl/clientSecret to checkout backend
-        ↓
-Checkout backend returns order + payment to FE
-        ↓
-Customer FE redirects to payment page or QR simulator
-        ↓
-Payment provider completes payment
-        ↓
-Payment provider sends webhook to BE
-        ↓
-Payment service validates webhook and finalizes payment
-        ↓
-Payment service calls Order service to confirm order paid
-        ↓
-Order service confirms order status = PAID
-        ↓
-If payment fails or is canceled:
-        ↓
-Payment service calls Order service to cancel the order
-        ↓
-Order service releases reserved inventory
-        ↓
-If method is BALANCE:
-        ↓
-Payment service calls Wallet service to debit customer wallet
-        ↓
-Payment service credits each shop wallet by order item shop total
-        ↓
-Payment service marks payment SUCCESS
-        ↓
-Payment service calls Order service to confirm order paid
-        ↓
-Checkout backend returns order + successful payment to FE
-```
-
-## Why Backend Checkout Is Better Than FE Orchestration
-
-The older simple flow was:
-
-```text
-FE -> POST /api/order
-FE -> POST /api/payments
-```
-
-That works, but it trusts the frontend to make the second call. If the FE closes, has a bug, loses network, or intentionally skips the payment call, the order remains without a payment session.
-
-The recommended flow is:
-
-```text
-FE -> POST /api/order/checkout
-Backend -> POST /api/order
-Backend -> POST /api/payments
-```
-
-This keeps FE simple and makes checkout creation a backend responsibility.
-
-## Transaction Boundary
-
-Do this:
-
-```text
-Checkout backend calls Order service
-        ↓
-Order service opens DB transaction
-        ↓
-Order service saves order and order items
-        ↓
-Order service commits transaction
-        ↓
-Order service returns order
-        ↓
-Checkout backend calls Payment service
-```
-
-Avoid this:
-
-```text
-OrderService.placeOrder() @Transactional
-        ↓
-save order
-        ↓
-call Payment service before transaction commits
-        ↓
-return order + payment
-```
-
-Calling payment inside the order transaction can create inconsistent state. For example, the payment provider session may be created successfully, but the order transaction may later roll back.
-
-## Backend Responsibilities
-
-### Checkout Backend / API Gateway / BFF
-
-Current endpoint:
-
-```text
-POST /api/order/checkout
-```
-
-Responsibilities:
-
-- Validate the checkout request.
-- Resolve the current customer from the `Authorization` token.
-- Generate or accept a checkout idempotency key.
-- Call `POST /api/order`.
-- Wait for the order service to return a committed order.
-- Call `POST /api/payments` with the committed `orderId` and selected `paymentMethod`.
-- Return both order detail and payment detail to the frontend.
-- If payment creation times out, recover by querying payment state by `orderId`.
-
-The checkout backend can be implemented as:
-
-```text
-API gateway route
-BFF service
-Next.js server route running in a stable Node.js container
-Dedicated checkout-service
-```
-
-Do not use a serverless or edge-only runtime for long-running payment orchestration unless its timeout/retry behavior is explicitly handled.
-
-### Order Service
+## Order Checkout
 
 Endpoint:
-
-```text
-POST /api/order
-```
-
-Current entry point:
-
-```text
-order-service/src/main/java/com/techie/microservices/order/controller/OrderController.java
-```
-
-Current service logic:
-
-```text
-order-service/src/main/java/com/techie/microservices/order/service/OrderService.java
-```
-
-Responsibilities:
-
-- Validate order request.
-- Resolve current customer from `Authorization` token.
-- Call Inventory service to resolve SKU and SKU price from `skuCode`.
-- Call Product service to resolve product detail.
-- Call Inventory service to reserve inventory for each SKU and quantity.
-- Save `t_order`.
-- Save `t_order_item` rows.
-- Return order response after the transaction commits.
-
-Current order status:
-
-```text
-PENDING
-```
-
-Recommended status:
-
-```text
-PENDING_PAYMENT
-```
-
-### Payment Service
-
-Endpoint:
-
-```text
-POST /api/payments
-```
-
-Responsibilities:
-
-- Validate `orderId`.
-- Load order from order service.
-- Verify the order belongs to the current customer.
-- Idempotently create or reuse an active payment for the order.
-- For `CARD` and `MANUAL`, create payment with status `PENDING` if one does not already exist.
-- For `CARD` and `MANUAL`, create external/mock payment provider session.
-- For `CARD` and `MANUAL`, persist payment session fields and return `paymentUrl` and/or `clientSecret`.
-- For `BALANCE`, call wallet-service to debit the customer wallet using an idempotent `externalRef`.
-- For `BALANCE`, group order items by `shopId` and credit each shop wallet using idempotent `externalRef` values.
-- For `BALANCE`, mark the payment `SUCCESS` and call the order service to confirm the order as paid immediately.
-- Accept provider webhooks and validate the payment session reference.
-- Mark the payment `SUCCESS` or `FAILED` only from the webhook or a trusted payment update.
-- On successful payment, call the order service to confirm the order as paid.
-
-### Wallet Service
-
-Endpoints:
-
-```text
-GET /api/wallet/customer/me
-POST /api/wallet/customer/me/deposits
-POST /api/wallet/customer/me/debits
-GET /api/wallet/shop/me
-POST /api/wallet/shops/{shopId}/credits
-```
-
-Responsibilities:
-
-- Own operational wallet balances in `wallet_service`.
-- Resolve the current customer by calling customer-service with the customer bearer token.
-- Resolve the current shop by calling shop-service with the shop bearer token.
-- Create missing customer/shop wallets with `0` balance and `USD` currency.
-- Record every wallet money movement in `t_wallet_transaction`.
-- Reject debits that would make the balance negative.
-- Make customer debits and shop credits idempotent when `externalRef` is supplied.
-
-Wallet debit/credit idempotency:
-
-```text
-owner_type + owner_id + transaction_type + external_ref
-```
-
-Webhook endpoint:
-
-```text
-POST /api/payments/webhooks/mock-provider
-```
-
-Responsibilities:
-
-- Validate the webhook payload and provider secret when configured.
-- Match the webhook to the stored payment by `paymentId` or `providerSessionId`.
-- Ensure the payment is still `PENDING` before finalizing it.
-- Persist payment history for the final status transition.
-- Call `POST /api/order/{orderId}/confirm-paid` when the payment succeeds.
-- Call `POST /api/order/{orderId}/cancel-payment` when the payment fails or is canceled.
-
-### Order Paid Confirmation
-
-Endpoint:
-
-```text
-POST /api/order/{orderId}/confirm-paid
-```
-
-Responsibilities:
-
-- Load the order and order items.
-- Return the existing order if it is already `PAID`.
-- Reject confirmation for canceled orders.
-- Mark the order `PAID`.
-
-### Inventory Reservation
-
-Endpoint:
-
-```text
-POST /api/inventory/reserve
-```
-
-Responsibilities:
-
-- Validate all requested SKU and quantity pairs.
-- Lock inventory rows while reserving stock.
-- Reject the request if stock is insufficient.
-- Create idempotent reservations keyed by `orderId`.
-- Keep the order item rows unchanged; inventory is released later if payment fails.
-
-### Inventory Release
-
-Endpoint:
-
-```text
-POST /api/inventory/release
-```
-
-Responsibilities:
-
-- Load reservations for the order.
-- Lock inventory rows while releasing stock.
-- Add the reserved quantity back to each SKU.
-- Delete reservation records after release.
-
-Current mock response includes:
-
-```json
-{
-  "id": "payment-id",
-  "orderId": "order-id",
-  "status": "PENDING",
-  "paymentUrl": "http://localhost:3004/payments/checkout?...",
-  "clientSecret": "mock_cs_..."
-}
-```
-
-## Why This Flow Is Safe
-
-If this succeeds:
-
-```text
-POST /api/order
-```
-
-then the order exists, even if this hangs or fails:
-
-```text
-POST /api/payments
-```
-
-This avoids losing the order when payment provider calls are slow.
-
-It also avoids trusting the frontend to create payment, because the frontend only calls:
-
-```text
-POST /api/order/checkout
-```
-
-## Timeout Recovery
-
-A timeout from `POST /api/payments` is ambiguous:
-
-```text
-Maybe payment was not created.
-Maybe payment was created but response was lost.
-```
-
-The checkout backend should recover by querying payment state:
-
-```text
-GET /api/payments?orderId={orderId}
-```
-
-For this to work fully, payment service should persist session data:
-
-```text
-payment_url
-client_secret
-provider
-provider_session_id
-session_expires_at
-idempotency_key
-```
-
-Then `GET /api/payments?orderId=...` can return the same payment session after a timeout, retry, or page refresh.
-
-## Required Idempotency
-
-Use an idempotency key for checkout and payment creation:
-
-```http
-Idempotency-Key: checkout-uuid
-```
-
-Backend rule:
-
-```text
-Same customer + same idempotency key returns the same checkout/order/payment result.
-```
-
-This prevents duplicate orders or duplicate payments if the checkout request is retried after timeout.
-
-Recommended checkout uniqueness:
-
-```text
-unique(customer_id, idempotency_key)
-```
-
-Recommended payment uniqueness:
-
-```text
-unique(customer_id, idempotency_key)
-```
-
-Also enforce one active pending payment per order:
-
-```text
-unique(order_id) where status = PENDING
-```
-
-Exact partial unique index syntax depends on the database.
-
-At minimum, payment creation must be idempotent by `orderId`:
-
-```text
-If active pending payment exists for orderId:
-  return existing payment/session
-Else:
-  create payment/session
-```
-
-## Recommended API Contract
-
-### Create Checkout
-
-Request:
 
 ```http
 POST /api/order/checkout
@@ -450,6 +44,8 @@ Authorization: Bearer ...
 Idempotency-Key: checkout-uuid
 Content-Type: application/json
 ```
+
+Request:
 
 ```json
 {
@@ -459,9 +55,12 @@ Content-Type: application/json
       "quantity": 1
     }
   ],
-  "paymentMethod": "CARD | MANUAL | BALANCE"
+  "paymentMethod": "CARD"
 }
 ```
+
+`paymentMethod` is accepted so the frontend can keep one checkout form shape,
+but order-service does not create a payment from it.
 
 Response:
 
@@ -470,124 +69,192 @@ Response:
   "order": {
     "id": "order-id",
     "orderNumber": "order-number",
+    "customerId": "customer-id",
     "status": "PENDING_PAYMENT",
-    "totalAmount": 100.00,
+    "totalAmount": 100.0,
     "items": []
-  },
-  "payment": {
-    "id": "payment-id",
-    "orderId": "order-id",
-    "status": "PENDING",
-    "sessionStatus": "READY",
-    "paymentUrl": "https://provider-checkout-url",
-    "clientSecret": "provider-client-secret"
   }
 }
 ```
 
-For `BALANCE`, the payment response is already successful:
+Current entry points:
 
-```json
-{
-  "payment": {
-    "id": "payment-id",
-    "orderId": "order-id",
-    "status": "SUCCESS",
-    "sessionStatus": "COMPLETED",
-    "paymentUrl": null,
-    "clientSecret": null
-  }
-}
+```text
+order-service/src/main/java/com/techie/microservices/order/controller/OrderController.java
+order-service/src/main/java/com/techie/microservices/order/service/OrderCheckoutService.java
+order-service/src/main/java/com/techie/microservices/order/service/OrderService.java
 ```
 
-### Internal Create Order
+Order-service responsibilities:
 
-Request:
+- Validate that at least one checkout item exists.
+- Resolve current customer from the bearer token.
+- Reuse an existing order for the same `customerId + idempotencyKey`.
+- Resolve SKU/product data and calculate item price.
+- Reserve inventory through inventory-service.
+- Save `t_order` and `t_order_item`.
+- Default order status to `PENDING_PAYMENT`.
+- Return the committed order immediately.
 
-```http
-POST /api/order
-Authorization: Bearer ...
-Content-Type: application/json
+Order-service must not call payment-service in this flow.
+
+## Payment Page
+
+After checkout returns, the customer frontend navigates to:
+
+```text
+/payments/checkout?orderId=order-id&method=CARD
 ```
 
-```json
-{
-  "items": [
-    {
-      "skuCode": "SKU-001",
-      "quantity": 1
-    }
-  ]
-}
+Supported `method` values:
+
+```text
+CARD
+MANUAL
+BALANCE
 ```
 
-Response:
+The payment page:
 
-```json
-{
-  "id": "order-id",
-  "orderNumber": "order-number",
-  "status": "PENDING_PAYMENT",
-  "totalAmount": 100.00,
-  "items": []
-}
-```
+1. Loads the order with `GET /api/order/{orderId}`.
+2. Shows the order total and selected payment method.
+3. Waits for the customer to click Pay.
+4. Calls `POST /api/payments` with the `orderId` and method.
+5. Refreshes order, payment, and wallet queries after payment changes.
 
-### Internal Create Payment Session
+## Payment Creation
 
-Request:
+Endpoint:
 
 ```http
 POST /api/payments
 Authorization: Bearer ...
-Idempotency-Key: checkout-uuid
+Idempotency-Key: optional-payment-key
 Content-Type: application/json
 ```
 
-```json
-{
-  "orderId": "order-id",
-  "method": "CARD | MANUAL | BALANCE"
-}
-```
-
-Response:
+Request:
 
 ```json
 {
-  "id": "payment-id",
   "orderId": "order-id",
-  "status": "PENDING",
-  "sessionStatus": "READY",
-  "paymentUrl": "https://provider-checkout-url",
-  "clientSecret": "provider-client-secret"
+  "method": "CARD"
 }
 ```
 
-## Frontend Behavior
+Current entry points:
 
 ```text
-1. Submit checkout form.
-2. Call POST /api/order/checkout with Idempotency-Key.
-3. If checkout succeeds with `CARD` or `MANUAL`, redirect to `payment.paymentUrl` or show the QR/manual simulator.
-4. If checkout succeeds with `BALANCE`, redirect to the paid order detail because payment is already final.
-5. If checkout times out, retry `POST /api/order/checkout` with the same Idempotency-Key.
-6. If retry returns existing order + pending provider payment, redirect to `payment.paymentUrl`.
-7. After the provider finishes payment, wait for the webhook-driven confirmation to update the order and payment state.
-8. If payment fails or is canceled, the backend releases the reservation and marks the order canceled.
-9. If payment session is not ready, show Retry Payment or poll checkout/payment status.
+payment-service/src/main/java/com/techie/microservices/payment/controller/PaymentController.java
+payment-service/src/main/java/com/techie/microservices/payment/service/PaymentService.java
 ```
 
-The frontend does not call `POST /api/payments` directly in the recommended flow.
+Payment-service responsibilities:
 
-For local and mock-provider flows, the checkout page can trigger the webhook simulation endpoint after the payment session is created. That is a development aid, not a replacement for the provider webhook contract.
+- Require `orderId`.
+- Resolve the current customer from the bearer token.
+- Load the order through order-service and verify ownership.
+- Reject creating a payment for `PAID` or `CANCELED` orders.
+- Reuse an existing payment by `customerId + idempotencyKey` when supplied.
+- Otherwise reuse the newest pending payment for the same customer and order.
+- Persist payment history after creation/finalization.
+
+For `CARD` and `MANUAL`:
+
+- Create or reuse a `PENDING` payment.
+- Set provider to `MOCK`.
+- Set `sessionStatus=READY`.
+- Store `providerSessionId`, `clientSecret`, and `paymentUrl`.
+- The local payment page can then simulate provider success/failure through the mock webhook endpoint.
+
+For `BALANCE`:
+
+- Create or reuse a pending wallet payment.
+- Debit the current customer wallet through wallet-service.
+- Credit shop wallets by grouped order item totals.
+- Call `POST /api/order/{orderId}/confirm-paid`.
+- Mark the payment `SUCCESS` with `sessionStatus=COMPLETED`.
+
+## Finalization
+
+Mock provider endpoint:
+
+```http
+POST /api/payments/webhooks/mock-provider
+X-Mock-Provider-Secret: optional-configured-secret
+Content-Type: application/json
+```
+
+Trusted/manual status endpoint:
+
+```http
+PATCH /api/payments/{paymentId}/status
+Content-Type: application/json
+```
+
+On `SUCCESS`, payment-service:
+
+- Loads order settlement details.
+- Credits shop wallets.
+- Calls `POST /api/order/{orderId}/confirm-paid`.
+- Marks payment `SUCCESS` and `sessionStatus=COMPLETED`.
+
+On `FAILED`, payment-service:
+
+- Calls `POST /api/order/{orderId}/cancel-payment`.
+- Releases reserved inventory through order-service.
+- Marks payment `FAILED` and `sessionStatus=FAILED`.
+
+## Wallet Settlement
+
+Wallet endpoints used by payment-service:
+
+```http
+POST /api/wallet/customer/me/debits
+POST /api/wallet/shops/{shopId}/credits
+```
+
+Settlement idempotency references:
+
+```text
+customer debit externalRef = paymentId
+shop credit externalRef = paymentId:shopId
+```
+
+This keeps customer balance and shop balances safe across retries.
+
+## End-to-End Status Transitions
+
+### CARD or MANUAL
+
+```text
+POST /api/order/checkout
+  -> order PENDING_PAYMENT
+payment page Pay button
+POST /api/payments
+  -> payment PENDING, session READY
+mock/provider success
+  -> payment SUCCESS, session COMPLETED
+  -> shop wallets credited
+  -> order PAID
+```
+
+### BALANCE
+
+```text
+POST /api/order/checkout
+  -> order PENDING_PAYMENT
+payment page Pay button
+POST /api/payments with method=BALANCE
+  -> customer wallet debited
+  -> shop wallets credited
+  -> payment SUCCESS, session COMPLETED
+  -> order PAID
+```
 
 ## Known Limits
 
-- Inventory is reserved on order creation and released if payment fails.
-- Payment session mock values should be persisted for timeout recovery.
-- Kafka event publishing in `OrderService` currently happens inside the transaction. For production reliability, use outbox or publish after transaction commit.
-- Checkout orchestration needs backend idempotency to avoid duplicate orders and duplicate payments.
-- Payment service must enforce one active pending payment per order.
-- Wallet debits and shop credits must be idempotent by `externalRef` to avoid double-moving money during retries.
-- Wallet-service is the operational wallet source; customer-service and shop-service wallet tables are not used for checkout settlement.
+- Inventory is reserved when the order is created and remains reserved until payment success, payment failure, cancellation, or cleanup.
+- If wallet settlement fails, the order can remain `PENDING_PAYMENT`; add retry/cancel tooling or an expiration job for production.
+- The payment page currently uses the local mock provider flow for `CARD` and `MANUAL`.
+- A production provider should redirect or confirm through a provider webhook, not trust browser-only completion.

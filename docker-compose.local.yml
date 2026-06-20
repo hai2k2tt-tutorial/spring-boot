@@ -219,6 +219,8 @@ services:
         condition: service_started
       schema-registry:
         condition: service_started
+      redis:
+        condition: service_healthy
     ports:
       - "8081:8081"
     environment:
@@ -232,6 +234,8 @@ services:
       CUSTOMER_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
       CUSTOMER_DATASOURCE_USERNAME: postgres
       CUSTOMER_DATASOURCE_PASSWORD: postgres
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
       SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       LOKI_URL: http://loki:3100/loki/api/v1/push

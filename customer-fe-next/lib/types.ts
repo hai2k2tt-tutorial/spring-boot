@@ -181,9 +181,6 @@ export interface PaymentResponseVo {
 
 export interface OrderCheckoutResponseVo {
   order: OrderResponseVo;
-  payment: PaymentResponseVo;
-  paymentUrl?: string;
-  clientSecret?: string;
 }
 
 export interface PaymentHistoryResponseVo {

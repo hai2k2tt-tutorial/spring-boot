@@ -44,10 +44,6 @@ inventory:
   service:
     url: http://localhost:8082
 
-payment:
-  service:
-    url: http://localhost:8085
-
 shop:
   service:
     url: http://localhost:8086

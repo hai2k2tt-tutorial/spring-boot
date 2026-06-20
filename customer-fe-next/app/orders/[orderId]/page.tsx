@@ -4,13 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Circle, Clock3, Package, ReceiptText, Store, Truck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Clock3, CreditCard, LoaderCircle, Package, ReceiptText, Store, Truck } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchOrder, fetchPayments, fetchProduct, fetchShopByProductShopId } from "@/lib/api";
-import { OrderItemResponseVo, OrderResponseVo, PaymentResponseVo, ProductResponseVo, ShopResponseVo, UUID } from "@/lib/types";
+import { OrderItemResponseVo, OrderResponseVo, PaymentMethod, PaymentResponseVo, ProductResponseVo, ShopResponseVo, UUID } from "@/lib/types";
 
 type OrderDetailPageProps = {
   params: Promise<{ orderId: string }>;
@@ -56,6 +56,23 @@ function statusVariant(status: string) {
 
 function normalizeStatus(status: string) {
   return status.replaceAll("_", " ");
+}
+
+function resolvePaymentMethod(payment?: PaymentResponseVo): PaymentMethod {
+  if (payment?.method === "BALANCE" || payment?.method === "MANUAL" || payment?.method === "CARD") {
+    return payment.method;
+  }
+
+  return "CARD";
+}
+
+function buildPaymentCheckoutHref(orderId: UUID, payment?: PaymentResponseVo) {
+  const searchParams = new URLSearchParams({
+    orderId,
+    method: resolvePaymentMethod(payment),
+  });
+
+  return `/payments/checkout?${searchParams.toString()}`;
 }
 
 function getShopId(order: OrderResponseVo) {
@@ -291,6 +308,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   });
 
   const payment = paymentsQuery.data?.[0];
+  const canCompletePayment = order?.status === "PENDING_PAYMENT";
 
   async function refreshDetail() {
     await Promise.allSettled([orderQuery.refetch(), catalogQuery.refetch(), paymentsQuery.refetch()]);
@@ -313,6 +331,21 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {canCompletePayment ? (
+            paymentsQuery.isLoading ? (
+              <Button disabled>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Loading payment
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href={buildPaymentCheckoutHref(order.id, payment)}>
+                  <CreditCard className="h-4 w-4" />
+                  Complete payment
+                </Link>
+              </Button>
+            )
+          ) : null}
           {order ? (
             <Badge variant={statusVariant(order.status)} className="uppercase tracking-wide">
               {normalizeStatus(order.status)}

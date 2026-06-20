@@ -284,14 +284,7 @@ export async function createOrderCheckout(
     const response = await api.post<OrderCheckoutResponseVo>("/order/checkout", checkoutRequest, {
       headers: { "Idempotency-Key": idempotencyKey },
     });
-    const paymentUrl = response.data.payment.paymentUrl ?? response.data.payment.payment_url;
-    const clientSecret = response.data.payment.clientSecret ?? response.data.payment.client_secret;
-
-    return {
-      ...response.data,
-      paymentUrl,
-      clientSecret,
-    };
+    return response.data;
   } catch (error) {
     throw parseError(error);
   }

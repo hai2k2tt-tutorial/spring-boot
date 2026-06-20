@@ -1,7 +1,6 @@
 package com.techie.microservices.order.config;
 
 import com.techie.microservices.order.client.InventoryClient;
-import com.techie.microservices.order.client.PaymentClient;
 import com.techie.microservices.order.client.ProductClient;
 import com.techie.microservices.order.client.ShopClient;
 import io.micrometer.observation.ObservationRegistry;
@@ -23,16 +22,12 @@ import java.time.Duration;
 public class RestClientConfig {
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(3);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(3);
-    private static final Duration PAYMENT_READ_TIMEOUT = Duration.ofSeconds(15);
 
     @Value("${inventory.service.url}")
     private String inventoryServiceUrl;
 
     @Value("${product.service.url}")
     private String productServiceUrl;
-
-    @Value("${payment.service.url}")
-    private String paymentServiceUrl;
 
     @Value("${shop.service.url}")
     private String shopServiceUrl;
@@ -47,11 +42,6 @@ public class RestClientConfig {
     @Bean
     public ProductClient productClient() {
         return createClient(ProductClient.class, productServiceUrl);
-    }
-
-    @Bean
-    public PaymentClient paymentClient() {
-        return createClient(PaymentClient.class, paymentServiceUrl, PAYMENT_READ_TIMEOUT);
     }
 
     @Bean

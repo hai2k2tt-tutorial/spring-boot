@@ -61,8 +61,12 @@ public class PaymentService {
         UUID customerId = tokenIdentity.currentUserId(authorization);
         Payment existingPayment = findExistingPayment(customerId, paymentCreateRequestDto.orderId(), idempotencyKey);
         if (existingPayment != null) {
-            if (existingPayment.getMethod() == PaymentMethod.BALANCE && existingPayment.getStatus() == PaymentStatus.PENDING) {
+            if (existingPayment.getStatus() == PaymentStatus.PENDING) {
                 OrderResponseDto order = orderClient.getOrder(existingPayment.getOrderId().toString(), authorization);
+                validateOrderPayable(order);
+                if (existingPayment.getMethod() != PaymentMethod.BALANCE) {
+                    return paymentMapper.toVo(existingPayment);
+                }
                 settleBalancePayment(existingPayment, order, authorization);
                 return paymentMapper.toVo(existingPayment);
             }
@@ -73,6 +77,7 @@ public class PaymentService {
         if (!customerId.equals(order.customerId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order does not belong to current customer");
         }
+        validateOrderPayable(order);
 
         Payment payment = paymentMapper.toEntity(paymentCreateRequestDto, customerId, order.totalAmount(), normalizeIdempotencyKey(idempotencyKey));
         paymentRepository.save(payment);
@@ -85,6 +90,15 @@ public class PaymentService {
         paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
         log.info("Payment created successfully");
         return paymentMapper.toVo(payment);
+    }
+
+    private void validateOrderPayable(OrderResponseDto order) {
+        if ("PAID".equalsIgnoreCase(order.status())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Paid order cannot create another payment");
+        }
+        if ("CANCELED".equalsIgnoreCase(order.status())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Canceled order cannot create a payment");
+        }
     }
 
     private void settleBalancePayment(Payment payment, OrderResponseDto order, String authorization) {

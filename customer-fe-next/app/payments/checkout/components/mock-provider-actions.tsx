@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
@@ -10,11 +11,13 @@ import { createUuid } from "@/lib/uuid";
 type MockProviderActionsProps = {
   paymentId?: string;
   clientSecret?: string;
+  orderId?: string;
 };
 
 const mockProviderSecret = process.env.NEXT_PUBLIC_MOCK_PROVIDER_SECRET;
 
-export function MockProviderActions({ paymentId, clientSecret }: MockProviderActionsProps) {
+export function MockProviderActions({ paymentId, clientSecret, orderId }: MockProviderActionsProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const webhookMutation = useMutation({
     mutationFn: (status: "SUCCESS" | "FAILED") =>
@@ -27,9 +30,15 @@ export function MockProviderActions({ paymentId, clientSecret }: MockProviderAct
         },
         mockProviderSecret,
       ),
-    onSuccess: () => {
+    onSuccess: (payment) => {
+      queryClient.invalidateQueries({ queryKey: ["customer-order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["customer-orders"] });
       queryClient.invalidateQueries({ queryKey: ["customer-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-wallet-transactions"] });
+      if (payment.status === "SUCCESS") {
+        router.push(`/orders/${payment.orderId}`);
+      }
     },
   });
 
@@ -42,7 +51,8 @@ export function MockProviderActions({ paymentId, clientSecret }: MockProviderAct
       <div>
         <p className="text-sm font-medium text-slate-950">Mock provider execution</p>
         <p className="mt-1 text-sm text-slate-500">
-          Simulate the provider returning a webhook. A success webhook marks the payment successful, confirms the order paid, and deducts inventory.
+          Simulate the provider returning a webhook. A success webhook marks the payment successful, credits shop wallets,
+          and confirms the order paid.
         </p>
       </div>
       <div className="flex flex-wrap gap-3">

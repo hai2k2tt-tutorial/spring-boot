@@ -51,15 +51,11 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function buildPaymentHandoffUrl(params: { orderId: string; paymentId: string; clientSecret?: string }) {
+function buildPaymentHandoffUrl(params: { orderId: string; method: PaymentMethod }) {
   const searchParams = new URLSearchParams({
     orderId: params.orderId,
-    paymentId: params.paymentId,
+    method: params.method,
   });
-
-  if (params.clientSecret) {
-    searchParams.set("clientSecret", params.clientSecret);
-  }
 
   return `/payments/checkout?${searchParams.toString()}`;
 }
@@ -158,21 +154,10 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         queryClient.invalidateQueries({ queryKey: ["customer-wallet-transactions"] }),
       ]);
 
-      if (checkout.payment.method === "BALANCE") {
-        router.push(`/orders/${checkout.order.id}`);
-        return;
-      }
-
-      if (checkout.paymentUrl) {
-        window.location.assign(checkout.paymentUrl);
-        return;
-      }
-
       router.push(
         buildPaymentHandoffUrl({
           orderId: checkout.order.id,
-          paymentId: checkout.payment.id,
-          clientSecret: checkout.clientSecret,
+          method: paymentMethod,
         }),
       );
     },
