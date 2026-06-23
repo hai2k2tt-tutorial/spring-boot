@@ -1,0 +1,21 @@
+{
+  "name": "spring-boot",
+  "version": "1.0.0",
+  "description": "This document describes the current split checkout flow in this repository.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hai2k2tt-tutorial/spring-boot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hai2k2tt-tutorial/spring-boot/issues"
+  },
+  "homepage": "https://github.com/hai2k2tt-tutorial/spring-boot#readme"
+}
