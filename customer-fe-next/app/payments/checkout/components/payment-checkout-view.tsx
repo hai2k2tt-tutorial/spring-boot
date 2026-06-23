@@ -8,13 +8,15 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createPayment, fetchOrder } from "@/lib/api";
+import { createAsyncPayment, fetchOrder } from "@/lib/api";
 import { PaymentMethod, PaymentResponseVo } from "@/lib/types";
 import { MockProviderActions } from "./mock-provider-actions";
 
 type PaymentCheckoutViewProps = {
   orderId?: string;
   method: PaymentMethod;
+  initialPaymentId?: string;
+  initialClientSecret?: string;
 };
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -38,7 +40,7 @@ function getClientSecret(payment: PaymentResponseVo) {
   return payment.clientSecret ?? payment.client_secret;
 }
 
-export function PaymentCheckoutView({ orderId, method }: PaymentCheckoutViewProps) {
+export function PaymentCheckoutView({ orderId, method, initialPaymentId, initialClientSecret }: PaymentCheckoutViewProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -52,7 +54,7 @@ export function PaymentCheckoutView({ orderId, method }: PaymentCheckoutViewProp
 
   const paymentMutation = useMutation({
     mutationFn: () =>
-      createPayment({
+      createAsyncPayment({
         orderId: orderId ?? "",
         method,
       }),
@@ -78,7 +80,8 @@ export function PaymentCheckoutView({ orderId, method }: PaymentCheckoutViewProp
   });
 
   const payment = paymentMutation.data;
-  const clientSecret = payment ? getClientSecret(payment) : undefined;
+  const paymentId = payment?.id ?? initialPaymentId;
+  const clientSecret = payment ? getClientSecret(payment) : initialClientSecret;
   const isWallet = method === "BALANCE";
   const canPay = Boolean(orderId) && !paymentMutation.isPending && orderQuery.data?.status !== "PAID";
 
@@ -175,8 +178,8 @@ export function PaymentCheckoutView({ orderId, method }: PaymentCheckoutViewProp
           {paymentMutation.isError ? (
             <Alert variant="destructive">{getErrorMessage(paymentMutation.error, "Unable to create payment.")}</Alert>
           ) : null}
-          {payment && payment.method !== "BALANCE" ? (
-            <MockProviderActions paymentId={payment.id} clientSecret={clientSecret} orderId={payment.orderId} />
+          {(payment && payment.method !== "BALANCE") || initialPaymentId ? (
+            <MockProviderActions paymentId={paymentId} clientSecret={clientSecret} orderId={payment?.orderId ?? orderId} />
           ) : null}
         </CardContent>
       </Card>

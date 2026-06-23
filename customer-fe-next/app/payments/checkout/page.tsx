@@ -13,7 +13,16 @@ export default async function PaymentCheckoutPage({ searchParams }: PaymentCheck
   const resolvedSearchParams = await searchParams;
   const orderId = getSearchParamValue(resolvedSearchParams.orderId);
   const method = getSearchParamValue(resolvedSearchParams.method);
+  const paymentId = getSearchParamValue(resolvedSearchParams.paymentId);
+  const clientSecret = getSearchParamValue(resolvedSearchParams.clientSecret);
   const paymentMethod: PaymentMethod = method === "MANUAL" || method === "BALANCE" ? method : "CARD";
 
-  return <PaymentCheckoutView orderId={orderId} method={paymentMethod} />;
+  return (
+    <PaymentCheckoutView
+      orderId={orderId}
+      method={paymentMethod}
+      initialPaymentId={paymentId}
+      initialClientSecret={clientSecret}
+    />
+  );
 }

@@ -271,6 +271,15 @@ export async function createPayment(payment: PaymentCreateRequestDto): Promise<P
   }
 }
 
+export async function createAsyncPayment(payment: PaymentCreateRequestDto): Promise<PaymentResponseVo> {
+  try {
+    const response = await api.post<PaymentResponseVo>("/payments/async", payment);
+    return response.data;
+  } catch (error) {
+    throw parseError(error);
+  }
+}
+
 export async function createOrderCheckout(
   order: OrderCreateRequestDto,
   method: PaymentCreateRequestDto["method"] = "CARD",

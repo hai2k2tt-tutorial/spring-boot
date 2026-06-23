@@ -80,6 +80,11 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+            - name: PAYMENT_MOCK_CHECKOUT_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: payment-service-config
+                  key: PAYMENT_MOCK_CHECKOUT_BASE_URL
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}

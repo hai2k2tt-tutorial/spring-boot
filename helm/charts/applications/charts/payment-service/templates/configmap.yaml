@@ -9,4 +9,5 @@ data:
   CUSTOMER_DATASOURCE_URL: {{ .Values.config.customerDatasourceUrl | quote }}
   CUSTOMER_DATASOURCE_USERNAME: {{ .Values.config.customerDatasourceUsername | quote }}
   CUSTOMER_DATASOURCE_PASSWORD: {{ .Values.config.customerDatasourcePassword | quote }}
+  PAYMENT_MOCK_CHECKOUT_BASE_URL: {{ .Values.config.mockCheckoutBaseUrl | quote }}
 {{- end }}
