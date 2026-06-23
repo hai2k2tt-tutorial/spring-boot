@@ -13,6 +13,9 @@ public interface WalletClient {
     void debitCurrentCustomerWallet(@RequestBody WalletMoneyRequestDto request,
                                     @RequestHeader("Authorization") String authorization);
 
+    @PostExchange("/api/wallet/customers/{customerId}/debits")
+    void debitCustomerWallet(@PathVariable UUID customerId, @RequestBody WalletMoneyRequestDto request);
+
     @PostExchange("/api/wallet/shops/{shopId}/credits")
     void creditShopWallet(@PathVariable UUID shopId, @RequestBody WalletMoneyRequestDto request);
 }

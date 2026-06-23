@@ -11,6 +11,16 @@ spring:
     open-in-view: false
   liquibase:
     enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
 
 server:
   port: 8085
@@ -32,6 +42,14 @@ customer:
 payment:
   mock:
     checkout-base-url: http://localhost:3004/payments/checkout
+  events:
+    creation-topic: payment-creation-requests
+    state-topic: payment-state-events
+    saga-group: payment-service-saga
+  outbox:
+    publish-delay: 2s
+    send-timeout: 5s
+    max-attempts: 10
 
 springdoc:
   swagger-ui:

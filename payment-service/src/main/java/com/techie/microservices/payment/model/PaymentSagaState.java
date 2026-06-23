@@ -1,0 +1,16 @@
+package com.techie.microservices.payment.model;
+
+public enum PaymentSagaState {
+    STARTED,
+    VALIDATING_ORDER,
+    CREATING_PAYMENT,
+    CREATING_PROVIDER_SESSION,
+    DEBITING_CUSTOMER_WALLET,
+    CREDITING_SHOP_WALLETS,
+    CONFIRMING_ORDER_PAID,
+    CANCELING_ORDER_PAYMENT,
+    COMPLETED,
+    FAILED,
+    COMPENSATING,
+    COMPENSATED
+}

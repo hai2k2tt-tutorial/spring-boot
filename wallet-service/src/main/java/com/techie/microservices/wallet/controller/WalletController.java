@@ -51,6 +51,13 @@ public class WalletController {
         return walletService.debitCurrentCustomerWallet(authorization, request);
     }
 
+    @PostMapping("/customers/{customerId:[0-9a-fA-F-]{36}}/debits")
+    @ResponseStatus(HttpStatus.OK)
+    public WalletResponseVo debitCustomerWallet(@PathVariable UUID customerId,
+                                                @RequestBody WalletMoneyRequestDto request) {
+        return walletService.debitCustomerWallet(customerId, request);
+    }
+
     @GetMapping("/shop/me")
     @ResponseStatus(HttpStatus.OK)
     public WalletResponseVo getCurrentShopWallet(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {

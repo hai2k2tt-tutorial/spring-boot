@@ -55,6 +55,11 @@ public class WalletService {
     }
 
     @Transactional
+    public WalletResponseVo debitCustomerWallet(UUID customerId, WalletMoneyRequestDto request) {
+        return applyMoney(WalletOwnerType.CUSTOMER, customerId, WalletTransactionType.DEBIT, request, true);
+    }
+
+    @Transactional
     public WalletResponseVo getCurrentShopWallet(String authorization) {
         UUID shopId = shopClient.getCurrentShop(authorization).shopId();
         return toWalletVo(getOrCreateWallet(WalletOwnerType.SHOP, shopId));

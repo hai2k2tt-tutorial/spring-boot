@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        logicalFilePath="src/main/resources/db/changelog/db.changelog-master.xml"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="3-create-payment-saga-and-outbox-tables" author="codex">
+        <createTable tableName="t_payment_saga">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="UUID">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="payment_id" type="UUID"/>
+            <column name="customer_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="idempotency_key" type="VARCHAR(128)"/>
+            <column name="state" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_event_id" type="UUID"/>
+            <column name="failure_reason" type="VARCHAR(1024)"/>
+            <column name="retry_count" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_payment_outbox">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="event_type" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_type" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="attempts" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_error" type="VARCHAR(1024)"/>
+            <column name="published_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="t_payment_saga" indexName="idx_payment_saga_customer_idempotency_key" unique="true">
+            <column name="customer_id"/>
+            <column name="idempotency_key"/>
+        </createIndex>
+
+        <createIndex tableName="t_payment_outbox" indexName="idx_payment_outbox_status_created_at">
+            <column name="status"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <createIndex tableName="t_payment_outbox" indexName="idx_payment_outbox_aggregate">
+            <column name="aggregate_type"/>
+            <column name="aggregate_id"/>
+        </createIndex>
+
+        <sql>
+            ALTER TABLE t_payment_saga
+            ADD CONSTRAINT chk_payment_saga_state
+            CHECK (state IN (
+                'STARTED',
+                'VALIDATING_ORDER',
+                'CREATING_PAYMENT',
+                'CREATING_PROVIDER_SESSION',
+                'DEBITING_CUSTOMER_WALLET',
+                'CREDITING_SHOP_WALLETS',
+                'CONFIRMING_ORDER_PAID',
+                'CANCELING_ORDER_PAYMENT',
+                'COMPLETED',
+                'FAILED',
+                'COMPENSATING',
+                'COMPENSATED'
+            ));
+        </sql>
+
+        <sql>
+            ALTER TABLE t_payment_outbox
+            ADD CONSTRAINT chk_payment_outbox_status
+            CHECK (status IN ('PENDING', 'PUBLISHED', 'FAILED'));
+        </sql>
+
+        <rollback>
+            <dropTable tableName="t_payment_outbox"/>
+            <dropTable tableName="t_payment_saga"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

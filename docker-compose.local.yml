@@ -288,6 +288,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      broker:
+        condition: service_started
       wallet-service:
         condition: service_started
     ports:
@@ -298,6 +300,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       ORDER_SERVICE_URL: http://order-service:8081
       WALLET_SERVICE_URL: http://wallet-service:8088
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
       CUSTOMER_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
       CUSTOMER_DATASOURCE_USERNAME: postgres
       CUSTOMER_DATASOURCE_PASSWORD: postgres

@@ -7,4 +7,5 @@
 
     <include file="changes/001-create-payment-and-history-tables.xml" relativeToChangelogFile="true"/>
     <include file="changes/002-add-payment-session-idempotency-fields.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-create-payment-saga-and-outbox-tables.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

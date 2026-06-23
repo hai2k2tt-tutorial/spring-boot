@@ -3,6 +3,7 @@ package com.techie.microservices.payment.controller;
 import com.techie.microservices.payment.dto.PaymentCreateRequestDto;
 import com.techie.microservices.payment.dto.PaymentProviderWebhookRequestDto;
 import com.techie.microservices.payment.dto.PaymentStatusUpdateRequestDto;
+import com.techie.microservices.payment.service.PaymentSagaOrchestratorService;
 import com.techie.microservices.payment.service.PaymentService;
 import com.techie.microservices.payment.vo.PaymentHistoryResponseVo;
 import com.techie.microservices.payment.vo.PaymentResponseVo;
@@ -29,6 +30,7 @@ import java.util.UUID;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final PaymentSagaOrchestratorService paymentSagaOrchestratorService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -36,6 +38,14 @@ public class PaymentController {
                                            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
         return paymentService.createPayment(paymentCreateRequestDto, authorization, idempotencyKey);
+    }
+
+    @PostMapping("/async")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public PaymentResponseVo requestAsyncPayment(@RequestBody PaymentCreateRequestDto paymentCreateRequestDto,
+                                                 @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+                                                 @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
+        return paymentSagaOrchestratorService.requestAsyncPayment(paymentCreateRequestDto, authorization, idempotencyKey);
     }
 
     @PatchMapping("/{paymentId}/status")

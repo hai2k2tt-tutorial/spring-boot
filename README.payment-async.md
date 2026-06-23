@@ -3,12 +3,13 @@
 This document describes the async version of the split checkout flow from
 `README.payment-sync.md`.
 
-The architecture remains broker/outbox/SSE based. The behavioral split is:
+The architecture uses an orchestration saga with broker/outbox/SSE based
+delivery and notifications. The behavioral split is:
 
 ```text
 Order checkout creates only the order.
 Payment page Pay action requests payment creation.
-Payment creation/settlement happens asynchronously in the backend.
+Payment creation/settlement is coordinated asynchronously by a saga orchestrator.
 ```
 
 ## Goal
@@ -30,7 +31,7 @@ Customer clicks Pay
         ↓
 FE shows Payment creating
         ↓
-Payment worker creates provider session or settles BALANCE
+Payment saga orchestrator commands provider session creation or BALANCE settlement
         ↓
 FE receives SSE update or polling sees payment state
         ↓
@@ -66,19 +67,21 @@ Customer clicks Pay
 Payment API
   ↓ validate orderId, paymentMethod, bearer token, and order ownership
   ↓ reject PAID/CANCELED orders
-  ↓ save payment request outbox event PAYMENT_CREATION_REQUESTED
+  ↓ save payment request and outbox event PAYMENT_CREATION_REQUESTED
   ↓ commit
   ↓ return accepted request/payment placeholder to FE
 Customer FE
   ↓ open SSE connection or poll payment state
 Outbox publisher
   ↓ publish PAYMENT_CREATION_REQUESTED
-Payment worker
+Payment saga orchestrator
   ↓ consume PAYMENT_CREATION_REQUESTED
+  ↓ create/update payment saga state
   ↓ create or reuse payment idempotently
   ↓ CARD/MANUAL: create provider/mock session
-  ↓ BALANCE: debit customer wallet and credit shop wallets
-  ↓ publish payment state event
+  ↓ BALANCE: command wallet debit/credits
+  ↓ command order confirmation/cancellation when terminal
+  ↓ publish payment state events
 Realtime/SSE backend
   ↓ consume payment state event or read latest DB state
   ↓ push SSE event to customer browser
@@ -90,16 +93,33 @@ Customer FE
 The important change from a backend-owned async checkout is that
 `PAYMENT_CREATION_REQUESTED` is emitted from the payment step, not from order
 checkout. Order checkout may publish order lifecycle events for notifications,
-but those events must not create a payment.
+but those events must not create a payment or start the payment saga.
+
+Saga style:
+
+```text
+Orchestration saga.
+
+Payment saga orchestrator owns the workflow state and decides the next command.
+Participant services execute commands and return results.
+Participant services do not independently decide the next global checkout step.
+```
 
 ## Architecture
 
-Use the same async architecture:
+Use an orchestration saga architecture:
 
 ```text
-service transaction → outbox table → publisher → Kafka/Redis Stream → worker
-Kafka/Redis Stream → realtime-service or long-lived Next.js Node server → SSE → Browser
+Payment API transaction → payment request + outbox row
+outbox publisher → Kafka/Redis Stream → payment saga orchestrator
+payment saga orchestrator transaction → saga state + command outbox rows
+command outbox publisher → Kafka/Redis Stream or HTTP command adapter → participant services
+participant result events → payment saga orchestrator
+payment state events → realtime-service or long-lived Next.js Node server → SSE → Browser
 ```
+
+The orchestrator may be implemented inside `payment-service` initially. If it
+grows, split it into a dedicated `payment-saga-service`.
 
 A dedicated realtime service is recommended for production.
 
@@ -167,7 +187,7 @@ POST /api/payments
 ```
 
 For async payment creation, use a request endpoint that commits quickly and lets
-the worker do provider/wallet work:
+the saga orchestrator do provider/wallet work:
 
 ```http
 POST /api/payments/async
@@ -219,12 +239,16 @@ Payment request API responsibilities:
 - Save `PAYMENT_CREATION_REQUESTED` to outbox after validation.
 - Return without calling a provider or wallet-service.
 
+The Payment API starts the saga but does not orchestrate it in the request
+thread. The saga starts only after the request transaction commits and the
+outbox publisher publishes `PAYMENT_CREATION_REQUESTED`.
+
 ## Payment Outbox
 
 Use outbox to avoid this failure:
 
 ```text
-Payment creation event was published, but the payment request DB transaction rolled back.
+Payment saga start event was published, but the payment request DB transaction rolled back.
 ```
 
 Preferred flow:
@@ -240,6 +264,10 @@ Publishes PAYMENT_CREATION_REQUESTED
         ↓
 Marks outbox row published
 ```
+
+Only mark an outbox row published after the broker send succeeds. For Kafka,
+wait for the producer send result/callback and use producer settings that
+provide durable acknowledgement, such as `acks=all` in production.
 
 Example outbox payload:
 
@@ -264,9 +292,10 @@ orderId
 Using `orderId` as key keeps payment events for the same order ordered within
 one partition or stream shard.
 
-## Payment Worker Responsibilities
+## Payment Saga Orchestrator Responsibilities
 
-Payment worker consumes `PAYMENT_CREATION_REQUESTED`.
+Payment saga orchestrator consumes `PAYMENT_CREATION_REQUESTED` and owns the
+payment saga lifecycle.
 
 Current payment service files:
 
@@ -275,20 +304,89 @@ payment-service/src/main/java/com/techie/microservices/payment/controller/Paymen
 payment-service/src/main/java/com/techie/microservices/payment/service/PaymentService.java
 ```
 
-Worker responsibilities:
+Orchestrator responsibilities:
 
 - Validate `orderId`, `customerId`, and `paymentMethod` from the event.
 - Load order detail from order-service.
 - Verify the order belongs to the event/customer context.
 - Reject `PAID` and `CANCELED` orders.
+- Create or update a persisted saga instance keyed by `orderId` and/or
+  `paymentRequestId`.
 - Idempotently create or reuse an active payment for `orderId`.
 - Reuse payment by `customerId + idempotencyKey` when supplied.
 - For `CARD` and `MANUAL`, create payment with status `PENDING`.
-- For `CARD` and `MANUAL`, create mock/provider session fields.
-- For `BALANCE`, debit the current customer wallet and credit shop wallets by grouped order item totals.
-- For `BALANCE`, mark payment `SUCCESS`, set `sessionStatus=COMPLETED`, and call order-service `confirm-paid`.
+- For `CARD` and `MANUAL`, command mock/provider session creation and persist
+  the resulting session fields.
+- For `BALANCE`, send commands to debit the current customer wallet and credit
+  shop wallets by grouped order item totals.
+- For `BALANCE`, mark payment `SUCCESS`, set `sessionStatus=COMPLETED`, and
+  send a command to order-service `confirm-paid`.
+- On terminal failure, send a command to order-service `cancel-payment` when the
+  order should be canceled.
 - Persist payment history.
-- Publish a payment state event after the payment row is committed.
+- Publish payment state events only after payment/saga state is committed.
+
+Recommended saga states:
+
+```text
+STARTED
+VALIDATING_ORDER
+CREATING_PAYMENT
+CREATING_PROVIDER_SESSION
+DEBITING_CUSTOMER_WALLET
+CREDITING_SHOP_WALLETS
+CONFIRMING_ORDER_PAID
+CANCELING_ORDER_PAYMENT
+COMPLETED
+FAILED
+COMPENSATING
+COMPENSATED
+```
+
+Recommended command/result events:
+
+```text
+PAYMENT_CREATION_REQUESTED
+CREATE_PROVIDER_SESSION_COMMAND
+PROVIDER_SESSION_CREATED
+PROVIDER_SESSION_CREATE_FAILED
+DEBIT_CUSTOMER_WALLET_COMMAND
+CUSTOMER_WALLET_DEBITED
+CUSTOMER_WALLET_DEBIT_FAILED
+CREDIT_SHOP_WALLET_COMMAND
+SHOP_WALLET_CREDITED
+SHOP_WALLET_CREDIT_FAILED
+CONFIRM_ORDER_PAID_COMMAND
+ORDER_PAID_CONFIRMED
+CANCEL_ORDER_PAYMENT_COMMAND
+ORDER_PAYMENT_CANCELED
+```
+
+The orchestrator is the only component that should translate participant
+results into the next checkout command.
+
+Recommended saga persistence:
+
+```text
+t_payment_saga
+  saga_id
+  order_id
+  payment_id
+  customer_id
+  idempotency_key
+  state
+  last_event_id
+  failure_reason
+  retry_count
+  created_at
+  updated_at
+
+unique(order_id)
+unique(customer_id, idempotency_key)
+```
+
+Every command should include a stable command id or external reference so a
+participant can safely ignore duplicate command delivery.
 
 Current payment session state persisted by payment-service:
 
@@ -350,13 +448,15 @@ POST /api/payments/webhooks/mock-provider
 PATCH /api/payments/{paymentId}/status
 ```
 
-On `SUCCESS`, payment-service credits shop wallets and calls:
+On `SUCCESS`, payment-service/saga orchestrator credits shop wallets and sends
+the order confirmation command:
 
 ```http
 POST /api/order/{orderId}/confirm-paid
 ```
 
-On `FAILED`, payment-service calls:
+On `FAILED`, payment-service/saga orchestrator sends the cancel command when
+the order should be canceled:
 
 ```http
 POST /api/order/{orderId}/cancel-payment
@@ -366,7 +466,8 @@ POST /api/order/{orderId}/cancel-payment
 
 Broker delivery can be duplicated.
 
-Payment request handling and worker handling must both be idempotent:
+Payment request handling, saga orchestration, and participant command handling
+must all be idempotent:
 
 ```text
 If payment/request exists by customerId + idempotencyKey:
@@ -374,7 +475,7 @@ If payment/request exists by customerId + idempotencyKey:
 Else if active PENDING payment exists for orderId:
   return existing payment/session
 Else:
-  accept request or create payment/session
+  accept request or create payment/session/saga
 ```
 
 Current persistence already supports:
@@ -583,7 +684,7 @@ Authorization: Bearer ...
 
 ## Retry and Timeout Policy
 
-Payment worker should not hang forever on provider or wallet calls.
+Payment saga orchestrator should not hang forever on provider or wallet calls.
 
 Recommended policy:
 
@@ -600,7 +701,7 @@ If payment creation fails:
 payment.session_status = FAILED
 payment.status = FAILED when no retry should continue
 publish PAYMENT_SESSION_FAILED or PAYMENT_FAILED
-optionally call POST /api/order/{orderId}/cancel-payment
+optionally send CANCEL_ORDER_PAYMENT_COMMAND
 FE shows Retry payment or canceled order state
 ```
 
@@ -627,27 +728,31 @@ Keep using wallet `externalRef` values based on `paymentId`.
 - Payment creation can be retried independently.
 - FE can show real-time payment progress.
 - The broker/SSE architecture remains the async notification path.
+- The payment saga has one explicit owner for workflow decisions.
 
 ### Limits
 
 - System becomes eventually consistent.
 - FE must handle waiting, timeout, refresh, and reconnect states.
 - SSE is not durable; polling fallback is still required.
-- More infrastructure is needed: outbox publisher, payment worker, and customer realtime backend.
+- More infrastructure is needed: outbox publisher, payment saga orchestrator,
+  participant command handlers, and customer realtime backend.
 - Duplicate broker events must be handled safely.
 - Payment session data must be persisted; events alone are not enough.
 - Inventory can remain reserved if the customer never clicks Pay or if async payment creation fails.
 - Add cancel/expiration tooling for stale `PENDING_PAYMENT` orders.
-- Current payment-service does not yet include an async broker consumer.
+- Current payment-service does not yet include an async saga orchestrator or
+  broker consumer.
 
 ## Recommended Production Rule
 
-Use broker/SSE for notification, not source of truth.
+Use the saga database and service databases as source of truth. Use broker/SSE
+for delivery and notification, not as the only source of truth.
 
 Source of truth:
 
 ```text
-order database + payment database + wallet database
+payment saga database + order database + payment database + wallet database
 ```
 
 Notification path:
