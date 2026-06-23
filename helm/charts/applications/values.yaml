@@ -150,6 +150,7 @@ paymentService:
     customerDatasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/customer_service
     customerDatasourceUsername: postgres
     customerDatasourcePassword: postgres
+    kafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
     mockCheckoutBaseUrl: https://customer-fe-next.haint.fyi/payments/checkout
 
 walletService:

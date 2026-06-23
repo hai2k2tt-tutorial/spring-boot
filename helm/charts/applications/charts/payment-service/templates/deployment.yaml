@@ -76,15 +76,9 @@ spec:
                   name: common-config
                   key: WALLET_SERVICE_URL
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
-              valueFrom:
-                configMapKeyRef:
-                  name: common-config
-                  key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: {{ .Values.config.kafkaBootstrapServers | quote }}
             - name: PAYMENT_MOCK_CHECKOUT_BASE_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: payment-service-config
-                  key: PAYMENT_MOCK_CHECKOUT_BASE_URL
+              value: {{ .Values.config.mockCheckoutBaseUrl | quote }}
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}
