@@ -10,7 +10,6 @@ import com.techie.microservices.payment.dto.WalletMoneyRequestDto;
 import com.techie.microservices.payment.mapper.PaymentHistoryMapper;
 import com.techie.microservices.payment.mapper.PaymentMapper;
 import com.techie.microservices.payment.model.Payment;
-import com.techie.microservices.payment.model.PaymentHistory;
 import com.techie.microservices.payment.model.PaymentHistoryType;
 import com.techie.microservices.payment.model.PaymentMethod;
 import com.techie.microservices.payment.model.PaymentStatus;
@@ -87,7 +86,7 @@ public class PaymentService {
             applyMockProviderSession(payment);
         }
         paymentRepository.save(payment);
-        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
+        recordPurchaseHistoryIfSuccessful(payment);
         log.info("Payment created successfully");
         return paymentMapper.toVo(payment);
     }
@@ -135,11 +134,11 @@ public class PaymentService {
         payment.setStatus(newStatus);
         payment.setSessionStatus(newStatus == PaymentStatus.SUCCESS ? "COMPLETED" : newStatus == PaymentStatus.FAILED ? "FAILED" : payment.getSessionStatus());
         paymentRepository.save(payment);
-        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
         if (previousStatus != PaymentStatus.SUCCESS && newStatus == PaymentStatus.SUCCESS) {
             OrderResponseDto order = orderClient.getOrderForInternalSettlement(payment.getOrderId().toString());
             creditShopWallets(payment, order);
             orderClient.confirmPaid(payment.getOrderId().toString());
+            recordPurchaseHistoryIfSuccessful(payment);
         } else if (newStatus == PaymentStatus.FAILED) {
             orderClient.cancelPayment(payment.getOrderId().toString());
         }
@@ -169,12 +168,12 @@ public class PaymentService {
         payment.setStatus(newStatus);
         payment.setSessionStatus(newStatus == PaymentStatus.SUCCESS ? "COMPLETED" : "FAILED");
         paymentRepository.save(payment);
-        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, resolveHistoryType(payment)));
 
         if (newStatus == PaymentStatus.SUCCESS) {
             OrderResponseDto order = orderClient.getOrderForInternalSettlement(payment.getOrderId().toString());
             creditShopWallets(payment, order);
             orderClient.confirmPaid(payment.getOrderId().toString());
+            recordPurchaseHistoryIfSuccessful(payment);
         } else {
             orderClient.cancelPayment(payment.getOrderId().toString());
         }
@@ -309,10 +308,14 @@ public class PaymentService {
         return idempotencyKey == null || idempotencyKey.isBlank() ? null : idempotencyKey.trim();
     }
 
-    private PaymentHistoryType resolveHistoryType(Payment payment) {
-        return switch (payment.getMethod()) {
-            case BALANCE, CARD, MANUAL -> PaymentHistoryType.PURCHASE;
-        };
+    private void recordPurchaseHistoryIfSuccessful(Payment payment) {
+        if (payment.getStatus() != PaymentStatus.SUCCESS) {
+            return;
+        }
+        if (paymentHistoryRepository.existsByPayment_IdAndType(payment.getId(), PaymentHistoryType.PURCHASE)) {
+            return;
+        }
+        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, PaymentHistoryType.PURCHASE));
     }
 
     private String createMockClientSecret(Payment payment) {

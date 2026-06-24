@@ -193,7 +193,6 @@ public class PaymentSagaOrchestratorService {
         payment.setProviderSessionId("mock_ps_" + payment.getId());
         payment.setSessionStatus("READY");
         paymentRepository.save(payment);
-        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, PaymentHistoryType.PURCHASE));
         saga.setState(PaymentSagaState.COMPLETED);
         savePaymentStateOutbox(PAYMENT_SESSION_READY, saga, payment);
     }
@@ -219,7 +218,7 @@ public class PaymentSagaOrchestratorService {
         payment.setProvider("WALLET");
         payment.setProviderSessionId(null);
         paymentRepository.save(payment);
-        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, PaymentHistoryType.PURCHASE));
+        recordPurchaseHistoryIfSuccessful(payment);
 
         saga.setState(PaymentSagaState.COMPLETED);
         savePaymentStateOutbox(PAYMENT_SETTLED, saga, payment);
@@ -241,7 +240,6 @@ public class PaymentSagaOrchestratorService {
         payment.setStatus(PaymentStatus.FAILED);
         payment.setSessionStatus("FAILED");
         paymentRepository.save(payment);
-        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, PaymentHistoryType.PURCHASE));
         savePaymentStateOutbox(payment.getMethod() == PaymentMethod.BALANCE ? PAYMENT_FAILED : PAYMENT_SESSION_FAILED, saga, payment);
     }
 
@@ -325,6 +323,16 @@ public class PaymentSagaOrchestratorService {
                 payment.getSessionStatus(),
                 Instant.now()
         ));
+    }
+
+    private void recordPurchaseHistoryIfSuccessful(Payment payment) {
+        if (payment.getStatus() != PaymentStatus.SUCCESS) {
+            return;
+        }
+        if (paymentHistoryRepository.existsByPayment_IdAndType(payment.getId(), PaymentHistoryType.PURCHASE)) {
+            return;
+        }
+        paymentHistoryRepository.save(paymentHistoryMapper.toEntity(payment, PaymentHistoryType.PURCHASE));
     }
 
     private void saveOutbox(String eventType, String aggregateType, UUID aggregateId, Object payload) {
