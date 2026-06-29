@@ -3,6 +3,8 @@ package com.techie.microservices.payment.controller;
 import com.techie.microservices.payment.dto.PaymentCreateRequestDto;
 import com.techie.microservices.payment.dto.PaymentProviderWebhookRequestDto;
 import com.techie.microservices.payment.dto.PaymentStatusUpdateRequestDto;
+import com.techie.microservices.payment.security.Permission;
+import com.techie.microservices.payment.security.RequirePermission;
 import com.techie.microservices.payment.service.PaymentSagaOrchestratorService;
 import com.techie.microservices.payment.service.PaymentService;
 import com.techie.microservices.payment.vo.PaymentHistoryResponseVo;
@@ -34,6 +36,7 @@ public class PaymentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(Permission.PAYMENT_CUSTOMER)
     public PaymentResponseVo createPayment(@RequestBody PaymentCreateRequestDto paymentCreateRequestDto,
                                            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
@@ -42,6 +45,7 @@ public class PaymentController {
 
     @PostMapping("/async")
     @ResponseStatus(HttpStatus.ACCEPTED)
+    @RequirePermission(Permission.PAYMENT_CUSTOMER)
     public PaymentResponseVo requestAsyncPayment(@RequestBody PaymentCreateRequestDto paymentCreateRequestDto,
                                                  @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                                  @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
@@ -50,6 +54,7 @@ public class PaymentController {
 
     @PatchMapping("/{paymentId}/status")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.PAYMENT_ADMIN)
     public PaymentResponseVo updatePaymentStatus(@PathVariable UUID paymentId,
                                                  @RequestBody PaymentStatusUpdateRequestDto paymentStatusUpdateRequestDto) {
         return paymentService.updatePaymentStatus(paymentId, paymentStatusUpdateRequestDto);
@@ -64,6 +69,7 @@ public class PaymentController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.PAYMENT_READ)
     public List<PaymentResponseVo> getPayments(@RequestParam(required = false) UUID customerId,
                                                @RequestParam(required = false) UUID orderId) {
         return paymentService.getPayments(customerId, orderId);
@@ -71,12 +77,14 @@ public class PaymentController {
 
     @GetMapping("/shop/me")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.PAYMENT_SHOP)
     public List<PaymentResponseVo> getCurrentShopPayments(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return paymentService.getCurrentShopPayments(authorization);
     }
 
     @GetMapping("/{paymentId}/history")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.PAYMENT_READ)
     public List<PaymentHistoryResponseVo> getPaymentHistory(@PathVariable UUID paymentId) {
         return paymentService.getPaymentHistory(paymentId);
     }

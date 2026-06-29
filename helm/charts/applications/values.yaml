@@ -153,6 +153,7 @@ paymentService:
     customerDatasourcePassword: postgres
     kafkaBootstrapServers: broker.microservices.svc.cluster.local:29092
     mockCheckoutBaseUrl: https://customer-fe-next.haint.fyi/payments/checkout
+    permissionsFile: classpath:permissions.yml
 
 walletService:
   enabled: true

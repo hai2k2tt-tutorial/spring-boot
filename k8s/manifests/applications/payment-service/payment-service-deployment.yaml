@@ -43,6 +43,11 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: WALLET_SERVICE_URL
+            - name: APP_PERMISSIONS_FILE
+              valueFrom:
+                configMapKeyRef:
+                  name: payment-service-config
+                  key: APP_PERMISSIONS_FILE
           resources:
             requests:
               cpu: 100m

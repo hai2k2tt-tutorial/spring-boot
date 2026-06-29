@@ -79,6 +79,11 @@ spec:
               value: {{ .Values.config.kafkaBootstrapServers | quote }}
             - name: PAYMENT_MOCK_CHECKOUT_BASE_URL
               value: {{ .Values.config.mockCheckoutBaseUrl | quote }}
+            - name: APP_PERMISSIONS_FILE
+              valueFrom:
+                configMapKeyRef:
+                  name: payment-service-config
+                  key: APP_PERMISSIONS_FILE
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}

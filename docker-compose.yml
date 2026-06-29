@@ -269,6 +269,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       ORDER_SERVICE_URL: http://order-service:8081
+      APP_PERMISSIONS_FILE: classpath:permissions.yml
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 

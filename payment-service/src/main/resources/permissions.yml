@@ -1,0 +1,15 @@
+permissions:
+  payment.admin:
+    authorities:
+      - admin
+  payment.customer:
+    authorities:
+      - customer
+  payment.shop:
+    authorities:
+      - shop
+  payment.read:
+    authorities:
+      - admin
+      - customer
+      - shop
