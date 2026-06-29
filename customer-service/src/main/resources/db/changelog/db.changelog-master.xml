@@ -7,4 +7,5 @@
 
     <include file="changes/001-create-customer-auth-profile-wallet.xml" relativeToChangelogFile="true"/>
     <include file="changes/002-drop-customer-auth-password-hash.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-drop-customer-wallet-table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -1,17 +1,14 @@
 package com.techie.microservices.customer.mapper;
 
 import com.techie.microservices.customer.dto.CustomerProfileUpdateRequestDto;
-import com.techie.microservices.customer.dto.CustomerWalletUpdateRequestDto;
 import com.techie.microservices.customer.model.CustomerAuth;
 import com.techie.microservices.customer.model.CustomerProfile;
 import com.techie.microservices.customer.model.CustomerStatus;
-import com.techie.microservices.customer.model.CustomerWallet;
 import com.techie.microservices.customer.vo.CustomerResponseVo;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @Component
@@ -33,15 +30,7 @@ public class CustomerMapper {
                 .build();
     }
 
-    public CustomerWallet toWalletEntity(CustomerProfile customerProfile) {
-        return CustomerWallet.builder()
-                .customer(customerProfile)
-                .balance(BigDecimal.ZERO)
-                .currency("USD")
-                .build();
-    }
-
-    public CustomerResponseVo toVo(CustomerAuth customerAuth, CustomerProfile customerProfile, CustomerWallet customerWallet) {
+    public CustomerResponseVo toVo(CustomerAuth customerAuth, CustomerProfile customerProfile) {
         return new CustomerResponseVo(
                 customerAuth.getId(),
                 customerAuth.getEmail(),
@@ -50,13 +39,10 @@ public class CustomerMapper {
                 customerProfile.getFirstName(),
                 customerProfile.getLastName(),
                 customerProfile.getPhone(),
-                customerWallet.getBalance(),
-                customerWallet.getCurrency(),
                 customerAuth.getCreatedAt(),
                 customerAuth.getUpdatedAt(),
                 customerProfile.getCreatedAt(),
-                customerProfile.getUpdatedAt(),
-                customerWallet.getUpdatedAt()
+                customerProfile.getUpdatedAt()
         );
     }
 
@@ -68,15 +54,6 @@ public class CustomerMapper {
             return CustomerStatus.valueOf(status.trim().toUpperCase());
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid customer status");
-        }
-    }
-
-    public void updateWallet(CustomerWallet customerWallet, CustomerWalletUpdateRequestDto customerWalletUpdateRequestDto) {
-        if (customerWalletUpdateRequestDto.balance() != null) {
-            customerWallet.setBalance(customerWalletUpdateRequestDto.balance());
-        }
-        if (customerWalletUpdateRequestDto.currency() != null && !customerWalletUpdateRequestDto.currency().isBlank()) {
-            customerWallet.setCurrency(customerWalletUpdateRequestDto.currency());
         }
     }
 

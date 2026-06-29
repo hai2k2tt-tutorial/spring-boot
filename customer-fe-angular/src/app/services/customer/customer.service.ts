@@ -5,7 +5,6 @@ import {
   CustomerCreateRequestDto,
   CustomerResponseVo,
   CustomerStatusUpdateRequestDto,
-  CustomerWalletUpdateRequestDto,
   UUID
 } from "../../model/api";
 
@@ -23,10 +22,6 @@ export class CustomerService {
 
   updateCustomerStatus(customerId: UUID, status: CustomerStatusUpdateRequestDto): Observable<CustomerResponseVo> {
     return this.httpClient.patch<CustomerResponseVo>(`/api/customers/${customerId}/status`, status);
-  }
-
-  updateCustomerWallet(customerId: UUID, wallet: CustomerWalletUpdateRequestDto): Observable<CustomerResponseVo> {
-    return this.httpClient.patch<CustomerResponseVo>(`/api/customers/${customerId}/wallet`, wallet);
   }
 
   getCustomers(): Observable<Array<CustomerResponseVo>> {

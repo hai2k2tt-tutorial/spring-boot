@@ -350,9 +350,8 @@ Wallet service owns operational customer and shop wallet balances. Customer wall
 
 | Method | Path | Status | Params | Request body | Response | Access/notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| `POST` | `/api/customers/me/sync` | `200 OK` | None | None | `CustomerResponseVo` | - customer login sync; uses bearer token claims, creates auth/profile/wallet if missing, no-op if already synced
+| `POST` | `/api/customers/me/sync` | `200 OK` | None | None | `CustomerResponseVo` | - customer login sync; uses bearer token claims, creates auth/profile if missing, no-op if already synced
 | `PATCH` | `/api/customers/{customerId}/status` | `200 OK` | `customerId` path `UUID` | `CustomerStatusUpdateRequestDto` | `CustomerResponseVo` | - admin
-| `PATCH` | `/api/customers/{customerId}/wallet` | `200 OK` | `customerId` path `UUID` | `CustomerWalletUpdateRequestDto` | `CustomerResponseVo` | - user (only own wallet) + admin (all wallets)
 | `GET` | `/api/customers` | `200 OK` | None | None | `CustomerResponseVo[]` | - admin only
 | `GET` | `/api/customers/{customerId}` | `200 OK` | `customerId` path `UUID` | None | `CustomerResponseVo` | - user (only own profile) + admin (all profiles)
 
@@ -364,16 +363,7 @@ Wallet service owns operational customer and shop wallet balances. Customer wall
 }
 ```
 
-`CustomerWalletUpdateRequestDto`
-
-```json
-{
-  "balance": 0,
-  "currency": "string"
-}
-```
-
-`CustomerResponseVo`: `authId`, `email`, `status`, `customerId`, `firstName`, `lastName`, `phone`, `balance`, `currency`, `authCreatedAt`, `authUpdatedAt`, `profileCreatedAt`, `profileUpdatedAt`, `walletUpdatedAt`
+`CustomerResponseVo`: `authId`, `email`, `status`, `customerId`, `firstName`, `lastName`, `phone`, `authCreatedAt`, `authUpdatedAt`, `profileCreatedAt`, `profileUpdatedAt`
 
 ## Shop Service
 
@@ -695,7 +685,7 @@ Failure cases:
 
 #### `POST /api/customers/me/sync`
 
-Success `200 OK`: reads customer claims from the bearer token, returns the existing customer if already synced, or creates auth/profile/wallet records with default `ACTIVE` status, `0` balance, and `USD` currency.
+Success `200 OK`: reads customer claims from the bearer token, returns the existing customer if already synced, or creates auth/profile records with default `ACTIVE` status.
 
 Failure cases:
 

@@ -1,0 +1,11 @@
+permissions:
+  customer.admin:
+    authorities:
+      - admin
+  customer.customer:
+    authorities:
+      - customer
+  customer.read:
+    authorities:
+      - admin
+      - customer

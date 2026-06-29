@@ -191,11 +191,6 @@ export interface CustomerStatusUpdateRequestDto {
   status: AccountStatus | string;
 }
 
-export interface CustomerWalletUpdateRequestDto {
-  balance: number;
-  currency: string;
-}
-
 export interface CustomerResponseVo {
   authId: UUID;
   email: string;
@@ -204,13 +199,10 @@ export interface CustomerResponseVo {
   firstName: string;
   lastName: string;
   phone?: string;
-  balance: number;
-  currency: string;
   authCreatedAt: Instant;
   authUpdatedAt: Instant;
   profileCreatedAt: Instant;
   profileUpdatedAt: Instant;
-  walletUpdatedAt: Instant;
 }
 
 export interface ShopCreateRequestDto {

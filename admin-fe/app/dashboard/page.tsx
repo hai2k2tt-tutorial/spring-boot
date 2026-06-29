@@ -208,7 +208,7 @@ export default function AdminDashboardPage() {
           ))}
         </ApiTable>
 
-        <ApiTable title="Customers" headers={["Customer", "Email", "Status", "Wallet"]}>
+        <ApiTable title="Customers" headers={["Customer", "Email", "Status", "Updated"]}>
           {customersQuery.isLoading ? <LoadingRow colSpan={4} label="Loading customers..." /> : null}
           {customersQuery.isError ? <ErrorRow colSpan={4} error={customersQuery.error} onRetry={() => void customersQuery.refetch()} /> : null}
           {!customersQuery.isLoading && !customersQuery.isError && customers.length === 0 ? <EmptyRow colSpan={4} label="No customers returned." /> : null}
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
             <TableRow key={customer.customerId}>
               <TableCell className="font-medium">{customer.firstName} {customer.lastName}</TableCell><TableCell>{customer.email}</TableCell>
               <TableCell><Badge variant={customer.status === "ACTIVE" ? "secondary" : "outline"}>{customer.status}</Badge></TableCell>
-              <TableCell>{customer.balance} {customer.currency}</TableCell>
+              <TableCell className="text-slate-500">{customer.profileUpdatedAt ? new Date(customer.profileUpdatedAt).toLocaleString() : "-"}</TableCell>
             </TableRow>
           ))}
         </ApiTable>

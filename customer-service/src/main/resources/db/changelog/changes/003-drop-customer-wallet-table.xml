@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        logicalFilePath="src/main/resources/db/changelog/db.changelog-master.xml"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <changeSet id="3-drop-customer-wallet-table" author="codex">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="t_customer_wallet"/>
+        </preConditions>
+        <dropTable tableName="t_customer_wallet"/>
+        <rollback>
+            <createTable tableName="t_customer_wallet">
+                <column name="customer_id" type="UUID">
+                    <constraints primaryKey="true" nullable="false"/>
+                </column>
+                <column name="balance" type="NUMERIC(19,2)" defaultValueNumeric="0">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="currency" type="VARCHAR(8)" defaultValue="USD">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+            <addForeignKeyConstraint baseTableName="t_customer_wallet" baseColumnNames="customer_id"
+                                     constraintName="fk_customer_wallet_customer"
+                                     referencedTableName="t_customer_profile" referencedColumnNames="id"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

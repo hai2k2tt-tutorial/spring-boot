@@ -14,7 +14,6 @@ import {
   CustomerWalletTransactionResponseVo,
   CustomerProfileUpdateRequestDto,
   CustomerStatusUpdateRequestDto,
-  CustomerWalletUpdateRequestDto,
   InventoryCheckResponseVo,
   Order,
   OrderCheckoutResponseVo,
@@ -396,18 +395,6 @@ export async function updateCustomerStatus(
 ): Promise<CustomerResponseVo> {
   try {
     const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/status`, status);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function updateCustomerWallet(
-  customerId: UUID,
-  wallet: CustomerWalletUpdateRequestDto
-): Promise<CustomerResponseVo> {
-  try {
-    const response = await api.patch<CustomerResponseVo>(`/customers/${customerId}/wallet`, wallet);
     return response.data;
   } catch (error) {
     throw parseError(error);

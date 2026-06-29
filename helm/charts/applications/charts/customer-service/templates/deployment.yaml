@@ -50,6 +50,11 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+            - name: APP_PERMISSIONS_FILE
+              valueFrom:
+                configMapKeyRef:
+                  name: customer-service-config
+                  key: APP_PERMISSIONS_FILE
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}

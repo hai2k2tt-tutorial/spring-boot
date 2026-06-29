@@ -145,13 +145,10 @@ export interface CustomerResponseVo {
   firstName: string;
   lastName: string;
   phone?: string;
-  balance: number;
-  currency: string;
   authCreatedAt: Instant;
   authUpdatedAt: Instant;
   profileCreatedAt: Instant;
   profileUpdatedAt: Instant;
-  walletUpdatedAt: Instant;
 }
 
 export interface ShopResponseVo {

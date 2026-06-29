@@ -4,14 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techie.microservices.customer.dto.CustomerProfileUpdateRequestDto;
 import com.techie.microservices.customer.dto.CustomerStatusUpdateRequestDto;
-import com.techie.microservices.customer.dto.CustomerWalletUpdateRequestDto;
 import com.techie.microservices.customer.mapper.CustomerMapper;
 import com.techie.microservices.customer.model.CustomerAuth;
 import com.techie.microservices.customer.model.CustomerProfile;
-import com.techie.microservices.customer.model.CustomerWallet;
 import com.techie.microservices.customer.repository.CustomerAuthRepository;
 import com.techie.microservices.customer.repository.CustomerProfileRepository;
-import com.techie.microservices.customer.repository.CustomerWalletRepository;
 import com.techie.microservices.customer.vo.CustomerResponseVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +31,6 @@ import java.util.UUID;
 public class CustomerService {
     private final CustomerAuthRepository customerAuthRepository;
     private final CustomerProfileRepository customerProfileRepository;
-    private final CustomerWalletRepository customerWalletRepository;
     private final CustomerMapper customerMapper;
     private final ObjectMapper objectMapper;
 
@@ -66,11 +63,8 @@ public class CustomerService {
         CustomerProfile customerProfile = customerMapper.toProfileEntity(customerAuth, claims.firstName(), claims.lastName());
         customerProfile = customerProfileRepository.save(customerProfile);
 
-        CustomerWallet customerWallet = customerMapper.toWalletEntity(customerProfile);
-        customerWallet = customerWalletRepository.save(customerWallet);
-
         log.info("Customer synced successfully");
-        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+        return customerMapper.toVo(customerAuth, customerProfile);
     }
 
     @Transactional
@@ -81,22 +75,7 @@ public class CustomerService {
         customerAuth.setStatus(customerMapper.resolveStatus(customerStatusUpdateRequestDto.status()));
         customerAuth.setUpdatedAt(Instant.now());
         customerAuthRepository.save(customerAuth);
-        CustomerWallet customerWallet = customerWalletRepository.findById(customerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
-        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
-    }
-
-    @Transactional
-    public CustomerResponseVo updateWallet(UUID customerId, CustomerWalletUpdateRequestDto customerWalletUpdateRequestDto) {
-        CustomerProfile customerProfile = customerProfileRepository.findById(customerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
-        CustomerAuth customerAuth = customerProfile.getAuth();
-        CustomerWallet customerWallet = customerWalletRepository.findById(customerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
-        customerMapper.updateWallet(customerWallet, customerWalletUpdateRequestDto);
-        customerWallet.setUpdatedAt(Instant.now());
-        customerWalletRepository.save(customerWallet);
-        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+        return customerMapper.toVo(customerAuth, customerProfile);
     }
 
     @Transactional
@@ -112,12 +91,10 @@ public class CustomerService {
         if (!customerAuth.getId().equals(authId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot update another customer profile");
         }
-        CustomerWallet customerWallet = customerWalletRepository.findById(customerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
         customerMapper.updateProfile(customerProfile, customerProfileUpdateRequestDto);
         customerProfile.setUpdatedAt(Instant.now());
         customerProfileRepository.save(customerProfile);
-        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+        return customerMapper.toVo(customerAuth, customerProfile);
     }
 
     @Transactional
@@ -129,12 +106,10 @@ public class CustomerService {
         CustomerProfile customerProfile = findCurrentCustomerProfile(claims)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
         CustomerAuth customerAuth = customerProfile.getAuth();
-        CustomerWallet customerWallet = customerWalletRepository.findById(customerProfile.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
         customerMapper.updateProfile(customerProfile, customerProfileUpdateRequestDto);
         customerProfile.setUpdatedAt(Instant.now());
         customerProfileRepository.save(customerProfile);
-        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+        return customerMapper.toVo(customerAuth, customerProfile);
     }
 
     private java.util.Optional<CustomerProfile> findCurrentCustomerProfile(TokenClaims claims) {
@@ -156,18 +131,30 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
-    public CustomerResponseVo getCustomer(UUID customerId) {
+    public CustomerResponseVo getCustomer(UUID customerId, String authorization) {
+        requireAdminOrCurrentCustomer(customerId, authorization);
         CustomerProfile customerProfile = customerProfileRepository.findById(customerId)
                 .or(() -> customerProfileRepository.findByAuthId(customerId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
         return mapCustomer(customerProfile);
     }
 
+    private void requireAdminOrCurrentCustomer(UUID customerId, String authorization) {
+        TokenClaims claims = parseTokenClaims(authorization);
+        if (claims.roles().contains("admin")) {
+            return;
+        }
+
+        CustomerProfile currentCustomer = findCurrentCustomerProfile(claims)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+        if (!currentCustomer.getId().equals(customerId) && !currentCustomer.getAuth().getId().equals(customerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot access another customer");
+        }
+    }
+
     private CustomerResponseVo mapCustomer(CustomerProfile customerProfile) {
         CustomerAuth customerAuth = customerProfile.getAuth();
-        CustomerWallet customerWallet = customerWalletRepository.findById(customerProfile.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer wallet not found"));
-        return customerMapper.toVo(customerAuth, customerProfile, customerWallet);
+        return customerMapper.toVo(customerAuth, customerProfile);
     }
 
     private TokenClaims parseTokenClaims(String authorization) {
@@ -193,6 +180,7 @@ public class CustomerService {
             String preferredName = stringClaim(claims, "preferred_username");
             String firstName = stringClaim(claims, "given_name");
             String lastName = stringClaim(claims, "family_name");
+            List<String> roles = tokenRoles(claims);
 
             if (firstName == null || firstName.isBlank()) {
                 firstName = preferredName != null && !preferredName.isBlank() ? preferredName : emailName(email);
@@ -201,7 +189,7 @@ public class CustomerService {
                 lastName = "-";
             }
 
-            return new TokenClaims(subject, email, firstName, lastName);
+            return new TokenClaims(subject, email, firstName, lastName, roles);
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid bearer token");
         } catch (Exception exception) {
@@ -238,6 +226,21 @@ public class CustomerService {
         return atIndex > 0 ? email.substring(0, atIndex) : email;
     }
 
-    private record TokenClaims(String subject, String email, String firstName, String lastName) {
+    private List<String> tokenRoles(Map<String, Object> claims) {
+        List<String> roles = new ArrayList<>();
+        Object realmAccess = claims.get("realm_access");
+        if (realmAccess instanceof Map<?, ?> realmAccessClaims) {
+            Object tokenRoles = realmAccessClaims.get("roles");
+            if (tokenRoles instanceof List<?> roleList) {
+                roleList.stream()
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .forEach(roles::add);
+            }
+        }
+        return roles;
+    }
+
+    private record TokenClaims(String subject, String email, String firstName, String lastName, List<String> roles) {
     }
 }
