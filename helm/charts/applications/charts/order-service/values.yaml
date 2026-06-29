@@ -18,3 +18,4 @@ config:
   customerDatasourceUsername: postgres
   customerDatasourcePassword: postgres
   schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
+  permissionsFile: classpath:permissions.yml

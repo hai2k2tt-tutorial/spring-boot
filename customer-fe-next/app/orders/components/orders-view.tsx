@@ -10,7 +10,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { fetchOrders, fetchProduct, fetchShopByProductShopId } from "@/lib/api";
+import { fetchCurrentCustomerOrders, fetchProduct, fetchShopByProductShopId } from "@/lib/api";
 import { OrderItemResponseVo, OrderResponseVo, ProductResponseVo, ShopResponseVo, UUID } from "@/lib/types";
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -179,7 +179,7 @@ export function OrdersView() {
 
   const ordersQuery = useQuery({
     queryKey: ["customer-orders", authQueryKey],
-    queryFn: () => fetchOrders(),
+    queryFn: () => fetchCurrentCustomerOrders(),
     enabled: status !== "loading",
     staleTime: 30 * 1000,
     retry: 1,

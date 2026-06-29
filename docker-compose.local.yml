@@ -234,6 +234,7 @@ services:
       CUSTOMER_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
       CUSTOMER_DATASOURCE_USERNAME: postgres
       CUSTOMER_DATASOURCE_PASSWORD: postgres
+      APP_PERMISSIONS_FILE: classpath:permissions.yml
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092

@@ -127,10 +127,17 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponseVo> getOrders(UUID customerId) {
-        List<Order> orders = customerId == null
-                ? orderRepository.findAll()
-                : orderRepository.findAllByCustomerId(customerId.toString());
+    public List<OrderResponseVo> getAdminOrders(String authorization) {
+        return toOrderResponseList(orderRepository.findAll());
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseVo> getCurrentCustomerOrders(String authorization) {
+        UUID customerId = tokenIdentity.currentCustomer(authorization).id();
+        return toOrderResponseList(orderRepository.findAllByCustomerId(customerId.toString()));
+    }
+
+    private List<OrderResponseVo> toOrderResponseList(List<Order> orders) {
         return orders.stream()
                 .map(order -> orderMapper.toVo(order, orderItemRepository.findAllByOrderId(order.getId())))
                 .toList();

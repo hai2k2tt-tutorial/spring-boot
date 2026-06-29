@@ -63,6 +63,11 @@ spec:
                 configMapKeyRef:
                   key: SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL
                   name: order-service-config
+            - name: APP_PERMISSIONS_FILE
+              valueFrom:
+                configMapKeyRef:
+                  key: APP_PERMISSIONS_FILE
+                  name: order-service-config
           resources:
             requests:
               cpu: 100m

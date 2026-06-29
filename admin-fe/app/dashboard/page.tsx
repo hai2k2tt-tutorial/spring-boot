@@ -14,7 +14,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import {
   fetchCategories,
   fetchCustomers,
-  fetchOrders,
+  fetchAdminOrders,
   fetchPayments,
   fetchProducts,
   fetchShops,
@@ -27,7 +27,7 @@ type AdminWorkspaceData = {
   categories: Awaited<ReturnType<typeof fetchCategories>>;
   shops: Awaited<ReturnType<typeof fetchShops>>;
   customers: Awaited<ReturnType<typeof fetchCustomers>>;
-  orders: Awaited<ReturnType<typeof fetchOrders>>;
+  orders: Awaited<ReturnType<typeof fetchAdminOrders>>;
   payments: Awaited<ReturnType<typeof fetchPayments>>;
   skus: Awaited<ReturnType<typeof fetchSkus>>;
 };
@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
   });
   const ordersQuery = useQuery({
     queryKey: ["admin-orders", authQueryKey],
-    queryFn: () => fetchOrders(),
+    queryFn: () => fetchAdminOrders(),
     enabled: status !== "loading",
     staleTime: 30 * 1000,
     retry: 1,

@@ -1,0 +1,10 @@
+permissions:
+  order.admin:
+    authorities:
+      - admin
+  order.customer:
+    authorities:
+      - customer
+  order.shop:
+    authorities:
+      - shop

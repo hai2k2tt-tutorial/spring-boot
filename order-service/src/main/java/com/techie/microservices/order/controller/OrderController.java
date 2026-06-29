@@ -2,6 +2,8 @@ package com.techie.microservices.order.controller;
 
 import com.techie.microservices.order.dto.CheckoutCreateRequestDto;
 import com.techie.microservices.order.dto.OrderCreateRequestDto;
+import com.techie.microservices.order.security.Permission;
+import com.techie.microservices.order.security.RequirePermission;
 import com.techie.microservices.order.service.OrderCheckoutService;
 import com.techie.microservices.order.service.OrderService;
 import com.techie.microservices.order.vo.CheckoutResponseVo;
@@ -27,6 +29,7 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(Permission.ORDER_CUSTOMER)
     public OrderResponseVo placeOrder(@RequestBody OrderCreateRequestDto orderCreateRequestDto,
                                       @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                       @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
@@ -35,26 +38,37 @@ public class OrderController {
 
     @PostMapping("/checkout")
     @ResponseStatus(HttpStatus.CREATED)
+    @RequirePermission(Permission.ORDER_CUSTOMER)
     public CheckoutResponseVo checkout(@RequestBody CheckoutCreateRequestDto checkoutCreateRequestDto,
                                        @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                        @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey) {
         return orderCheckoutService.checkout(checkoutCreateRequestDto, authorization, idempotencyKey);
     }
 
-    @GetMapping
+    @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
-    public List<OrderResponseVo> getOrders(@RequestParam(required = false) UUID customerId) {
-        return orderService.getOrders(customerId);
+    @RequirePermission(Permission.ORDER_CUSTOMER)
+    public List<OrderResponseVo> getCurrentCustomerOrders(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return orderService.getCurrentCustomerOrders(authorization);
+    }
+
+    @GetMapping("/admin")
+    @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.ORDER_ADMIN)
+    public List<OrderResponseVo> getAdminOrders(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+        return orderService.getAdminOrders(authorization);
     }
 
     @GetMapping("/shop/me")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.ORDER_SHOP)
     public List<OrderResponseVo> getCurrentShopOrders(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return orderService.getCurrentShopOrders(authorization);
     }
 
     @GetMapping("/shop/me/{orderId}")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.ORDER_SHOP)
     public OrderResponseVo getCurrentShopOrder(@PathVariable UUID orderId,
                                                @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return orderService.getCurrentShopOrder(orderId, authorization);
@@ -62,6 +76,7 @@ public class OrderController {
 
     @GetMapping("/{orderId}")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.ORDER_CUSTOMER)
     public OrderResponseVo getOrder(@PathVariable UUID orderId,
                                     @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return orderService.getOrder(orderId, authorization);

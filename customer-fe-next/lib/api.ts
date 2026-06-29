@@ -231,11 +231,9 @@ export async function placeOrder(order: OrderCreateRequestDto): Promise<OrderRes
   }
 }
 
-export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]> {
+export async function fetchCurrentCustomerOrders(): Promise<OrderResponseVo[]> {
   try {
-    const response = await api.get<OrderResponseVo[]>("/order", {
-      params: customerId ? { customerId } : undefined,
-    });
+    const response = await api.get<OrderResponseVo[]>("/order/me");
     return response.data;
   } catch (error) {
     throw parseError(error);

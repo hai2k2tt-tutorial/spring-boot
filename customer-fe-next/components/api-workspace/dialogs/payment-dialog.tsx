@@ -10,7 +10,7 @@ import { SelectField } from "@/components/forms";
 import { Modal } from "@/components/api-workspace/primitives";
 import { paymentSchema } from "@/components/api-workspace/schemas";
 import { Button } from "@/components/ui/button";
-import { createPayment, fetchOrders } from "@/lib/api";
+import { createPayment, fetchCurrentCustomerOrders } from "@/lib/api";
 import type { OrderResponseVo } from "@/lib/types";
 import { FormDialogProps } from "./types";
 
@@ -28,7 +28,7 @@ export function PaymentDialog({ open, onClose, saving, submit }: FormDialogProps
   });
   const ordersQuery = useQuery<OrderResponseVo[]>({
     queryKey: ["customer-order-options"],
-    queryFn: () => fetchOrders(),
+    queryFn: () => fetchCurrentCustomerOrders(),
     enabled: open,
     staleTime: 30 * 1000,
     retry: 1,

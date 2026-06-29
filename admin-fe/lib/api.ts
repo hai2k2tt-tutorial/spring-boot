@@ -167,11 +167,9 @@ export async function checkStock(skuCode: string, quantity: number): Promise<Inv
   }
 }
 
-export async function fetchOrders(customerId?: UUID): Promise<OrderResponseVo[]> {
+export async function fetchAdminOrders(): Promise<OrderResponseVo[]> {
   try {
-    const response = await api.get<OrderResponseVo[]>("/order", {
-      params: customerId ? { customerId } : undefined,
-    });
+    const response = await api.get<OrderResponseVo[]>("/order/admin");
     return response.data;
   } catch (error) {
     throw parseError(error);

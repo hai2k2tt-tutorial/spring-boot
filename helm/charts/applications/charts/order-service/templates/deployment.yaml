@@ -105,6 +105,11 @@ spec:
                 configMapKeyRef:
                   name: order-service-config
                   key: SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL
+            - name: APP_PERMISSIONS_FILE
+              valueFrom:
+                configMapKeyRef:
+                  name: order-service-config
+                  key: APP_PERMISSIONS_FILE
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}

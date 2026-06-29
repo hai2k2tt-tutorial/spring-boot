@@ -10,4 +10,5 @@ data:
   CUSTOMER_DATASOURCE_USERNAME: {{ .Values.config.customerDatasourceUsername | quote }}
   CUSTOMER_DATASOURCE_PASSWORD: {{ .Values.config.customerDatasourcePassword | quote }}
   SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: {{ .Values.config.schemaRegistryUrl | quote }}
+  APP_PERMISSIONS_FILE: {{ .Values.config.permissionsFile | quote }}
 {{- end }}
