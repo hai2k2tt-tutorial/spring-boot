@@ -1,0 +1,7 @@
+permissions:
+  wallet.customer:
+    authorities:
+      - customer
+  wallet.shop:
+    authorities:
+      - shop

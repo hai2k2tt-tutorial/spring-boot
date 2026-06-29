@@ -1,6 +1,8 @@
 package com.techie.microservices.wallet.controller;
 
 import com.techie.microservices.wallet.dto.WalletMoneyRequestDto;
+import com.techie.microservices.wallet.security.Permission;
+import com.techie.microservices.wallet.security.RequirePermission;
 import com.techie.microservices.wallet.service.WalletService;
 import com.techie.microservices.wallet.vo.WalletResponseVo;
 import com.techie.microservices.wallet.vo.WalletTransactionResponseVo;
@@ -27,18 +29,21 @@ public class WalletController {
 
     @GetMapping("/customer/me")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.WALLET_CUSTOMER)
     public WalletResponseVo getCurrentCustomerWallet(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return walletService.getCurrentCustomerWallet(authorization);
     }
 
     @GetMapping("/customer/me/transactions")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.WALLET_CUSTOMER)
     public List<WalletTransactionResponseVo> getCurrentCustomerTransactions(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return walletService.getCurrentCustomerTransactions(authorization);
     }
 
     @PostMapping("/customer/me/deposits")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.WALLET_CUSTOMER)
     public WalletResponseVo depositCurrentCustomerWallet(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                                          @RequestBody WalletMoneyRequestDto request) {
         return walletService.depositCurrentCustomerWallet(authorization, request);
@@ -46,6 +51,7 @@ public class WalletController {
 
     @PostMapping("/customer/me/debits")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.WALLET_CUSTOMER)
     public WalletResponseVo debitCurrentCustomerWallet(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                                        @RequestBody WalletMoneyRequestDto request) {
         return walletService.debitCurrentCustomerWallet(authorization, request);
@@ -60,12 +66,14 @@ public class WalletController {
 
     @GetMapping("/shop/me")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.WALLET_SHOP)
     public WalletResponseVo getCurrentShopWallet(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return walletService.getCurrentShopWallet(authorization);
     }
 
     @GetMapping("/shop/me/transactions")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.WALLET_SHOP)
     public List<WalletTransactionResponseVo> getCurrentShopTransactions(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return walletService.getCurrentShopTransactions(authorization);
     }

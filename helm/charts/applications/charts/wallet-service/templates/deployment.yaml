@@ -60,6 +60,11 @@ spec:
                 configMapKeyRef:
                   name: common-config
                   key: SHOP_SERVICE_URL
+            - name: APP_PERMISSIONS_FILE
+              valueFrom:
+                configMapKeyRef:
+                  name: wallet-service-config
+                  key: APP_PERMISSIONS_FILE
           resources:
 {{ toYaml .Values.resources | nindent 12 }}
 {{- end }}

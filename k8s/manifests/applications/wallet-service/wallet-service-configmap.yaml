@@ -4,3 +4,4 @@ metadata:
   name: wallet-service-config
 data:
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/wallet_service"
+  APP_PERMISSIONS_FILE: "classpath:permissions.yml"

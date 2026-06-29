@@ -3,6 +3,7 @@ package com.techie.microservices.wallet.service;
 import com.techie.microservices.wallet.client.CustomerClient;
 import com.techie.microservices.wallet.client.ShopClient;
 import com.techie.microservices.wallet.dto.WalletMoneyRequestDto;
+import com.techie.microservices.wallet.mapper.WalletMapper;
 import com.techie.microservices.wallet.model.Wallet;
 import com.techie.microservices.wallet.model.WalletOwnerType;
 import com.techie.microservices.wallet.model.WalletTransaction;
@@ -29,11 +30,12 @@ public class WalletService {
     private final ShopClient shopClient;
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository transactionRepository;
+    private final WalletMapper walletMapper;
 
     @Transactional
     public WalletResponseVo getCurrentCustomerWallet(String authorization) {
         UUID customerId = customerClient.getCurrentCustomer(authorization).customerId();
-        return toWalletVo(getOrCreateWallet(WalletOwnerType.CUSTOMER, customerId));
+        return walletMapper.toVo(getOrCreateWallet(WalletOwnerType.CUSTOMER, customerId));
     }
 
     @Transactional(readOnly = true)
@@ -62,7 +64,7 @@ public class WalletService {
     @Transactional
     public WalletResponseVo getCurrentShopWallet(String authorization) {
         UUID shopId = shopClient.getCurrentShop(authorization).shopId();
-        return toWalletVo(getOrCreateWallet(WalletOwnerType.SHOP, shopId));
+        return walletMapper.toVo(getOrCreateWallet(WalletOwnerType.SHOP, shopId));
     }
 
     @Transactional(readOnly = true)
@@ -78,7 +80,7 @@ public class WalletService {
 
     private List<WalletTransactionResponseVo> getTransactions(WalletOwnerType ownerType, UUID ownerId) {
         return transactionRepository.findAllByOwnerTypeAndOwnerIdOrderByCreatedAtDesc(ownerType, ownerId).stream()
-                .map(this::toTransactionVo)
+                .map(walletMapper::toVo)
                 .toList();
     }
 
@@ -96,7 +98,7 @@ public class WalletService {
                     .findByOwnerTypeAndOwnerIdAndTypeAndExternalRef(ownerType, ownerId, type, externalRef)
                     .orElse(null);
             if (existing != null) {
-                return toWalletVo(getOrCreateWallet(ownerType, ownerId));
+                return walletMapper.toVo(getOrCreateWallet(ownerType, ownerId));
             }
         }
 
@@ -128,7 +130,7 @@ public class WalletService {
                 .externalRef(externalRef)
                 .description(normalize(request.description()))
                 .build());
-        return toWalletVo(wallet);
+        return walletMapper.toVo(wallet);
     }
 
     private Wallet getOrCreateWallet(WalletOwnerType ownerType, UUID ownerId) {
@@ -145,33 +147,6 @@ public class WalletService {
         if (request == null || request.amount() == null || request.amount().signum() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be greater than zero");
         }
-    }
-
-    private WalletResponseVo toWalletVo(Wallet wallet) {
-        return new WalletResponseVo(
-                wallet.getId(),
-                wallet.getOwnerType().name(),
-                wallet.getOwnerId(),
-                wallet.getBalance(),
-                wallet.getCurrency(),
-                wallet.getUpdatedAt()
-        );
-    }
-
-    private WalletTransactionResponseVo toTransactionVo(WalletTransaction transaction) {
-        return new WalletTransactionResponseVo(
-                transaction.getId(),
-                transaction.getWalletId(),
-                transaction.getOwnerType().name(),
-                transaction.getOwnerId(),
-                transaction.getType().name(),
-                transaction.getAmount(),
-                transaction.getBalanceAfter(),
-                transaction.getCurrency(),
-                transaction.getExternalRef(),
-                transaction.getDescription(),
-                transaction.getCreatedAt()
-        );
     }
 
     private String normalize(String value) {
