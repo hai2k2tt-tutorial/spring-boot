@@ -29,7 +29,6 @@ import {
   ShopResponseVo,
   ShopProfileUpdateRequestDto,
   ShopStatusUpdateRequestDto,
-  ShopWalletUpdateRequestDto,
   SkuRequestDto,
   SkuResponseVo,
   UUID,
@@ -446,18 +445,6 @@ export async function updateShopStatus(
 ): Promise<ShopResponseVo> {
   try {
     const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/status`, status);
-    return response.data;
-  } catch (error) {
-    throw parseError(error);
-  }
-}
-
-export async function updateShopWallet(
-  shopId: UUID,
-  wallet: ShopWalletUpdateRequestDto
-): Promise<ShopResponseVo> {
-  try {
-    const response = await api.patch<ShopResponseVo>(`/shops/${shopId}/wallet`, wallet);
     return response.data;
   } catch (error) {
     throw parseError(error);

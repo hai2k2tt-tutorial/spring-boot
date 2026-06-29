@@ -40,6 +40,11 @@ spec:
                 configMapKeyRef:
                   name: shop-service-config
                   key: SPRING_DATASOURCE_URL
+            - name: APP_PERMISSIONS_FILE
+              valueFrom:
+                configMapKeyRef:
+                  name: shop-service-config
+                  key: APP_PERMISSIONS_FILE
             - name: LOKI_URL
               valueFrom:
                 configMapKeyRef:

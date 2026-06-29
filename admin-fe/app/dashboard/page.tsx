@@ -195,7 +195,7 @@ export default function AdminDashboardPage() {
       </ApiTable>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <ApiTable title="Shops" headers={["Shop", "Owner", "Status", "Wallet"]}>
+        <ApiTable title="Shops" headers={["Shop", "Owner", "Status", "Updated"]}>
           {shopsQuery.isLoading ? <LoadingRow colSpan={4} label="Loading shops..." /> : null}
           {shopsQuery.isError ? <ErrorRow colSpan={4} error={shopsQuery.error} onRetry={() => void shopsQuery.refetch()} /> : null}
           {!shopsQuery.isLoading && !shopsQuery.isError && shops.length === 0 ? <EmptyRow colSpan={4} label="No shops returned." /> : null}
@@ -203,7 +203,7 @@ export default function AdminDashboardPage() {
             <TableRow key={shop.shopId}>
               <TableCell className="font-medium">{shop.shopName}</TableCell><TableCell>{shop.ownerName}</TableCell>
               <TableCell><Badge variant={shop.status === "ACTIVE" ? "secondary" : "outline"}>{shop.status}</Badge></TableCell>
-              <TableCell>{shop.balance} {shop.currency}</TableCell>
+              <TableCell className="text-slate-500">{shop.profileUpdatedAt ? new Date(shop.profileUpdatedAt).toLocaleString() : "-"}</TableCell>
             </TableRow>
           ))}
         </ApiTable>

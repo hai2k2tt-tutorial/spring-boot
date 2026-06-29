@@ -2,7 +2,8 @@ package com.techie.microservices.shop.controller;
 
 import com.techie.microservices.shop.dto.ShopProfileUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopStatusUpdateRequestDto;
-import com.techie.microservices.shop.dto.ShopWalletUpdateRequestDto;
+import com.techie.microservices.shop.security.Permission;
+import com.techie.microservices.shop.security.RequirePermission;
 import com.techie.microservices.shop.service.ShopService;
 import com.techie.microservices.shop.vo.ShopResponseVo;
 import lombok.RequiredArgsConstructor;
@@ -30,18 +31,21 @@ public class ShopController {
 
     @PostMapping("/me/sync")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.SHOP_SHOP)
     public ShopResponseVo syncCurrentShop(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return shopService.syncCurrentShop(authorization);
     }
 
     @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.SHOP_SHOP)
     public ShopResponseVo getCurrentShop(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         return shopService.getCurrentShop(authorization);
     }
 
     @PatchMapping("/me/profile")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.SHOP_SHOP)
     public ShopResponseVo updateCurrentProfile(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
             @RequestBody ShopProfileUpdateRequestDto shopProfileUpdateRequestDto
@@ -51,20 +55,15 @@ public class ShopController {
 
     @PatchMapping("/{shopId:[0-9a-fA-F-]{36}}/status")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.SHOP_ADMIN)
     public ShopResponseVo updateShopStatus(@PathVariable UUID shopId,
                                            @RequestBody ShopStatusUpdateRequestDto shopStatusUpdateRequestDto) {
         return shopService.updateShopStatus(shopId, shopStatusUpdateRequestDto);
     }
 
-    @PatchMapping("/{shopId:[0-9a-fA-F-]{36}}/wallet")
-    @ResponseStatus(HttpStatus.OK)
-    public ShopResponseVo updateWallet(@PathVariable UUID shopId,
-                                       @RequestBody ShopWalletUpdateRequestDto shopWalletUpdateRequestDto) {
-        return shopService.updateWallet(shopId, shopWalletUpdateRequestDto);
-    }
-
     @PatchMapping("/{shopId:[0-9a-fA-F-]{36}}/profile")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.SHOP_SHOP)
     public ShopResponseVo updateProfile(@PathVariable UUID shopId,
                                         @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
                                         @RequestBody ShopProfileUpdateRequestDto shopProfileUpdateRequestDto) {
@@ -73,12 +72,14 @@ public class ShopController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.SHOP_ADMIN)
     public List<ShopResponseVo> getShops() {
         return shopService.getShops();
     }
 
     @GetMapping("/{shopId:[0-9a-fA-F-]{36}}")
     @ResponseStatus(HttpStatus.OK)
+    @RequirePermission(Permission.SHOP_READ)
     public ShopResponseVo getShop(@PathVariable UUID shopId) {
         return shopService.getShop(shopId);
     }

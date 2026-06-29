@@ -4,14 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.techie.microservices.shop.dto.ShopProfileUpdateRequestDto;
 import com.techie.microservices.shop.dto.ShopStatusUpdateRequestDto;
-import com.techie.microservices.shop.dto.ShopWalletUpdateRequestDto;
 import com.techie.microservices.shop.mapper.ShopMapper;
 import com.techie.microservices.shop.model.ShopAuth;
 import com.techie.microservices.shop.model.ShopProfile;
-import com.techie.microservices.shop.model.ShopWallet;
 import com.techie.microservices.shop.repository.ShopAuthRepository;
 import com.techie.microservices.shop.repository.ShopProfileRepository;
-import com.techie.microservices.shop.repository.ShopWalletRepository;
 import com.techie.microservices.shop.vo.ShopResponseVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +30,6 @@ import java.util.UUID;
 public class ShopService {
     private final ShopAuthRepository shopAuthRepository;
     private final ShopProfileRepository shopProfileRepository;
-    private final ShopWalletRepository shopWalletRepository;
     private final ShopMapper shopMapper;
     private final ObjectMapper objectMapper;
 
@@ -66,11 +62,8 @@ public class ShopService {
         ShopProfile shopProfile = shopMapper.toProfileEntity(shopAuth, claims.shopName(), claims.ownerName());
         shopProfile = shopProfileRepository.save(shopProfile);
 
-        ShopWallet shopWallet = shopMapper.toWalletEntity(shopProfile);
-        shopWallet = shopWalletRepository.save(shopWallet);
-
         log.info("Shop synced successfully");
-        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+        return shopMapper.toVo(shopAuth, shopProfile);
     }
 
     @Transactional
@@ -81,22 +74,7 @@ public class ShopService {
         shopAuth.setStatus(shopMapper.resolveStatus(shopStatusUpdateRequestDto.status()));
         shopAuth.setUpdatedAt(Instant.now());
         shopAuthRepository.save(shopAuth);
-        ShopWallet shopWallet = shopWalletRepository.findById(shopId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop wallet not found"));
-        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
-    }
-
-    @Transactional
-    public ShopResponseVo updateWallet(UUID shopId, ShopWalletUpdateRequestDto shopWalletUpdateRequestDto) {
-        ShopProfile shopProfile = shopProfileRepository.findById(shopId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop not found"));
-        ShopAuth shopAuth = shopProfile.getAuth();
-        ShopWallet shopWallet = shopWalletRepository.findById(shopId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop wallet not found"));
-        shopMapper.updateWallet(shopWallet, shopWalletUpdateRequestDto);
-        shopWallet.setUpdatedAt(Instant.now());
-        shopWalletRepository.save(shopWallet);
-        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+        return shopMapper.toVo(shopAuth, shopProfile);
     }
 
     @Transactional
@@ -112,12 +90,10 @@ public class ShopService {
         if (!shopAuth.getId().equals(authId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot update another shop profile");
         }
-        ShopWallet shopWallet = shopWalletRepository.findById(shopId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop wallet not found"));
         shopMapper.updateProfile(shopProfile, shopProfileUpdateRequestDto);
         shopProfile.setUpdatedAt(Instant.now());
         shopProfileRepository.save(shopProfile);
-        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+        return shopMapper.toVo(shopAuth, shopProfile);
     }
 
     @Transactional
@@ -129,12 +105,10 @@ public class ShopService {
         ShopProfile shopProfile = findCurrentShopProfile(claims)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop not found"));
         ShopAuth shopAuth = shopProfile.getAuth();
-        ShopWallet shopWallet = shopWalletRepository.findById(shopProfile.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop wallet not found"));
         shopMapper.updateProfile(shopProfile, shopProfileUpdateRequestDto);
         shopProfile.setUpdatedAt(Instant.now());
         shopProfileRepository.save(shopProfile);
-        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+        return shopMapper.toVo(shopAuth, shopProfile);
     }
 
     private java.util.Optional<ShopProfile> findCurrentShopProfile(TokenClaims claims) {
@@ -164,9 +138,7 @@ public class ShopService {
 
     private ShopResponseVo mapShop(ShopProfile shopProfile) {
         ShopAuth shopAuth = shopProfile.getAuth();
-        ShopWallet shopWallet = shopWalletRepository.findById(shopProfile.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Shop wallet not found"));
-        return shopMapper.toVo(shopAuth, shopProfile, shopWallet);
+        return shopMapper.toVo(shopAuth, shopProfile);
     }
 
     private TokenClaims parseTokenClaims(String authorization) {

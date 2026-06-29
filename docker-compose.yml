@@ -284,6 +284,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/shop_service
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      APP_PERMISSIONS_FILE: classpath:permissions.yml
       LOKI_URL: http://loki:3100/loki/api/v1/push
       MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
 

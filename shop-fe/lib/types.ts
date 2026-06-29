@@ -167,11 +167,6 @@ export interface CustomerStatusUpdateRequestDto {
   status: AccountStatus | string;
 }
 
-export interface CustomerWalletUpdateRequestDto {
-  balance: number;
-  currency: string;
-}
-
 export interface CustomerProfileUpdateRequestDto {
   firstName: string;
   lastName: string;
@@ -186,22 +181,14 @@ export interface CustomerResponseVo {
   firstName: string;
   lastName: string;
   phone?: string;
-  balance: number;
-  currency: string;
   authCreatedAt: Instant;
   authUpdatedAt: Instant;
   profileCreatedAt: Instant;
   profileUpdatedAt: Instant;
-  walletUpdatedAt: Instant;
 }
 
 export interface ShopStatusUpdateRequestDto {
   status: AccountStatus | string;
-}
-
-export interface ShopWalletUpdateRequestDto {
-  balance: number;
-  currency: string;
 }
 
 export interface ShopProfileUpdateRequestDto {
@@ -218,13 +205,10 @@ export interface ShopResponseVo {
   shopName: string;
   ownerName: string;
   phone?: string;
-  balance: number;
-  currency: string;
   authCreatedAt: Instant;
   authUpdatedAt: Instant;
   profileCreatedAt: Instant;
   profileUpdatedAt: Instant;
-  walletUpdatedAt: Instant;
 }
 
 export interface ShopWalletResponseVo {

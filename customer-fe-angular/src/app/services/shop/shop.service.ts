@@ -5,7 +5,6 @@ import {
   ShopCreateRequestDto,
   ShopResponseVo,
   ShopStatusUpdateRequestDto,
-  ShopWalletUpdateRequestDto,
   UUID
 } from "../../model/api";
 
@@ -23,10 +22,6 @@ export class ShopService {
 
   updateShopStatus(shopId: UUID, status: ShopStatusUpdateRequestDto): Observable<ShopResponseVo> {
     return this.httpClient.patch<ShopResponseVo>(`/api/shops/${shopId}/status`, status);
-  }
-
-  updateShopWallet(shopId: UUID, wallet: ShopWalletUpdateRequestDto): Observable<ShopResponseVo> {
-    return this.httpClient.patch<ShopResponseVo>(`/api/shops/${shopId}/wallet`, wallet);
   }
 
   getShops(): Observable<Array<ShopResponseVo>> {

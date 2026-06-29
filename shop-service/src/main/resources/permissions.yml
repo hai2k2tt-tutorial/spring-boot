@@ -1,0 +1,11 @@
+permissions:
+  shop.admin:
+    authorities:
+      - admin
+  shop.shop:
+    authorities:
+      - shop
+  shop.read:
+    authorities:
+      - admin
+      - shop

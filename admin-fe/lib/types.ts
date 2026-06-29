@@ -159,11 +159,8 @@ export interface ShopResponseVo {
   shopName: string;
   ownerName: string;
   phone?: string;
-  balance: number;
-  currency: string;
   authCreatedAt: Instant;
   authUpdatedAt: Instant;
   profileCreatedAt: Instant;
   profileUpdatedAt: Instant;
-  walletUpdatedAt: Instant;
 }

@@ -175,17 +175,17 @@ export function ProfileView() {
         <Card>
           <CardHeader>
             <CardTitle>Account detail</CardTitle>
-            <CardDescription>Read-only identity and wallet data.</CardDescription>
+            <CardDescription>Read-only identity and wallet-service data.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <Detail label="Email" value={profile?.email} />
             <Detail label="Status" value={profile?.status} />
             <Detail
               label="Wallet"
-              value={wallet || profile ? formatBalance(wallet?.balance ?? profile?.balance, wallet?.currency ?? profile?.currency) : undefined}
+              value={wallet ? formatBalance(wallet.balance, wallet.currency) : undefined}
             />
             <Detail label="Shop ID" value={profile?.shopId} />
-            <Detail label="Updated" value={formatDate(wallet?.updatedAt ?? profile?.walletUpdatedAt ?? profile?.profileUpdatedAt)} />
+            <Detail label="Updated" value={formatDate(wallet?.updatedAt ?? profile?.profileUpdatedAt)} />
           </CardContent>
         </Card>
       </div>

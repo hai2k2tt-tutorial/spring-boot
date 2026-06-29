@@ -552,6 +552,7 @@ applications:
         memory: 1Gi
     config:
       datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/shop_service
+      permissionsFile: classpath:permissions.yml
   customerService:
     enabled: true
     image: docker.io/hai2k2tt/customer-service:2-amd64

@@ -7,4 +7,5 @@
 
     <include file="changes/001-create-shop-auth-profile-wallet.xml" relativeToChangelogFile="true"/>
     <include file="changes/002-drop-shop-auth-password-hash.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-drop-shop-wallet-table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

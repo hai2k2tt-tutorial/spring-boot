@@ -189,6 +189,7 @@ shopService:
       memory: 1Gi
   config:
     datasourceUrl: jdbc:postgresql://postgres.microservices.svc.cluster.local:5432/shop_service
+    permissionsFile: classpath:permissions.yml
 
 customerService:
   enabled: true

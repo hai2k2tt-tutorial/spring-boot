@@ -369,9 +369,8 @@ Wallet service owns operational customer and shop wallet balances. Customer wall
 
 | Method | Path | Status | Params | Request body | Response | Access/notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| `POST` | `/api/shops/me/sync` | `200 OK` | None | None | `ShopResponseVo` | - shop login sync; uses bearer token claims, creates auth/profile/wallet if missing, no-op if already synced
+| `POST` | `/api/shops/me/sync` | `200 OK` | None | None | `ShopResponseVo` | - shop login sync; uses bearer token claims, creates auth/profile if missing, no-op if already synced
 | `PATCH` | `/api/shops/{shopId}/status` | `200 OK` | `shopId` path `UUID` | `ShopStatusUpdateRequestDto` | `ShopResponseVo` | - admin
-| `PATCH` | `/api/shops/{shopId}/wallet` | `200 OK` | `shopId` path `UUID` | `ShopWalletUpdateRequestDto` | `ShopResponseVo` | - shop (only own wallet) + admin (all wallets)
 | `GET` | `/api/shops` | `200 OK` | None | None | `ShopResponseVo[]` | - admin only
 | `GET` | `/api/shops/{shopId}` | `200 OK` | `shopId` path `UUID` | None | `ShopResponseVo` | - shop (only own profile) + admin (all profiles)
 
@@ -383,16 +382,7 @@ Wallet service owns operational customer and shop wallet balances. Customer wall
 }
 ```
 
-`ShopWalletUpdateRequestDto`
-
-```json
-{
-  "balance": 0,
-  "currency": "string"
-}
-```
-
-`ShopResponseVo`: `authId`, `email`, `status`, `shopId`, `shopName`, `ownerName`, `phone`, `balance`, `currency`, `authCreatedAt`, `authUpdatedAt`, `profileCreatedAt`, `profileUpdatedAt`, `walletUpdatedAt`
+`ShopResponseVo`: `authId`, `email`, `status`, `shopId`, `shopName`, `ownerName`, `phone`, `authCreatedAt`, `authUpdatedAt`, `profileCreatedAt`, `profileUpdatedAt`
 
 ## POST and PUT Success/Failure Cases
 
@@ -703,7 +693,7 @@ Failure cases:
 
 #### `POST /api/shops/me/sync`
 
-Success `200 OK`: reads shop claims from the bearer token, returns the existing shop if already synced, or creates auth/profile/wallet records with default `ACTIVE` status, `0` balance, and `USD` currency.
+Success `200 OK`: reads shop claims from the bearer token, returns the existing shop if already synced, or creates auth/profile records with default `ACTIVE` status.
 
 Failure cases:
 

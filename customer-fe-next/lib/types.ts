@@ -252,11 +252,6 @@ export interface ShopStatusUpdateRequestDto {
   status: AccountStatus | string;
 }
 
-export interface ShopWalletUpdateRequestDto {
-  balance: number;
-  currency: string;
-}
-
 export interface ShopProfileUpdateRequestDto {
   shopName: string;
   ownerName: string;
@@ -271,11 +266,8 @@ export interface ShopResponseVo {
   shopName: string;
   ownerName: string;
   phone?: string;
-  balance: number;
-  currency: string;
   authCreatedAt: Instant;
   authUpdatedAt: Instant;
   profileCreatedAt: Instant;
   profileUpdatedAt: Instant;
-  walletUpdatedAt: Instant;
 }
