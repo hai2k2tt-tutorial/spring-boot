@@ -21,10 +21,6 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/keycloak"
     condition: keycloak.enabled
-  - name: mailhog
-    version: 0.1.0
-    repository: "file://charts/mailhog"
-    condition: mailhog.enabled
   - name: minio
     version: 0.1.0
     repository: "file://charts/minio"
@@ -33,7 +29,3 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/redis"
     condition: redis.enabled
-  - name: observability
-    version: 0.1.0
-    repository: "file://charts/observability"
-    condition: observability.enabled

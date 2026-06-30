@@ -28,16 +28,6 @@ spec:
                 configMapKeyRef:
                   name: shop-service-config
                   key: APP_PERMISSIONS_FILE
-            - name: LOKI_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: common-config
-                  key: LOKI_URL
-            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: common-config
-                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
           resources:
             requests:
               cpu: 100m

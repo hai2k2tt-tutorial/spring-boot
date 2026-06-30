@@ -107,24 +107,19 @@ infrastructure:
           cpu: "1"
           memory: 1Gi
       serviceName: broker
-      brokerId: "1"
-      zookeeperConnect: zookeeper:2181
-      listenerSecurityProtocolMap: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      nodeId: "1"
+      processRoles: broker,controller
+      controllerQuorumVoters: 1@broker:29093
+      listeners: "PLAINTEXT://broker:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://broker:29093"
+      listenerSecurityProtocolMap: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT"
       advertisedListeners: "PLAINTEXT://broker:29092,PLAINTEXT_HOST://broker:9092"
+      controllerListenerNames: CONTROLLER
+      interBrokerListenerName: PLAINTEXT
       offsetsTopicReplicationFactor: "1"
-    zookeeper:
-      image: confluentinc/cp-zookeeper:7.5.0
-      replicaCount: 1
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-      serviceName: zookeeper
-      clientPort: "2181"
-      tickTime: "2000"
+      transactionStateLogMinIsr: "1"
+      transactionStateLogReplicationFactor: "1"
+      groupInitialRebalanceDelayMs: "0"
+      clusterId: MkU3OEVBNTcwNTJENDM2Qk
     schemaRegistry:
       image: confluentinc/cp-schema-registry:7.5.0
       replicaCount: 1
@@ -188,8 +183,6 @@ infrastructure:
       - https://shop-wallet-fe.haint.fyi
       - https://shop-wallet-fe.haint.fyi/*
       - https://shop-wallet-fe.haint.fyi/api/shop-wallet-fe/auth/callback/keycloak
-      - https://customer-fe-angular.haint.fyi
-      - https://customer-fe-angular.haint.fyi/*
     db:
       vendor: MYSQL
       host: keycloak-mysql
@@ -223,186 +216,9 @@ infrastructure:
       size: 1Gi
       hostPath: /data/keycloak-mysql
 
-  mailhog:
-    enabled: true
-    fullnameOverride: mailhog
-    image: axllent/mailpit:v1.27
-    replicaCount: 1
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
-
-  observability:
-    enabled: true
-    grafana:
-      image: grafana/grafana:10.1.0
-      replicaCount: 1
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-      anonymousEnabled: "true"
-      anonymousOrgRole: Admin
-      disableLoginForm: "true"
-      datasourceYml: |
-        apiVersion: 1
-        datasources:
-          - name: Prometheus
-            type: prometheus
-            access: proxy
-            url: http://prometheus.default.svc.cluster.local:9090
-            editable: false
-            jsonData:
-              httpMethod: POST
-              exemplarTraceIdDestinations:
-                - name: trace_id
-                  datasourceUid: tempo
-          - name: Tempo
-            type: tempo
-            access: proxy
-            orgId: 1
-            url: http://tempo.default.svc.cluster.local:3100
-            basicAuth: false
-            isDefault: true
-            version: 1
-            editable: false
-            apiVersion: 1
-            uid: tempo
-            jsonData:
-              httpMethod: GET
-              tracesToLogs:
-                datasourceUid: 'loki'
-              nodeGraph:
-                enabled: true
-          - name: Loki
-            type: loki
-            uid: loki
-            access: proxy
-            orgId: 1
-            url: http://loki.default.svc.cluster.local:3100
-            basicAuth: false
-            isDefault: false
-            version: 1
-            editable: false
-            apiVersion: 1
-            jsonData:
-              derivedFields:
-                - datasourceUid: tempo
-                  matcherRegex: "\\[.+,(.+?),"
-                  name: TraceID
-                  url: $${__value.raw}
-    prometheus:
-      image: prom/prometheus:v2.46.0
-      replicaCount: 1
-      resources:
-        requests:
-          cpu: 200m
-          memory: 512Mi
-        limits:
-          cpu: 500m
-          memory: 1Gi
-      configYml: |
-        global:
-          scrape_interval: 2s
-          evaluation_interval: 2s
-
-        scrape_configs:
-          - job_name: 'api-gateway'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'api-gateway.microservices.svc.cluster.local:9000' ]
-          - job_name: 'product-service'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'product-service.microservices.svc.cluster.local:8080' ]
-                labels:
-                  application: 'Product Service'
-          - job_name: 'order-service'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'order-service.microservices.svc.cluster.local:8081' ]
-                labels:
-                  application: 'Order Service'
-          - job_name: 'inventory-service'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'inventory-service.microservices.svc.cluster.local:8082' ]
-                labels:
-                  application: 'Inventory Service'
-          - job_name: 'notification-service'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'notification-service.microservices.svc.cluster.local:8083' ]
-                labels:
-                  application: 'Notification Service'
-          - job_name: 'payment-service'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'payment-service.microservices.svc.cluster.local:8085' ]
-                labels:
-                  application: 'Payment Service'
-          - job_name: 'shop-service'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'shop-service.microservices.svc.cluster.local:8086' ]
-                labels:
-                  application: 'Shop Service'
-          - job_name: 'customer-service'
-            metrics_path: '/actuator/prometheus'
-            static_configs:
-              - targets: [ 'customer-service.microservices.svc.cluster.local:8087' ]
-                labels:
-                  application: 'Customer Service'
-    loki:
-      image: grafana/loki:main
-      replicaCount: 1
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-    tempo:
-      image: grafana/tempo:2.2.2
-      replicaCount: 1
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-      storage:
-        size: 1Gi
-        storageClassName: standard
-        hostPath: /data/tempo
-      configYml: |
-        server:
-          http_listen_port: 3100
-
-        distributor:
-          receivers:
-            zipkin:
-
-        storage:
-          trace:
-            backend: local
-            local:
-              path: /tmp/tempo/blocks
-
 applications:
   namespace: microservices
   commonConfig:
-    lokiUrl: http://loki.microservices.svc.cluster.local:3100/loki/api/v1/push
-    managementZipkinTracingEndpoint: http://tempo.microservices.svc.cluster.local:9411
     productServiceUrl: http://product-service.microservices.svc.cluster.local:8080
     orderServiceUrl: http://order-service.microservices.svc.cluster.local:8081
     inventoryServiceUrl: http://inventory-service.microservices.svc.cluster.local:8082
@@ -511,8 +327,6 @@ applications:
       datasourceUsername: postgres
       datasourcePassword: postgres
       schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
-      mailHost: mailhog.microservices.svc.cluster.local
-      mailPort: "1025"
       shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
       shopNotificationTopic: shop-notifications
   paymentService:
@@ -670,23 +484,6 @@ applications:
       authCookieDomain: ""
       authBasePath: /api/customer-fe-next/auth
       authSecret: replace-with-a-long-random-string
-  customerFeAngular:
-    enabled: true
-    image: docker.io/hai2k2tt/customer-fe-angular:2-amd64
-    imagePullPolicy: Always
-    replicaCount: 1
-    service:
-      port: 80
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
-    config:
-      apiBaseUrl: http://api-gateway.microservices.svc.cluster.local:9000/api
-
 k8sGateway:
   enabled: true
   namespace: microservices
@@ -739,22 +536,6 @@ k8sGateway:
       hostname: kafka-ui.haint.fyi
       backendRefName: kafka-ui
       backendRefPort: 8080
-    - name: grafana-route
-      hostname: grafana.haint.fyi
-      backendRefName: grafana
-      backendRefPort: 3000
-    - name: tempo-route
-      hostname: tempo.haint.fyi
-      backendRefName: tempo
-      backendRefPort: 3100
-    - name: prometheus-route
-      hostname: prometheus.haint.fyi
-      backendRefName: prometheus
-      backendRefPort: 9090
-    - name: mailhog-route
-      hostname: mailhog.haint.fyi
-      backendRefName: mailhog
-      backendRefPort: 8025
     - name: minio-route
       hostname: minio.haint.fyi
       backendRefName: minio
@@ -763,10 +544,6 @@ k8sGateway:
       hostname: schema-registry.haint.fyi
       backendRefName: schema-registry
       backendRefPort: 8081
-    - name: loki-route
-      hostname: loki.haint.fyi
-      backendRefName: loki
-      backendRefPort: 3100
     - name: landing-fe-route
       hostname: landing-fe.haint.fyi
       backendRefName: landing-fe
@@ -791,10 +568,6 @@ k8sGateway:
       hostname: shop-wallet-fe.haint.fyi
       backendRefName: shop-wallet-fe
       backendRefPort: 3007
-    - name: customer-fe-angular-route
-      hostname: customer-fe-angular.haint.fyi
-      backendRefName: customer-fe-angular
-      backendRefPort: 80
   proxySettingsPolicies:
     - name: frontend-proxy-settings
       targetRefs:
@@ -816,9 +589,6 @@ k8sGateway:
         - group: gateway.networking.k8s.io
           kind: HTTPRoute
           name: shop-wallet-fe-route
-        - group: gateway.networking.k8s.io
-          kind: HTTPRoute
-          name: customer-fe-angular-route
       buffering:
         bufferSize: 32k
         buffers:

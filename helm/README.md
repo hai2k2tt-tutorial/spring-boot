@@ -75,15 +75,9 @@ shop-fe.haint.fyi                 A  <VPS_PUBLIC_IP>
 customer-fe-next.haint.fyi        A  <VPS_PUBLIC_IP>
 customer-wallet-fe.haint.fyi      A  <VPS_PUBLIC_IP>
 shop-wallet-fe.haint.fyi          A  <VPS_PUBLIC_IP>
-customer-fe-angular.haint.fyi     A  <VPS_PUBLIC_IP>
 minio.haint.fyi                   A  <VPS_PUBLIC_IP>
 kafka-ui.haint.fyi                A  <VPS_PUBLIC_IP>
-grafana.haint.fyi                 A  <VPS_PUBLIC_IP>
-tempo.haint.fyi                   A  <VPS_PUBLIC_IP>
-prometheus.haint.fyi              A  <VPS_PUBLIC_IP>
-mailhog.haint.fyi                 A  <VPS_PUBLIC_IP>
 schema-registry.haint.fyi         A  <VPS_PUBLIC_IP>
-loki.haint.fyi                    A  <VPS_PUBLIC_IP>
 ```
 
 Keep port `80` open permanently. Let's Encrypt HTTP-01 validation uses it even
@@ -110,8 +104,8 @@ sudo ufw status
 Create the host directories used by the chart's static `hostPath` volumes:
 
 ```bash
-sudo mkdir -p /data/postgres /data/minio /data/keycloak-mysql /data/tempo /data/mongodb
-sudo chmod 0777 /data/postgres /data/minio /data/keycloak-mysql /data/tempo /data/mongodb
+sudo mkdir -p /data/postgres /data/minio /data/keycloak-mysql /data/mongodb
+sudo chmod 0777 /data/postgres /data/minio /data/keycloak-mysql /data/mongodb
 ```
 
 The chart creates static PV/PVC pairs for:
@@ -121,7 +115,6 @@ The chart creates static PV/PVC pairs for:
 | Postgres | `postgres-pv` | `postgres-pvc` | `/data/postgres` |
 | MinIO | `minio-pv` | `minio-pvc` | `/data/minio` |
 | Keycloak MySQL | `keycloak-mysql-pv` | `keycloak-mysql-pvc` | `/data/keycloak-mysql` |
-| Tempo | `tempo-pv` | `tempo-pvc` | `/data/tempo` |
 | MongoDB, if enabled | `mongodb-pv` | `mongodb-pvc` | `/data/mongodb` |
 
 Postgres and MinIO size/path/class are value-driven. Keycloak MySQL, Tempo, and
@@ -355,9 +348,6 @@ applications:
       authBasePath: /api/shop-wallet-fe/auth
       authSecret: "CHANGE_ME_SHOP_WALLET_FE_AUTH_SECRET"
 
-  customerFeAngular:
-    image: docker.io/hai2k2tt/customer-fe-angular:2-amd64
-
 k8sGateway:
   enabled: true
   certManager:
@@ -432,7 +422,6 @@ At minimum, expose only:
 - `customer-fe-next`
 - `customer-wallet-fe`
 - `shop-wallet-fe`
-- `customer-fe-angular`
 - `api`
 - `keycloak`
 - `minio`, only if product images must be served through this public host
@@ -613,8 +602,7 @@ for deploy in \
   shop-fe \
   customer-fe-next \
   customer-wallet-fe \
-  shop-wallet-fe \
-  customer-fe-angular
+  shop-wallet-fe
 do
   kubectl rollout status "deployment/${deploy}" -n microservices --timeout=300s
 done
@@ -692,7 +680,6 @@ kubectl describe deploy \
   customer-fe-next \
   customer-wallet-fe \
   shop-wallet-fe \
-  customer-fe-angular \
   -n microservices | grep -E "^(Name:|Replicas:|    Image:)"
 ```
 
@@ -757,15 +744,9 @@ Current default public routes:
 | `customer-fe-next-route` | `customer-fe-next.haint.fyi` | `customer-fe-next` | `3004` |
 | `customer-wallet-fe-route` | `customer-wallet-fe.haint.fyi` | `customer-wallet-fe` | `3006` |
 | `shop-wallet-fe-route` | `shop-wallet-fe.haint.fyi` | `shop-wallet-fe` | `3007` |
-| `customer-fe-angular-route` | `customer-fe-angular.haint.fyi` | `customer-fe-angular` | `80` |
 | `minio-route` | `minio.haint.fyi` | `minio` | `9000` |
 | `kafka-ui-route` | `kafka-ui.haint.fyi` | `kafka-ui` | `8080` |
-| `grafana-route` | `grafana.haint.fyi` | `grafana` | `3000` |
-| `tempo-route` | `tempo.haint.fyi` | `tempo` | `3100` |
-| `prometheus-route` | `prometheus.haint.fyi` | `prometheus` | `9090` |
-| `mailhog-route` | `mailhog.haint.fyi` | `mailhog` | `8025` |
 | `schema-registry-route` | `schema-registry.haint.fyi` | `schema-registry` | `8081` |
-| `loki-route` | `loki.haint.fyi` | `loki` | `3100` |
 
 ## 17. Upgrade
 
@@ -800,8 +781,7 @@ kubectl rollout restart -n microservices \
   deployment/shop-fe \
   deployment/customer-fe-next \
   deployment/customer-wallet-fe \
-  deployment/shop-wallet-fe \
-  deployment/customer-fe-angular
+  deployment/shop-wallet-fe
 ```
 
 ## 18. Rollback

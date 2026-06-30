@@ -80,8 +80,3 @@ dependencies:
     version: 0.1.0
     repository: "file://charts/shop-wallet-fe"
     condition: shopWalletFe.enabled
-  - name: customer-fe-angular
-    alias: customerFeAngular
-    version: 0.1.0
-    repository: "file://charts/customer-fe-angular"
-    condition: customerFeAngular.enabled

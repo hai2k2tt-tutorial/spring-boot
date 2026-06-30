@@ -84,7 +84,6 @@ applications.landingFe.image
 applications.adminFe.image
 applications.shopFe.image
 applications.customerFeNext.image
-applications.customerFeAngular.image
 ```
 
 ## One-Time VPS Preparation
@@ -258,7 +257,6 @@ jobs:
             --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${DEPLOY_IMAGE_TAG}" \
             --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${DEPLOY_IMAGE_TAG}" \
             --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${DEPLOY_IMAGE_TAG}" \
-            --set-string applications.customerFeAngular.image="${IMAGE_PREFIX}/customer-fe-angular:${DEPLOY_IMAGE_TAG}" \
             --set-string applications.apiGateway.imagePullPolicy=Always \
             --set-string applications.productService.imagePullPolicy=Always \
             --set-string applications.orderService.imagePullPolicy=Always \
@@ -270,8 +268,7 @@ jobs:
             --set-string applications.landingFe.imagePullPolicy=Always \
             --set-string applications.adminFe.imagePullPolicy=Always \
             --set-string applications.shopFe.imagePullPolicy=Always \
-            --set-string applications.customerFeNext.imagePullPolicy=Always \
-            --set-string applications.customerFeAngular.imagePullPolicy=Always
+            --set-string applications.customerFeNext.imagePullPolicy=Always
 
           for deploy in \
             api-gateway \
@@ -285,8 +282,7 @@ jobs:
             landing-fe \
             admin-fe \
             shop-fe \
-            customer-fe-next \
-            customer-fe-angular
+            customer-fe-next
           do
             kubectl rollout restart "deployment/${deploy}" \
               --namespace microservices
@@ -304,8 +300,7 @@ jobs:
             landing-fe \
             admin-fe \
             shop-fe \
-            customer-fe-next \
-            customer-fe-angular
+            customer-fe-next
           do
             kubectl rollout status "deployment/${deploy}" \
               --namespace microservices \
@@ -380,13 +375,12 @@ Then replace the SSH deploy step with:
       --set-string applications.landingFe.image="${IMAGE_PREFIX}/landing-fe:${DEPLOY_IMAGE_TAG}" \
       --set-string applications.adminFe.image="${IMAGE_PREFIX}/admin-fe:${DEPLOY_IMAGE_TAG}" \
       --set-string applications.shopFe.image="${IMAGE_PREFIX}/shop-fe:${DEPLOY_IMAGE_TAG}" \
-      --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${DEPLOY_IMAGE_TAG}" \
-      --set-string applications.customerFeAngular.image="${IMAGE_PREFIX}/customer-fe-angular:${DEPLOY_IMAGE_TAG}"
+      --set-string applications.customerFeNext.image="${IMAGE_PREFIX}/customer-fe-next:${DEPLOY_IMAGE_TAG}"
 
     kubectl rollout restart deployment/api-gateway deployment/product-service deployment/order-service \
       deployment/inventory-service deployment/notification-service deployment/payment-service \
       deployment/shop-service deployment/customer-service deployment/landing-fe deployment/admin-fe \
-      deployment/shop-fe deployment/customer-fe-next deployment/customer-fe-angular \
+      deployment/shop-fe deployment/customer-fe-next \
       --namespace microservices
 ```
 
@@ -430,7 +424,6 @@ kubectl describe deploy \
   admin-fe \
   shop-fe \
   customer-fe-next \
-  customer-fe-angular \
   -n microservices | grep -E "^(Name:|    Image:)"
 ```
 

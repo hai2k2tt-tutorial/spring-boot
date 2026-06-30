@@ -108,7 +108,6 @@ data:
           "enabled": true,
           "clientAuthenticatorType": "client-secret",
           "redirectUris": [
-            "http://localhost:4200",
             "http://localhost:3004",
             "http://localhost:3004/api/auth/callback/keycloak",
             "http://localhost:3004/api/customer-fe-next/auth/callback/keycloak",
@@ -129,11 +128,7 @@ data:
             "http://customer-fe-next.haint.fyi/api/customer-fe-next/auth/callback/keycloak",
             "http://customer-wallet-fe.haint.fyi",
             "http://customer-wallet-fe.haint.fyi/*",
-            "http://customer-wallet-fe.haint.fyi/api/customer-wallet-fe/auth/callback/keycloak",
-            "http://customer-fe-angular.local:8080",
-            "http://customer-fe-angular.local:8080/*",
-            "http://customer-fe-angular.haint.fyi",
-            "http://customer-fe-angular.haint.fyi/*"
+            "http://customer-wallet-fe.haint.fyi/api/customer-wallet-fe/auth/callback/keycloak"
           ],
           "webOrigins": [
             "*"

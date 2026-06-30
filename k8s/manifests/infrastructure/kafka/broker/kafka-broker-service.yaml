@@ -15,5 +15,9 @@ spec:
       protocol: TCP
       targetPort: 29092
       name: kafka-internal
+    - port: 29093
+      protocol: TCP
+      targetPort: 29093
+      name: controller
   selector:
     app: broker

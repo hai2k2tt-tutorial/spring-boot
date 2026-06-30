@@ -3,8 +3,16 @@ kind: ConfigMap
 metadata:
   name: kafka-broker-config
 data:
-  kafka_broker_id: '1'
-  kafka_zookeeper_connect: 'zookeeper:2181'
-  kafka_listener_security_protocol_map: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+  kafka_node_id: '1'
+  kafka_process_roles: 'broker,controller'
+  kafka_controller_quorum_voters: '1@broker:29093'
+  kafka_listeners: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://broker:29093'
+  kafka_listener_security_protocol_map: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT'
   kafka_advertised_listeners: 'PLAINTEXT://broker:29092,PLAINTEXT_HOST://broker:9092'
+  kafka_controller_listener_names: 'CONTROLLER'
+  kafka_inter_broker_listener_name: 'PLAINTEXT'
   kafka_offsets_topic_replication_factor: '1'
+  kafka_transaction_state_log_min_isr: '1'
+  kafka_transaction_state_log_replication_factor: '1'
+  kafka_group_initial_rebalance_delay_ms: '0'
+  cluster_id: 'MkU3OEVBNTcwNTJENDM2Qk'

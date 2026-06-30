@@ -3,8 +3,6 @@ kind: ConfigMap
 metadata:
   name: common-config
 data:
-  LOKI_URL: "http://loki.microservices.svc.cluster.local:3100/loki/api/v1/push"
-  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: "http://tempo.microservices.svc.cluster.local:9411"
   API_GATEWAY_URL: "http://api-gateway.microservices.svc.cluster.local:9000"
   PRODUCT_SERVICE_URL: "http://product-service.microservices.svc.cluster.local:8080"
   ORDER_SERVICE_URL: "http://order-service.microservices.svc.cluster.local:8081"

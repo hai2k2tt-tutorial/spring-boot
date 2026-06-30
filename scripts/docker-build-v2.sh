@@ -34,7 +34,6 @@ landing-fe
 admin-fe
 shop-fe
 customer-fe-next
-customer-fe-angular
 customer-wallet-fe
 shop-wallet-fe
 "

@@ -24,16 +24,10 @@ for example:
 127.0.0.1 admin-fe.local
 127.0.0.1 shop-fe.local
 127.0.0.1 customer-fe-next.local
-127.0.0.1 customer-fe-angular.local
 127.0.0.1 api.local
 127.0.0.1 keycloak.local
 127.0.0.1 kafka-ui.local
-127.0.0.1 grafana.local
-127.0.0.1 tempo.local
-127.0.0.1 prometheus.local
-127.0.0.1 mailhog.local
 127.0.0.1 schema-registry.local
-127.0.0.1 loki.local
 ```
 
 Then access services through the Gateway on port `8080`, for example

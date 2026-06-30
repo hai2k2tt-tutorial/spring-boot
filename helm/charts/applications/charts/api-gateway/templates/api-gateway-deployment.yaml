@@ -65,16 +65,6 @@ spec:
                 configMapKeyRef:
                   name: api-gateway-config
                   key: APP_SECURITY_ADMIN_JWK_SET_URI
-            - name: LOKI_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: common-config
-                  key: LOKI_URL
-            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: common-config
-                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
             - name: PRODUCT_SERVICE_URL
               valueFrom:
                 configMapKeyRef:

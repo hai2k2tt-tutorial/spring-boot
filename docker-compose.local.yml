@@ -100,52 +100,6 @@ services:
     volumes:
       - ./docker/keycloak/realms:/opt/keycloak/data/import:ro
 
-  loki:
-    image: grafana/loki:3.1.1
-    container_name: loki
-    ports:
-      - "3100:3100"
-    command: ["-config.file=/etc/loki/local-config.yaml"]
-
-  prometheus:
-    image: prom/prometheus:v2.54.1
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-
-  tempo:
-    image: grafana/tempo:2.6.1
-    container_name: tempo
-    ports:
-      - "3200:3200"
-      - "9411:9411"
-    command: ["-config.file=/etc/tempo.yml"]
-    volumes:
-      - ./docker/tempo/tempo.yml:/etc/tempo.yml:ro
-
-  grafana:
-    image: grafana/grafana:11.2.0
-    container_name: grafana
-    depends_on:
-      - prometheus
-      - loki
-      - tempo
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./docker/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
-      - ./docker/grafana/dashboard.json:/var/lib/grafana/dashboards/dashboard.json:ro
-
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: mailhog
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: minio
@@ -181,8 +135,6 @@ services:
       MINIO_BUCKET_PRODUCT_IMAGES: product-images
       MINIO_PRODUCT_IMAGES_PUBLIC_PATH: /api/product/images
       SHOP_SERVICE_URL: http://shop-service:8086
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -200,8 +152,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_service
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -239,8 +189,6 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
       SPRING_KAFKA_PRODUCER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -256,8 +204,6 @@ services:
         condition: service_started
       schema-registry:
         condition: service_started
-      mailhog:
-        condition: service_started
       redis:
         condition: service_healthy
       shop-service:
@@ -272,12 +218,8 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SHOP_SERVICE_URL: http://shop-service:8086
       APP_NOTIFICATIONS_SHOP_TOPIC: shop-notifications
-      SPRING_MAIL_HOST: mailhog
-      SPRING_MAIL_PORT: 1025
       SPRING_KAFKA_BOOTSTRAP_SERVERS: broker:29092
       SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -306,8 +248,6 @@ services:
       CUSTOMER_DATASOURCE_USERNAME: postgres
       CUSTOMER_DATASOURCE_PASSWORD: postgres
       APP_PERMISSIONS_FILE: classpath:permissions.yml
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -326,8 +266,6 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       APP_PERMISSIONS_FILE: classpath:permissions.yml
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -346,8 +284,6 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       APP_PERMISSIONS_FILE: classpath:permissions.yml
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -372,8 +308,6 @@ services:
       CUSTOMER_SERVICE_URL: http://customer-service:8087
       SHOP_SERVICE_URL: http://shop-service:8086
       APP_PERMISSIONS_FILE: classpath:permissions.yml
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
     volumes:
       - ./:/workspace
       - backend-maven-cache:/root/.m2
@@ -412,8 +346,6 @@ services:
       APP_SECURITY_SHOP_JWK_SET_URI: http://keycloak:8080/realms/ecommerce-shop/protocol/openid-connect/certs
       APP_SECURITY_ADMIN_ISSUER_URI: http://localhost:8181/realms/ecommerce-admin
       APP_SECURITY_ADMIN_JWK_SET_URI: http://keycloak:8080/realms/ecommerce-admin/protocol/openid-connect/certs
-      LOKI_URL: http://loki:3100/loki/api/v1/push
-      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://tempo:9411
       PRODUCT_SERVICE_URL: http://product-service:8080
       ORDER_SERVICE_URL: http://order-service:8081
       INVENTORY_SERVICE_URL: http://inventory-service:8082
@@ -615,7 +547,6 @@ services:
 volumes:
   postgres-data:
   keycloak-mysql-data:
-  grafana-data:
   minio-data:
   backend-maven-cache:
   landing-fe-node-modules:

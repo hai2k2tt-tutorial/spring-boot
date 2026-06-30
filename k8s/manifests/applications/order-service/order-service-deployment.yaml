@@ -38,16 +38,6 @@ spec:
                 configMapKeyRef:
                   key: SPRING_DATASOURCE_URL
                   name: order-service-config
-            - name: LOKI_URL
-              valueFrom:
-                configMapKeyRef:
-                  key: LOKI_URL
-                  name: common-config
-            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-                  name: common-config
             - name: PRODUCT_SERVICE_URL
               valueFrom:
                 configMapKeyRef:

@@ -53,16 +53,6 @@ spec:
                 configMapKeyRef:
                   key: SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL
                   name: notification-service-config
-            - name: SPRING_MAIL_HOST
-              valueFrom:
-                configMapKeyRef:
-                  key: SPRING_MAIL_HOST
-                  name: notification-service-config
-            - name: SPRING_MAIL_PORT
-              valueFrom:
-                configMapKeyRef:
-                  key: SPRING_MAIL_PORT
-                  name: notification-service-config
             - name: SHOP_SERVICE_URL
               valueFrom:
                 configMapKeyRef:
@@ -73,16 +63,6 @@ spec:
                 configMapKeyRef:
                   key: APP_NOTIFICATIONS_SHOP_TOPIC
                   name: notification-service-config
-            - name: LOKI_URL
-              valueFrom:
-                configMapKeyRef:
-                  key: LOKI_URL
-                  name: common-config
-            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-                  name: common-config
           resources:
             requests:
               cpu: 100m

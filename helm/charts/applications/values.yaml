@@ -10,8 +10,6 @@ gatewayApi:
   enabled: true
 
 commonConfig:
-  lokiUrl: http://loki.microservices.svc.cluster.local:3100/loki/api/v1/push
-  managementZipkinTracingEndpoint: http://tempo.microservices.svc.cluster.local:9411
   apiGatewayUrl: http://api-gateway.microservices.svc.cluster.local:9000
   productServiceUrl: http://product-service.microservices.svc.cluster.local:8080
   orderServiceUrl: http://order-service.microservices.svc.cluster.local:8081
@@ -127,8 +125,6 @@ notificationService:
     datasourceUsername: postgres
     datasourcePassword: postgres
     schemaRegistryUrl: http://schema-registry.microservices.svc.cluster.local:8081
-    mailHost: mailhog.microservices.svc.cluster.local
-    mailPort: "1025"
     shopServiceUrl: http://shop-service.microservices.svc.cluster.local:8086
     shopNotificationTopic: shop-notifications
 
@@ -368,18 +364,3 @@ shopWalletFe:
     authCookieDomain: ""
     authBasePath: /api/shop-wallet-fe/auth
     authSecret: replace-with-a-long-random-string
-
-customerFeAngular:
-  enabled: true
-  image: docker.io/hai2k2tt/customer-fe-angular:2-amd64
-  imagePullPolicy: Always
-  replicaCount: 1
-  service:
-    port: 80
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 128Mi

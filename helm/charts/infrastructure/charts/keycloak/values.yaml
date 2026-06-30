@@ -22,8 +22,6 @@ redirectUris:
   - https://shop-wallet-fe.haint.fyi
   - https://shop-wallet-fe.haint.fyi/*
   - https://shop-wallet-fe.haint.fyi/api/shop-wallet-fe/auth/callback/keycloak
-  - https://customer-fe-angular.haint.fyi
-  - https://customer-fe-angular.haint.fyi/*
 kcHttpEnabled: "true"
 kcHostnameStrict: "false"
 kcHostnameStrictHttps: "false"

@@ -9,8 +9,6 @@ data:
   SPRING_DATASOURCE_USERNAME: {{ .Values.config.datasourceUsername | quote }}
   SPRING_DATASOURCE_PASSWORD: {{ .Values.config.datasourcePassword | quote }}
   SPRING_KAFKA_CONSUMER_PROPERTIES_SCHEMA_REGISTRY_URL: {{ .Values.config.schemaRegistryUrl | quote }}
-  SPRING_MAIL_HOST: {{ .Values.config.mailHost | quote }}
-  SPRING_MAIL_PORT: {{ .Values.config.mailPort | quote }}
   SHOP_SERVICE_URL: {{ .Values.config.shopServiceUrl | quote }}
   APP_NOTIFICATIONS_SHOP_TOPIC: {{ .Values.config.shopNotificationTopic | quote }}
 {{- end }}

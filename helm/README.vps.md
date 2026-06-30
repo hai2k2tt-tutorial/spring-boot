@@ -17,7 +17,7 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
 - `microservices` namespace
 - Metrics Server for `kubectl top` and the Kubernetes resource metrics API
 - Infrastructure: MySQL, MongoDB, Kafka, Keycloak, Mailpit, Grafana, Prometheus, Loki, Tempo
-- Applications: API gateway, product service, order service, inventory service, notification service, admin-fe, shop-fe, customer-fe-next, customer-fe-angular
+- Applications: API gateway, product service, order service, inventory service, notification service, admin-fe, shop-fe, customer-fe-next
 - Gateway API resources: `Gateway` and `HTTPRoute`
 
 ## Before you install
@@ -50,16 +50,10 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    - `admin-fe.haint.fyi`
    - `shop-fe.haint.fyi`
    - `customer-fe-next.haint.fyi`
-   - `customer-fe-angular.haint.fyi`
    - `api.haint.fyi`
    - `keycloak.haint.fyi`
    - `kafka-ui.haint.fyi`
-   - `grafana.haint.fyi`
-   - `tempo.haint.fyi`
-   - `prometheus.haint.fyi`
-   - `mailhog.haint.fyi`
    - `schema-registry.haint.fyi`
-   - `loki.haint.fyi`
 
 4. Update application URLs.
 
@@ -113,8 +107,6 @@ The chart defaults in `/helm` are now aligned to this VPS deployment:
    http://customer-fe-next.haint.fyi
    http://customer-fe-next.haint.fyi/*
    http://customer-fe-next.haint.fyi/api/auth/callback/keycloak
-   http://customer-fe-angular.haint.fyi
-   http://customer-fe-angular.haint.fyi/*
    ```
 
 6. Review Prometheus scrape targets if you need metrics.
@@ -232,7 +224,7 @@ export DOCKER_PASSWORD='...'
 export IMAGE_TAG=2
 export PLATFORMS=linux/amd64,linux/arm64
 export BACKEND_MODULES="api-gateway"
-export FRONTEND_APPS="admin-fe shop-fe customer-fe-next customer-fe-angular"
+export FRONTEND_APPS="admin-fe shop-fe customer-fe-next"
 
 ./scripts/docker-build-v2.sh
 ```
@@ -353,7 +345,7 @@ helm upgrade --install microservices helm \
 If you republished an image tag and want to force fresh pods immediately:
 
 ```bash
-kubectl rollout restart deploy/admin-fe deploy/shop-fe deploy/customer-fe-next deploy/customer-fe-angular -n microservices
+kubectl rollout restart deploy/admin-fe deploy/shop-fe deploy/customer-fe-next -n microservices
 kubectl rollout restart deploy/api-gateway deploy/product-service deploy/order-service deploy/inventory-service deploy/notification-service deploy/payment-service deploy/shop-service deploy/customer-service -n microservices
 ```
 
@@ -371,7 +363,6 @@ kubectl rollout status deployment/customer-service -n microservices --timeout=30
 kubectl rollout status deployment/admin-fe -n microservices --timeout=300s
 kubectl rollout status deployment/shop-fe -n microservices --timeout=300s
 kubectl rollout status deployment/customer-fe-next -n microservices --timeout=300s
-kubectl rollout status deployment/customer-fe-angular -n microservices --timeout=300s
 ```
 
 Wait for Metrics Server:
@@ -408,7 +399,6 @@ kubectl describe deploy \
   admin-fe \
   shop-fe \
   customer-fe-next \
-  customer-fe-angular \
   -n microservices | egrep "^(Name:|Replicas:|    Image:)"
 ```
 
@@ -423,16 +413,10 @@ Service map for `haint.fyi`, assuming you kept the same route names:
 | admin-fe | `admin-fe.haint.fyi` | `3002` | `http://admin-fe.haint.fyi/` |
 | shop-fe | `shop-fe.haint.fyi` | `3003` | `http://shop-fe.haint.fyi/` |
 | customer-fe-next | `customer-fe-next.haint.fyi` | `3004` | `http://customer-fe-next.haint.fyi/` |
-| customer-fe-angular | `customer-fe-angular.haint.fyi` | `80` | `http://customer-fe-angular.haint.fyi/` |
 | api-gateway | `api.haint.fyi` | `9000` | `http://api.haint.fyi/` |
 | keycloak | `keycloak.haint.fyi` | `8080` | `http://keycloak.haint.fyi/` |
 | kafka-ui | `kafka-ui.haint.fyi` | `8080` | `http://kafka-ui.haint.fyi/` |
-| grafana | `grafana.haint.fyi` | `3000` | `http://grafana.haint.fyi/` |
-| tempo | `tempo.haint.fyi` | `3100` | `http://tempo.haint.fyi/` |
-| prometheus | `prometheus.haint.fyi` | `9090` | `http://prometheus.haint.fyi/` |
-| mailhog | `mailhog.haint.fyi` | `8025` | `http://mailhog.haint.fyi/` |
 | schema-registry | `schema-registry.haint.fyi` | `8081` | `http://schema-registry.haint.fyi/` |
-| loki | `loki.haint.fyi` | `3100` | `http://loki.haint.fyi/` |
 
 ## Value checklist
 
@@ -442,7 +426,6 @@ If you want a single checklist for the VPS install, update these files:
 - `helm/charts/k8s-gateway/values.yaml`
 - `helm/charts/applications/values.yaml`
 - `helm/charts/infrastructure/charts/keycloak/values.yaml`
-- `helm/charts/infrastructure/charts/observability/charts/prometheus/templates/prometheus-configmap.yaml`
 
 ## Basic Helm maintenance commands
 

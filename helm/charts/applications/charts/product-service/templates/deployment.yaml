@@ -40,11 +40,6 @@ spec:
                 configMapKeyRef:
                   name: product-service-config
                   key: SPRING_DATASOURCE_URL
-            - name: LOKI_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: common-config
-                  key: LOKI_URL
             - name: MINIO_ENDPOINT
               valueFrom:
                 configMapKeyRef:
@@ -75,11 +70,6 @@ spec:
                 configMapKeyRef:
                   name: product-service-config
                   key: MINIO_PRODUCT_IMAGES_PUBLIC_PATH
-            - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: common-config
-                  key: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
             - name: SHOP_SERVICE_URL
               valueFrom:
                 configMapKeyRef:

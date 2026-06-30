@@ -35,7 +35,6 @@ shop-fe.haint.fyi              -> 103.6.234.153
 customer-fe-next.haint.fyi     -> 103.6.234.153
 customer-wallet-fe.haint.fyi   -> 103.6.234.153
 shop-wallet-fe.haint.fyi       -> 103.6.234.153
-customer-fe-angular.haint.fyi  -> 103.6.234.153
 ```
 
 The apex `haint.fyi` is not used by this chart. If you want SSL for `https://haint.fyi`, point the apex DNS record to `103.6.234.153` and add a Gateway route for it.

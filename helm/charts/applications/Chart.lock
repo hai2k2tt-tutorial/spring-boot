@@ -44,8 +44,5 @@ dependencies:
 - name: shop-wallet-fe
   repository: file://charts/shop-wallet-fe
   version: 0.1.0
-- name: customer-fe-angular
-  repository: file://charts/customer-fe-angular
-  version: 0.1.0
-digest: sha256:8dd81256d9e3ede47533ff8c0b9b8113b4f380aa5a362591b4af6d6a0f4d9bab
-generated: "2026-06-04T23:00:50.521442+07:00"
+digest: sha256:840c59f2f87ccdb6d2752c6305c92668315a0092c46e1d7ccdec913e6844b667
+generated: "2026-06-30T22:24:48.2471+07:00"

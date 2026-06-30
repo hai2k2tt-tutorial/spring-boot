@@ -60,7 +60,6 @@ docker-compose down
 The Compose stack exposes the main local entrypoints on:
 
 - `http://localhost:9000` for the API gateway
-- `http://localhost:3001` for customer-fe-angular
 - `http://localhost:3002` for admin-fe
 - `http://localhost:3003` for shop-fe
 - `http://localhost:3004` for customer-fe-next

@@ -4,8 +4,6 @@ metadata:
   name: common-config
   namespace: {{ .Values.namespace }}
 data:
-  LOKI_URL: {{ .Values.commonConfig.lokiUrl | quote }}
-  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: {{ .Values.commonConfig.managementZipkinTracingEndpoint | quote }}
   API_GATEWAY_URL: {{ .Values.commonConfig.apiGatewayUrl | quote }}
   PRODUCT_SERVICE_URL: {{ .Values.commonConfig.productServiceUrl | quote }}
   ORDER_SERVICE_URL: {{ .Values.commonConfig.orderServiceUrl | quote }}

@@ -1,12 +1,9 @@
 apiVersion: v2
 name: kafka
-description: Kafka stack (broker, zookeeper, schema registry, ui)
+description: Kafka stack (KRaft broker, schema registry, ui)
 version: 0.1.0
 appVersion: "7.5.0"
 dependencies:
-  - name: zookeeper
-    version: 0.1.0
-    repository: "file://charts/zookeeper"
   - name: broker
     version: 0.1.0
     repository: "file://charts/broker"
